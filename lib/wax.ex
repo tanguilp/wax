@@ -1,4 +1,5 @@
 defmodule Wax do
+  require Logger
 
   @type client_data :: map()
 
@@ -11,30 +12,36 @@ defmodule Wax do
 
     register_new_credential(attestation_obj, client_data)
   end
+
+  def test(attestation_obj, client_data) do
+    register_new_credential(Base.decode64!(attestation_obj), client_data)
+  end
   
   def register_new_credential(attestation_object_cbor, client_data_json_raw) do
     user = "user_001"
 
-    with {:ok, client_data_json} <- utf8_decode_client_data_json(client_data_json_raw),        #1
-         {:ok, client_data} <- Jason.decode(client_data_json),                                 #2
-         :ok <- type_create?(client_data),                                                     #3
-         :ok <- valid_challenge?(client_data),                                                 #4
-         :ok <- valid_origin?(client_data),                                                    #5
-         :ok <- valid_token_binding_status?(client_data),                                      #6
-         client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),                      #7
-         {:ok, %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt}}            #8
+    with {:ok, client_data_json} <- utf8_decode_client_data_json(client_data_json_raw),       #1
+         {:ok, client_data} <- Jason.decode(client_data_json),                                #2
+         :ok <- type_create?(client_data),                                                    #3
+         :ok <- valid_challenge?(client_data),                                                #4
+         :ok <- valid_origin?(client_data),                                                   #5
+         :ok <- valid_token_binding_status?(client_data),                                     #6
+         client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),                     #7
+         {:ok, %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt}}           #8
            <- cbor_decode(attestation_object_cbor),
          {:ok, auth_data} <- decode_auth_data(auth_data_bin),
-         :ok <- valid_rp_id?(auth_data.rp_id_hash),                                            #9
-         :ok <- user_present_flag_set?(auth_data.flags),                                       #10
-         :ok <- maybe_user_verified_flag_set?(auth_data.flags),                                #11
-         #FIXME: verify extensions                                                             #12
-         {:ok, valid_attestation_statement_format?} <- attestation_statement_format_fun(fmt),  #13
-         :ok <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),   #14
-         # trust anchors are obtained by another process                                       #15
-         :ok <- attestation_trustworthy?(att_stmt),                                            #16
-         :ok <- credential_id_not_registered?(auth_data.att_cred_data.cred_id),                #17
-         :ok <- register_credential(user, auth_data.att_cred_data)
+         :ok <- valid_rp_id?(auth_data),                                                      #9
+         :ok <- user_present_flag_set?(auth_data),                                            #10
+         :ok <- maybe_user_verified_flag_set?(auth_data),                                     #11
+         #FIXME: verify extensions                                                            #12
+         {:ok, valid_attestation_statement_format?}                                           #13
+           <- Wax.Attestation.statement_verify_fun(fmt),
+         {:ok, {attestation_type, trust_path}}                                                #14
+           <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),
+         # trust anchors are obtained by another process                                      #15
+         :ok <- attestation_trustworthy?(auth_data, attestation_type, trust_path),            #16
+         :ok <- credential_id_not_registered?(auth_data),                                     #17
+         :ok <- register_credential(user, auth_data)
     do
       :ok
     else
@@ -83,6 +90,7 @@ defmodule Wax do
 
   defp cbor_decode(cbor) do
     try do
+      Logger.debug("#{__MODULE__}: decoded cbor: #{inspect(:cbor.decode(cbor), pretty: true)}")
       {:ok, :cbor.decode(cbor)}
     catch
       _ -> {:error, :invalid_cbor}
@@ -108,27 +116,48 @@ defmodule Wax do
     attested_credential_data = Wax.AttestedCredentialData.new(aaguid,credential_id, 
       :cbor.decode(credential_public_key))
 
-    authdata = Wax.AuthData.new(rp_id_hash,
+    auth_data = Wax.AuthData.new(rp_id_hash,
       (if flag_user_present == 1, do: true, else: false),
       (if flag_user_verified == 1, do: true, else: false),
       (if flag_attested_credential_data == 1, do: true, else: false),
       (if flag_extension_data_included == 1, do: true, else: false),
       counter,
       attested_credential_data)
+
+    Logger.debug("#{__MODULE__}: decoded auth_data: #{inspect(auth_data, pretty: true)}")
+    {:ok, auth_data}
   end
 
-  defp valid_rp_id?(rp_id_hash) do
+  @spec valid_rp_id?(Wax.AuthData.t()) :: :ok | {:error, any()}
+  defp valid_rp_id?(auth_data) do
+    if auth_data.rp_id_hash == :crypto.hash(:sha256, "localhost") do #FIXME
+      :ok
+    else
+      {:error, :invalid_rp_id}
+    end
   end
-  defp user_present_flag_set?(flags) do
+
+  @spec user_present_flag_set?(Wax.AuthData.t()) :: :ok | {:error, any()}
+  defp user_present_flag_set?(auth_data) do
+    if auth_data.flag_user_present == true do
+      :ok
+    else
+      {:error, :flag_user_present_not_set}
+    end
   end
-  defp maybe_user_verified_flag_set?(flags) do
+
+  @spec maybe_user_verified_flag_set?(Wax.AuthData.t()) :: :ok | {:error, any()}
+  defp maybe_user_verified_flag_set?(auth_data) do
+    :ok #FIXME
   end
-  defp attestation_statement_format_fun(fmt) do
+
+  defp attestation_trustworthy?(auth_data, attestation_type, trust_path) do
+    :ok
   end
-  defp attestation_trustworthy?(att_stmt) do
+  defp credential_id_not_registered?(auth_data) do
+    :ok
   end
-  defp credential_id_not_registered?(cred_id) do
-  end
-  defp register_credential(user_handle, att_cred_data) do
+  defp register_credential(user_handle, auth_data) do
+    :ok
   end
 end
