@@ -3,45 +3,88 @@ defmodule Wax do
 
   @type client_data :: map()
 
-  def test() do
-    rawid = "AN6ERG4dqtOjaeIN6139euvOVBbemRABHQIfHnUpZWN56KeGnVyMC7LfuKSQLTkwX+efIYE0AQKjrBw1JOXTnQ=="
-
-    client_data = ~s({"challenge":"AAAAAAAAAAAAAAAAAAAAAA","clientExtensions":{},"hashAlgorithm":"SHA-256","origin":"http://localhost:4000","type":"webauthn.create"}) 
-
-    {:ok, attestation_obj} = Base.decode64("o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjESZYN5YgOjGh0NBcPZHZgW4/krrmihjLHmVzzuoMdl2NBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQADehERuHarTo2niDetd/XrrzlQW3pkQAR0CHx51KWVjeeinhp1cjAuy37ikkC05MF/nnyGBNAECo6wcNSTl052lAQIDJiABIVggJ9uN0t6HOlS8bfyTjGaGDrSrSs6v+IQAiow6zwDATugiWCCnb81bSAxn7AYwitIDhIhGGKJZi5NjLGBlIcuZFiprng==")
-
-    register_new_credential(attestation_obj, client_data)
+  def test(attestation_obj, client_data, challenge) do
+    register_new_credential(Base.decode64!(attestation_obj), client_data, challenge)
   end
 
-  def test(attestation_obj, client_data) do
-    register_new_credential(Base.decode64!(attestation_obj), client_data)
+  @spec new_credential_challenge(Wax.User.t()) :: Wax.AttestationChallenge.t()
+  def new_credential_challenge(user) do
+    Wax.AttestationChallenge.new(user)
   end
-  
-  def register_new_credential(attestation_object_cbor, client_data_json_raw) do
-    user = "user_001"
 
-    with {:ok, client_data_json} <- utf8_decode_client_data_json(client_data_json_raw),       #1
-         {:ok, client_data} <- Jason.decode(client_data_json),                                #2
-         :ok <- type_create?(client_data),                                                    #3
-         :ok <- valid_challenge?(client_data),                                                #4
-         :ok <- valid_origin?(client_data),                                                   #5
-         :ok <- valid_token_binding_status?(client_data),                                     #6
-         client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),                     #7
-         {:ok, %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt}}           #8
+  def register_new_credential(attestation_object_cbor, client_data_json_raw, challenge) do
+
+    with {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
+         :ok <- type_create?(client_data),
+         :ok <- valid_challenge?(challenge, client_data),
+         :ok <- valid_origin?(client_data),
+         :ok <- valid_token_binding_status?(client_data),
+         client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),
+         {:ok, %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt}}
            <- cbor_decode(attestation_object_cbor),
          {:ok, auth_data} <- decode_auth_data(auth_data_bin),
-         :ok <- valid_rp_id?(auth_data),                                                      #9
-         :ok <- user_present_flag_set?(auth_data),                                            #10
-         :ok <- maybe_user_verified_flag_set?(auth_data),                                     #11
-         #FIXME: verify extensions                                                            #12
-         {:ok, valid_attestation_statement_format?}                                           #13
+         :ok <- valid_rp_id?(auth_data),
+         :ok <- user_present_flag_set?(auth_data),
+         :ok <- maybe_user_verified_flag_set?(auth_data),
+         #FIXME: verify extensions
+         {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
-         {:ok, {attestation_type, trust_path}}                                                #14
+         {:ok, {attestation_type, trust_path}}
            <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),
-         # trust anchors are obtained by another process                                      #15
-         :ok <- attestation_trustworthy?(auth_data, attestation_type, trust_path),            #16
-         :ok <- credential_id_not_registered?(auth_data),                                     #17
-         :ok <- register_credential(user, auth_data)
+         # trust anchors are obtained by another process
+         :ok <- attestation_trustworthy?(auth_data, attestation_type, trust_path),
+         :ok <- credential_id_not_registered?(auth_data),
+         :ok <- register_credential(auth_data, challenge)
+    do
+      :okidoki
+    else
+      {:error, %Jason.DecodeError{}} ->
+        {:error, :json_decode_error}
+
+      x ->
+        x
+    end
+  end
+
+  @spec authentication_challenge(Wax.User.t()) :: Wax.Challenge.t()
+
+  def authentication_challenge(user) do
+    Wax.AuthenticationChallenge.new(user)
+  end
+
+  def auth_test(credential_id, auth_data, sig, client_data, challenge) do
+    authenticate(
+      Base.url_decode64!(credential_id, padding: false),
+      Base.decode64!(auth_data),
+      Base.decode64!(sig),
+      client_data,
+      challenge
+    )
+  end
+
+  def authenticate(credential_id,
+                   auth_data_bin,
+                   sig,
+                   client_data_json_raw,
+                   challenge) do
+    user = "user_001"
+
+    with :ok <- verify_credential_id(credential_id, challenge),
+         :ok <- credential_id_of_user?(credential_id, challenge),
+         {:ok, auth_data} <- Wax.AuthData.decode(auth_data_bin),
+         {:ok, public_key} <- public_key_of_credential_id(challenge, credential_id),
+         {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
+         :ok <- type_get?(client_data),
+         :ok <- valid_challenge?(challenge, client_data),                                     #8
+         :ok <- valid_origin?(client_data),                                                   #9
+         :ok <- valid_token_binding_status?(client_data),                                     #10
+         :ok <- valid_rp_id?(auth_data),                                                      #11
+         :ok <- user_present_flag_set?(auth_data),                                            #12
+         :ok <- maybe_user_verified_flag_set?(auth_data),                                     #13
+         #FIXME: verify extensions                                                            #14
+         client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),                     #15
+         :ok <- valid_signature?(auth_data_bin <> client_data_hash, sig, public_key),        #16
+         :ok <- handle_sig_count(auth_data)                                                   #17
     do
       :ok
     else
@@ -53,33 +96,38 @@ defmodule Wax do
     end
   end
 
-  defp utf8_decode_client_data_json(client_data_json_raw) do
-    #FIXME: implement https://encoding.spec.whatwg.org/#utf-8-decode ?
-    {:ok, client_data_json_raw}
-  end
-
-  @spec type_create?(client_data) :: :ok | {:error, atom()}
+  @spec type_create?(Wax.ClientData.t()) :: :ok | {:error, atom()}
   defp type_create?(client_data) do
-    if client_data["type"] == "webauthn.create" do
+    if client_data.type == :create do
       :ok
     else
       {:error, :attestation_invalid_type}
     end
   end
 
-  @spec valid_challenge?(client_data) :: :ok | {:error, atom()}
-  defp valid_challenge?(client_data) do
-    #FIXME
-    if client_data["challenge"] == "AAAAAAAAAAAAAAAAAAAAAA" do
+  @spec type_get?(client_data) :: :ok | {:error, atom()}
+  defp type_get?(client_data) do
+    if client_data.type == :get do
       :ok
     else
-      {:error, :attestation_invalid_challenge}
+      {:error, :attestation_invalid_type}
     end
   end
 
-  @spec valid_origin?(client_data) :: :ok | {:error, atom()}
+  @spec valid_challenge?(AttestationChallenge.t() | AuthenticationChallenge.t(),
+    Wax.ClientData.t()) :: :ok | {:error, any()}
+  def valid_challenge?(challenge, client_data) do
+    IO.inspect(client_data)
+    if challenge.bytes == client_data.challenge do
+      :ok
+    else
+      {:error, :invalid_challenge}
+    end
+  end
+
+  @spec valid_origin?(Wax.ClientData.t()) :: :ok | {:error, atom()}
   defp valid_origin?(client_data) do
-    if client_data["origin"] == "http://localhost:4000" do
+    if client_data.origin == "http://localhost:4000" do
       :ok
     else
       {:error, :attestation_invalid_origin}
@@ -157,7 +205,44 @@ defmodule Wax do
   defp credential_id_not_registered?(auth_data) do
     :ok
   end
-  defp register_credential(user_handle, auth_data) do
+  defp register_credential(auth_data, challenge) do
+    Wax.CredentialStore.ETS.register(challenge.user,
+                                     auth_data.attested_credential_data.credential_id,
+                                     auth_data.attested_credential_data.credential_public_key)
+  end
+
+  defp verify_credential_id(credential_id, challenge) do
+    if credential_id in challenge.allow_credentials do
+      :ok
+    else
+      {:error, :incorrect_credential_id_for_user}
+    end
+  end
+
+  defp credential_id_of_user?(credential_id, challenge) do
+    :ok
+  end
+
+  defp public_key_of_credential_id(challenge, credential_id) do
+    Wax.CredentialStore.ETS.get_key(challenge.user, credential_id)
+  end
+
+  defp valid_signature?(msg, sig, cose_key) do
+    IO.inspect(msg)
+    IO.inspect(sig)
+    IO.inspect(cose_key)
+    IO.inspect(Wax.CoseKey.pretty_print(cose_key))
+
+    ecp = {:ECPoint, <<4>> <> cose_key[-2] <> cose_key[-3]}
+
+    if :public_key.verify(msg, :sha256, sig, {ecp, {:namedCurve, :secp256r1}}) do
+      :yyyeeeeeaaaahhhhhhhhhhhhhhhh
+    else
+      {:error, :invalid_signature}
+    end
+  end
+
+  defp handle_sig_count(auth_data) do
     :ok
   end
 end

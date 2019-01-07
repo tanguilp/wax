@@ -1,5 +1,46 @@
 defmodule Wax.ClientData do
-  @type t :: map()
+  @enforce_keys [:type, :challenge, :origin]
+
+  defstruct [
+    :type,
+    :challenge,
+    :origin,
+    :token_binding
+  ]
+
+  @type t :: %__MODULE__{
+    type: :create | :get,
+    challenge: binary(),
+    origin: String.t(),
+    token_binding: any()
+  }
 
   @type hash :: binary()
+
+  @spec parse_raw_json(binary()) :: {:ok, t()} | {:error, any()}
+  def parse_raw_json(client_data_json_raw) do
+    #FIXME: implement https://encoding.spec.whatwg.org/#utf-8-decode ?
+    
+    with {:ok, client_data_map} <- Jason.decode(client_data_json_raw)
+    do
+      type =
+        case client_data_map["type"] do
+          "webauthn.create" ->
+            :create
+
+          "webauthn.get" ->
+            :get
+        end
+
+      {:ok, %__MODULE__{
+        type: type,
+        challenge: Base.url_decode64!(client_data_map["challenge"], padding: false),
+        origin: client_data_map["origin"],
+        token_binding: nil # unsupported
+        }}
+    else
+      {:error, error} ->
+        {:error, error}
+    end
+  end
 end
