@@ -19,6 +19,10 @@ defmodule Wax.CoseKey do
     @key_type_symmetric => "Symmetric"
   }
 
+  @es512 -36
+  @es384 -35
+  @es256 -7
+
   @cose_alg_string %{
     -259 => "RS512 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
     -258 => "RS384 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
@@ -83,16 +87,96 @@ defmodule Wax.CoseKey do
     7 => "Ed448"
   }
 
+  @cose_ec_named_curves %{
+    1 => :secp256r1,
+    2 => :secp384r1,
+    3 => :secp521r1
+  }
 
-  @spec pretty_print(t()) :: map()
 
-  def pretty_print(%{@kty => @key_type_EC2, @alg => alg, -1 => crv, -2 => x, -3 => y}) do
+  @spec pretty_map(t()) :: map()
+
+  def pretty_map(%{@kty => @key_type_OKP, @alg => alg} = key) do
     %{
-      kty: @key_type_string[@key_type_EC2],
-      crv: @cose_ec_string[crv],
+      kty: @key_type_string[@key_type_OKP],
       alg: @cose_alg_string[alg],
-      x: x,
-      y: y
+      crv: @cose_ec_string[key[-1]],
+      x: key[-2]
     }
   end
+
+  def pretty_map(%{@kty => @key_type_EC2, @alg => alg} = key) do
+    %{
+      kty: @key_type_string[@key_type_EC2],
+      alg: @cose_alg_string[alg],
+      crv: @cose_ec_string[key[-1]],
+      x: key[-2],
+      y: key[-3]
+    }
+  end
+
+  def pretty_map(%{@kty => @key_type_RSA, @alg => alg} = key) do
+    %{
+      kty: @key_type_string[@key_type_RSA],
+      alg: @cose_alg_string[alg],
+      n: key[-1],
+      e: key[-2],
+      p: key[-4],
+      q: key[-5],
+      dp: key[-6],
+      dq: key[-7],
+      qlnv: key[-8],
+      other: key[-9],
+      r_i: key[-10],
+      d_i: key[-11],
+      t_i: key[-12]
+    }
+  end
+
+  def pretty_map(%{@kty => @key_type_symmetric, @alg => alg} = key) do
+    %{
+      kty: @key_type_string[@key_type_RSA],
+      alg: @cose_alg_string[alg],
+    }
+  end
+
+  @spec verify(t(), binary(), binary()) :: :ok | {:error, any()}
+
+  def verify(%{@kty => @key_type_EC2, @alg => @es256, -1 => crv, -2 => x, -3 => y}, msg, sig)
+    when crv in unquote(Map.keys(@cose_ec_named_curves))
+  do
+    key = {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, @cose_ec_named_curves[crv]}}
+
+    if :public_key.verify(msg, :sha256, sig, key) do
+      :ok
+    else
+      {:error, :invalid_signature}
+    end
+  end
+
+  def verify(%{@kty => @key_type_EC2, @alg => @es384, -1 => crv, -2 => x, -3 => y}, msg, sig)
+    when crv in unquote(Map.keys(@cose_ec_named_curves))
+  do
+    key = {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, @cose_ec_named_curves[crv]}}
+
+    if :public_key.verify(msg, :sha384, sig, key) do
+      :ok
+    else
+      {:error, :invalid_signature}
+    end
+  end
+
+  def verify(%{@kty => @key_type_EC2, @alg => @es512, -1 => crv, -2 => x, -3 => y}, msg, sig)
+    when crv in unquote(Map.keys(@cose_ec_named_curves))
+  do
+    key = {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, @cose_ec_named_curves[crv]}}
+
+    if :public_key.verify(msg, :sha512, sig, key) do
+      :ok
+    else
+      {:error, :invalid_signature}
+    end
+  end
+
+  #FIXME: implement for other key types
 end

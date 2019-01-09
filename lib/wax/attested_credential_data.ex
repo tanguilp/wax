@@ -46,7 +46,7 @@ defmodule Wax.AttestedCredentialData do
     {:ok, {%__MODULE__{
       aaguid: aaguid,
       credential_id: credential_id,
-      credential_public_key: credential_public_key
+      credential_public_key: :cbor.decode(credential_public_key)
     }, nil}}
   end
 
