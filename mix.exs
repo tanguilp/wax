@@ -23,8 +23,9 @@ defmodule Wax.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      #FIXME: assess CBOR library sec, tests and conformance
       {:cbor, github: "yjh0502/cbor-erlang", ref: "b5c9dbc2de15753b2db15e13d88c11738c2ac292"},
+      #{:joken, github: "joken-elixir/joken", tag: "v2.0.0"},
+      {:jose, "~> 1.9"},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false}
     ]
