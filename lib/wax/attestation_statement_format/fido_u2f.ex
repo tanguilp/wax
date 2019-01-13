@@ -37,7 +37,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
       [der] ->
         case :public_key.pkix_decode_cert(der, :otp) do
           #FIXME: does pkix_decode_cert/2 checks the cert?
-          # The WebAuthn spec does not say the cert should be checked though 
+          # The WebAuthn spec does not say the cert should be checked though
           {:OTPCertificate,
             {:OTPTBSCertificate, :v3, _,
               _,
@@ -81,10 +81,11 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
   @spec valid_signature?(binary(), binary(), {:ECPoint, binary()}) :: :ok | {:error, any()}
   def valid_signature?(sig, verification_data, ec_pk) do
+    #FIXME: use X509 module instead
     if :public_key.verify(verification_data, :sha256, sig, {ec_pk, {:namedCurve, :secp256r1}}) do
       :ok
     else
-      {:error, :fido_u2f_invalid_signature}
+      {:error, :fido_u2f_invalid_attestation_signature}
     end
   end
 end

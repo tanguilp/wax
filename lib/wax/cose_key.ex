@@ -120,20 +120,11 @@ defmodule Wax.CoseKey do
       kty: @key_type_string[@key_type_RSA],
       alg: @cose_alg_string[alg],
       n: key[-1],
-      e: key[-2],
-      p: key[-4],
-      q: key[-5],
-      dp: key[-6],
-      dq: key[-7],
-      qlnv: key[-8],
-      other: key[-9],
-      r_i: key[-10],
-      d_i: key[-11],
-      t_i: key[-12]
+      e: key[-2]
     }
   end
 
-  def pretty_map(%{@kty => @key_type_symmetric, @alg => alg} = key) do
+  def pretty_map(%{@kty => @key_type_symmetric, @alg => alg}) do
     %{
       kty: @key_type_string[@key_type_RSA],
       alg: @cose_alg_string[alg],
@@ -179,4 +170,19 @@ defmodule Wax.CoseKey do
   end
 
   #FIXME: implement for other key types
+
+  @spec erlang_public_key(map) :: :public_key.rsa_public_key() | :public_key.ec_public_key()
+
+  def erlang_public_key(%{@kty => @key_type_EC2, -1 => curve, -2 => x, -3 => y}) do
+    {
+      {:ECPoint, <<4>> <> x <> y},
+      # here we convert the curve name to its OID since certificates against which
+      # it may be compared use OIDs
+      {:namedCurve, :pubkey_cert_records.namedCurves(@cose_ec_named_curves[curve])}
+    }
+  end
+
+  def erlang_public_key(%{@kty => @key_type_RSA, -1 => n, -2 => e}) do
+    {:RSAPublicKey, n, e}
+  end
 end

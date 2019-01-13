@@ -38,6 +38,10 @@ defmodule Wax.Attestation do
     {:ok, &Wax.AttestationStatementFormat.FIDOU2F.verify/3}
   end
 
+  def statement_verify_fun("android-key") do
+    {:ok, &Wax.AttestationStatementFormat.AndroidKey.verify/3}
+  end
+
   def statement_verify_fun(_) do
     {:error, :unsupported_statement_format}
   end

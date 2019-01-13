@@ -1,0 +1,60 @@
+AndroidKeyAttestationV1 DEFINITIONS IMPLICIT TAGS ::=
+
+BEGIN
+EXPORTS AndroidKeyAttestationV1;
+
+AndroidKeyAttestationV1 ::= SEQUENCE {
+    attestationVersion  INTEGER,
+    attestationSecurityLevel  SecurityLevel,
+    keymasterVersion  INTEGER,
+    keymasterSecurityLevel  SecurityLevel,
+    attestationChallenge  OCTET STRING,
+    uniqueId  OCTET STRING,
+    softwareEnforced  AuthorizationList,
+    teeEnforced  AuthorizationList
+}
+
+SecurityLevel ::= ENUMERATED {
+    software  (0),
+    trustedEnvironment  (1)
+}
+
+AuthorizationList ::= SEQUENCE {
+    purpose  [1] EXPLICIT SET OF INTEGER OPTIONAL,
+    algorithm  [2] EXPLICIT INTEGER OPTIONAL,
+    keySize  [3] EXPLICIT INTEGER OPTIONAL,
+    digest  [5] EXPLICIT SET OF INTEGER OPTIONAL,
+    padding  [6] EXPLICIT SET OF INTEGER OPTIONAL,
+    ecCurve  [10] EXPLICIT INTEGER OPTIONAL,
+    rsaPublicExponent  [200] EXPLICIT INTEGER OPTIONAL,
+    activeDateTime  [400] EXPLICIT INTEGER OPTIONAL,
+    originationExpireDateTime  [401] EXPLICIT INTEGER OPTIONAL,
+    usageExpireDateTime  [402] EXPLICIT INTEGER OPTIONAL,
+    noAuthRequired  [503] EXPLICIT NULL OPTIONAL,
+    userAuthType  [504] EXPLICIT INTEGER OPTIONAL,
+    authTimeout  [505] EXPLICIT INTEGER OPTIONAL,
+    allowWhileOnBody  [506] EXPLICIT NULL OPTIONAL,
+    allApplications  [600] EXPLICIT NULL OPTIONAL,
+    applicationId  [601] EXPLICIT OCTET STRING OPTIONAL,
+    creationDateTime  [701] EXPLICIT INTEGER OPTIONAL,
+    origin  [702] EXPLICIT INTEGER OPTIONAL,
+    rollbackResistant  [703] EXPLICIT NULL OPTIONAL,
+    rootOfTrust  [704] EXPLICIT RootOfTrust OPTIONAL,
+    osVersion  [705] EXPLICIT INTEGER OPTIONAL,
+    osPatchLevel  [706] EXPLICIT INTEGER OPTIONAL
+}
+
+RootOfTrust ::= SEQUENCE {
+    verifiedBootKey  OCTET STRING,
+    deviceLocked  BOOLEAN,
+    verifiedBootState  VerifiedBootState
+}
+
+VerifiedBootState ::= ENUMERATED {
+    verified  (0),
+    selfSigned  (1),
+    unverified  (2),
+    failed  (3)
+}
+
+END
