@@ -29,6 +29,10 @@ defmodule Wax.Metadata do
   end
 
   def update_metadata() do
+    #FIXME: handle
+    #   verify sig
+    #   verify hash
+    #   revoked certs & other revocation mecanisms
     Logger.info("Starting FIDO metadata update process")
 
     access_token =
@@ -65,9 +69,9 @@ defmodule Wax.Metadata do
 
             :ets.insert(:wax_metadata, {{:aaid, aaid}, metadata_statement})
 
-          _ ->
+          %Wax.MetadataStatement{attestation_certificate_key_identifiers: acki_list} ->
             Enum.each(
-              metadata_statement.attestation_certificate_key_identifiers,
+              acki_list,
               fn acki ->
                 Logger.debug("Saving metadata for  attestation certificate key identifier " <>
                   "`#{acki}` (#{metadata_statement.description})")
@@ -75,6 +79,9 @@ defmodule Wax.Metadata do
                 :ets.insert(:wax_metadata, {{:acki, acki}, metadata_statement})
               end
             )
+
+          _ ->
+            :ok
         end
       end
     )
