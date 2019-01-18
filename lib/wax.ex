@@ -86,7 +86,10 @@ defmodule Wax do
          {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
          {:ok, {attestation_type, trust_path}}
-           <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),
+           <- valid_attestation_statement_format?.(att_stmt,
+                                                   auth_data,
+                                                   client_data_hash,
+                                                   auth_data_bin),
          :ok <- attestation_trustworthy?(auth_data, attestation_type, trust_path)
     do
       {:ok,
