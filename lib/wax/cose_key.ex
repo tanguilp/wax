@@ -1,6 +1,4 @@
 defmodule Wax.CoseKey do
-  @type t :: %{required(integer) => integer}
-
   @kty 1
   @kid 2
   @alg 3
@@ -93,6 +91,9 @@ defmodule Wax.CoseKey do
     3 => :secp521r1
   }
 
+  @type t :: %{required(integer()) => integer}
+
+  @type cose_alg :: integer()
 
   @spec pretty_map(t()) :: map()
 

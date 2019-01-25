@@ -2,9 +2,38 @@ defmodule Wax.Metadata do
   require Logger
   use GenServer
 
+  @fido_alliance_root_cer_pem """
+    -----BEGIN CERTIFICATE-----
+    MIICQzCCAcigAwIBAgIORqmxkzowRM99NQZJurcwCgYIKoZIzj0EAwMwUzELMAkG
+    A1UEBhMCVVMxFjAUBgNVBAoTDUZJRE8gQWxsaWFuY2UxHTAbBgNVBAsTFE1ldGFk
+    YXRhIFRPQyBTaWduaW5nMQ0wCwYDVQQDEwRSb290MB4XDTE1MDYxNzAwMDAwMFoX
+    DTQ1MDYxNzAwMDAwMFowUzELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUZJRE8gQWxs
+    aWFuY2UxHTAbBgNVBAsTFE1ldGFkYXRhIFRPQyBTaWduaW5nMQ0wCwYDVQQDEwRS
+    b290MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEFEoo+6jdxg6oUuOloqPjK/nVGyY+
+    AXCFz1i5JR4OPeFJs+my143ai0p34EX4R1Xxm9xGi9n8F+RxLjLNPHtlkB3X4ims
+    rfIx7QcEImx1cMTgu5zUiwxLX1ookVhIRSoso2MwYTAOBgNVHQ8BAf8EBAMCAQYw
+    DwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU0qUfC6f2YshA1Ni9udeO0VS7vEYw
+    HwYDVR0jBBgwFoAU0qUfC6f2YshA1Ni9udeO0VS7vEYwCgYIKoZIzj0EAwMDaQAw
+    ZgIxAKulGbSFkDSZusGjbNkAhAkqTkLWo3GrN5nRBNNk2Q4BlG+AvM5q9wa5WciW
+    DcMdeQIxAMOEzOFsxX9Bo0h4LOFE5y5H8bdPFYW+l5gy1tQiJv+5NUyM2IBB55XU
+    YjdBz56jSA==
+    -----END CERTIFICATE-----
+    """
+
+  @fido_alliance_root_cer_der\
+    @fido_alliance_root_cer_pem
+    |> X509.Certificate.from_pem!()
+    |> X509.Certificate.to_der()
+
+  # client API
+
   def start_link do
     GenServer.start_link(__MODULE__, %{}, name: Module.concat(__MODULE__, :_updater_genserver))
   end
+
+  #@spec get(Wax.AuthenticatorData.t()) :: t() | Wax.MetadataStatement.t()
+
+  # server callbacks
 
   def init(_state) do
     :ets.new(:wax_metadata, [:named_table, :set, :protected])
@@ -35,91 +64,130 @@ defmodule Wax.Metadata do
     #   revoked certs & other revocation mecanisms
     Logger.info("Starting FIDO metadata update process")
 
-    access_token =
-      Application.get_env(:wax, :metadata_access_token)
-      |> :erlang.binary_to_list()
+    access_token = Application.get_env(:wax, :metadata_access_token)
 
-    {:ok, {{_, 200, _}, _, body}} =
-      :httpc.request('https://mds2.fidoalliance.org/?token=' ++ access_token)
+    if access_token do
+      case HTTPoison.get("https://mds2.fidoalliance.org/?token=" <> access_token) do
+        {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+          File.write("toc.jws", body)
+          process_metadata_toc(body)
 
-    metadata = parse_jwt(:erlang.list_to_binary(body))
-
-    tasks = Enum.map(
-      metadata["entries"],
-      fn entry ->
-        Task.async(fn -> update_metadata_statement(entry) end)
+        e ->
+          Logger.warn("Unable to download metadata (#{inspect(e)})")
       end
-    )
-
-    Enum.each(
-      tasks,
-      fn task ->
-        metadata_statement = Task.await(task)
-
-        case metadata_statement do
-          %Wax.MetadataStatement{aaguid: aaguid} when is_binary(aaguid) ->
-            Logger.debug("Saving metadata for aaguid `#{aaguid}` " <>
-              "(#{metadata_statement.description})")
-
-            :ets.insert(:wax_metadata, {{:aaguid, aaguid}, metadata_statement})
-
-          %Wax.MetadataStatement{aaid: aaid} when is_binary(aaid) ->
-            Logger.debug("Saving metadata for aaid `#{aaid}` " <>
-              "(#{metadata_statement.description})")
-
-            :ets.insert(:wax_metadata, {{:aaid, aaid}, metadata_statement})
-
-          %Wax.MetadataStatement{attestation_certificate_key_identifiers: acki_list} ->
-            Enum.each(
-              acki_list,
-              fn acki ->
-                Logger.debug("Saving metadata for  attestation certificate key identifier " <>
-                  "`#{acki}` (#{metadata_statement.description})")
-
-                :ets.insert(:wax_metadata, {{:acki, acki}, metadata_statement})
-              end
-            )
-
-          _ ->
-            :ok
-        end
-      end
-    )
-  end
-
-  @spec update_metadata_statement(map()) :: any()
-  def update_metadata_statement(entry) do
-    try do
-      access_token =
-        Application.get_env(:wax, :metadata_access_token)
-        |> :erlang.binary_to_list()
-
-      #FIXME: httpc doesn't want to follow redirect hence the additional `/`
-      request = {
-        :erlang.binary_to_list(entry["url"]) ++ '/?token=' ++ access_token,
-        [{'accept', '*/*'}]
-      }
-      {:ok, {{_, 200, _}, _, body}} = :httpc.request(:get, request, [], [])
-
-      body
-      |> :erlang.list_to_binary()
-      |> Base.url_decode64!()
-      |> Jason.decode!()
-      |> Wax.MetadataStatement.from_json()
-    rescue
-      e ->
-        Logger.warn("Failed updating metadata aaid=#{entry["aaid"]}, reason: #{Exception.message(e)}")
-
-        :error
+    else
+      Logger.warn("No access token configured for FIDO metadata, metadata not updated. " <>
+        "Some attestation formats and types won't be supported")
     end
   end
 
-  @spec parse_jwt(binary()) :: map()
-  defp parse_jwt(binary) do
-    [_header, body_b64, _sig] = String.split(binary, ".")
+  @spec process_metadata_toc(String.t()) :: no_return()
 
-    body_b64
-    |> Base.url_decode64!(padding: false)
-    |> Jason.decode!()
+  defp process_metadata_toc(jws) do
+    case Wax.Utils.JWS.verify(jws, @fido_alliance_root_cer_der) do
+      _ ->
+      #:ok ->
+      # FIXME: JWS doesn't work for this specific JWT
+        {%{"alg" => alg}, metadata} = parse_jwt(jws)
+
+        # one of sha256, sha512, etc
+        digest_alg = digest_from_jws_alg(alg)
+
+        tasks = Enum.map(
+          metadata["entries"],
+          fn entry ->
+            Task.async(fn -> update_metadata_statement(entry, digest_alg) end)
+          end
+        )
+
+        Enum.each(
+          tasks,
+          fn task ->
+            metadata_statement = Task.await(task)
+
+            case metadata_statement do
+              %Wax.MetadataStatement{aaguid: aaguid} when is_binary(aaguid) ->
+                Logger.debug("Saving metadata for aaguid `#{aaguid}` " <>
+                  "(#{metadata_statement.description})")
+
+                :ets.insert(:wax_metadata, {{:aaguid, aaguid}, metadata_statement})
+
+              %Wax.MetadataStatement{aaid: aaid} when is_binary(aaid) ->
+                Logger.debug("Saving metadata for aaid `#{aaid}` " <>
+                  "(#{metadata_statement.description})")
+
+                :ets.insert(:wax_metadata, {{:aaid, aaid}, metadata_statement})
+
+              %Wax.MetadataStatement{attestation_certificate_key_identifiers: acki_list} ->
+                Enum.each(
+                  acki_list,
+                  fn acki ->
+                    Logger.debug("Saving metadata for attestation certificate key identifier " <>
+                      "`#{acki}` (#{metadata_statement.description})")
+
+                    :ets.insert(:wax_metadata, {{:acki, acki}, metadata_statement})
+                  end
+                )
+
+              _ ->
+                :ok
+            end
+          end
+        )
+
+      {:error, reason} ->
+        Logger.warn("Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")
+    end
   end
+
+  @spec update_metadata_statement(map(), :crypto.sha1() | :crypto.sha2() | :crypto.sha3())
+    :: any()
+  def update_metadata_statement(entry, digest_alg) do
+    case HTTPoison.get(
+      entry["url"] <> "?token=" <> Application.get_env(:wax, :metadata_access_token),
+      [],
+      follow_redirect: true) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        if :crypto.hash(digest_alg, body) == Base.url_decode64!(entry["hash"]) do
+          body
+          |> Base.url_decode64!()
+          |> Jason.decode!()
+          |> Wax.MetadataStatement.from_json()
+        else
+          Logger.warn("Invalid hash for metadata entry at " <> entry["url"])
+        end
+
+      _ ->
+        Logger.warn("Failed to download metadata statement at " <> entry["url"])
+    end
+  end
+
+  @spec parse_jwt(binary()) :: {map(), map()}
+  defp parse_jwt(binary) do
+    [header_b64, body_b64, _sig] = String.split(binary, ".")
+
+    {
+      header_b64
+      |> Base.url_decode64!(padding: false)
+      |> Jason.decode!(),
+      body_b64
+      |> Base.url_decode64!(padding: false)
+      |> Jason.decode!(),
+    }
+  end
+
+  #see section 3.1 of https://www.rfc-editor.org/rfc/rfc7518.txt
+  @spec digest_from_jws_alg(String.t()) :: :crypto.sha1() | :crypto.sha2() | :crypto.sha3()
+  defp digest_from_jws_alg("HS256"), do: :sha256
+  defp digest_from_jws_alg("HS384"), do: :sha384
+  defp digest_from_jws_alg("HS512"), do: :sha512
+  defp digest_from_jws_alg("RS256"), do: :sha256
+  defp digest_from_jws_alg("RS384"), do: :sha384
+  defp digest_from_jws_alg("RS512"), do: :sha512
+  defp digest_from_jws_alg("ES256"), do: :sha256
+  defp digest_from_jws_alg("ES384"), do: :sha384
+  defp digest_from_jws_alg("ES512"), do: :sha512
+  defp digest_from_jws_alg("PS256"), do: :sha256
+  defp digest_from_jws_alg("PS384"), do: :sha384
+  defp digest_from_jws_alg("PS512"), do: :sha512
 end
