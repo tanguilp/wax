@@ -28,38 +28,66 @@ defmodule Wax.AttestedCredentialData do
   @doc """
   Decode attested credential data
 
-  We return the rest because the attested credential credential data is of variable
-  size and can be followed by extensions
+  In addition, the number of bytes read is returned so that extensions can be further parsed
+  (and only when `with_appended_extensions` is `true`
   """
-  @spec decode(binary()) :: {:ok, {t() | nil, binary()}} | {:error, any()}
-  def decode(<<>>), do: {:ok, {nil, <<>>}}
+  @spec decode(binary(), boolean())
+    :: {:ok, t()} |{:ok, {t() | non_neg_integer()}} | {:error, any()}
 
   def decode(
     <<
       aaguid::binary-size(16),
       credential_id_length::unsigned-big-integer-size(16),
       credential_id::binary-size(credential_id_length),
-      credential_public_key::binary #FIXME: parse when there are extensions
-      >>
+      rest::binary
+    >>,
+    with_appended_extensions
   )
   do
-    {:ok, {%__MODULE__{
-      aaguid: aaguid,
-      credential_id: credential_id,
-      credential_public_key: :cbor.decode(credential_public_key)
-    }, nil}}
+    if with_appended_extensions do
+      {cbor, bytes_read} = cbor_decode_binary_unknown_length(rest, 1, byte_size(rest))
+
+      {:ok,
+        {
+          %__MODULE__{
+          aaguid: aaguid,
+          credential_id: credential_id,
+            credential_public_key: cbor
+          }, bytes_read
+        }
+      }
+    else
+      {:ok,
+        %__MODULE__{
+          aaguid: aaguid,
+          credential_id: credential_id,
+          credential_public_key: :cbor.decode(rest)
+        }
+      }
+    end
   end
 
-  def decode(_), do: {:error, :invalid_attested_credential_data}
+  def decode(_, _), do: {:error, :invalid_attested_credential_data}
 
-  @spec decode!(binary()) :: t() | no_return()
-  def decode!(bin) do
-    case decode(bin) do
-      {:ok, {acd, rest}} ->
-        acd
+  @spec cbor_decode_binary_unknown_length(binary, non_neg_integer(), non_neg_integer())
+    :: {any(), non_neg_integer()}
 
-      {:error, error} ->
-        raise error
+  def cbor_decode_binary_unknown_length(_bin, nb, max) when nb > max do
+    raise "#{__MODULE__}: invalid CBOR decode error"
+  end
+
+  def cbor_decode_binary_unknown_length(bin, nb, max) do
+    try do
+      %{} = cpk = :cbor.decode(<<bin::binary-size(nb)>>)
+
+      {cpk, nb}
+    # yeah :cbor both throws and raises
+    rescue
+      _ ->
+        cbor_decode_binary_unknown_length(bin, nb + 1, max)
+    catch
+      _ ->
+        cbor_decode_binary_unknown_length(bin, nb + 1, max)
     end
   end
 end
