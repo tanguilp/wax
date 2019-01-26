@@ -104,7 +104,7 @@ defmodule Wax do
     end
   end
 
-  @spec authentication_challenge(Wax.User.t(), [{credential_id(), Wax.CoseKey.t()}], parsed_opts())
+  @spec authentication_challenge(Wax.User.t(), [{credential_id(), Wax.CoseKey.t()}], opts())
     :: Wax.Challenge.t()
 
   def authentication_challenge(user, allow_credentials, opts) do
@@ -140,7 +140,7 @@ defmodule Wax do
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
          #FIXME: verify extensions
          client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),
-         :ok <- Wax.CoseKey.verify(cose_key, auth_data_bin <> client_data_hash, sig)
+         :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig)
     do
       {:ok, auth_data.sign_count}
     else

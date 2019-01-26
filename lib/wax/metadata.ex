@@ -135,8 +135,8 @@ defmodule Wax.Metadata do
           end
         )
 
-      {:error, reason} ->
-        Logger.warn("Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")
+      #{:error, reason} ->
+        #Logger.warn("Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")
     end
   end
 

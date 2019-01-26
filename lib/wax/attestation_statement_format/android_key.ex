@@ -11,11 +11,11 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash, _auth_data_bin) do
+  def verify(att_stmt, auth_data, client_data_hash, auth_data_bin) do
     #FIXME: shall we verify the cert chain?
     with :ok <- valid_cbor?(att_stmt),
          first_cert <- X509.Certificate.from_der!(List.first(att_stmt["x5c"])),
-         :ok <- valid_signature?(att_stmt["sig"], auth_data <> client_data_hash, first_cert),
+         :ok <- valid_signature?(att_stmt["sig"], auth_data_bin <> client_data_hash, first_cert),
          :ok <- public_key_matches_first_cert?(auth_data, first_cert),
          :ok <- valid_extension_data?(first_cert, client_data_hash)
     do
@@ -26,7 +26,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["sig"])
     and is_list(att_stmt["x5c"])
@@ -51,6 +51,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
 
   @spec public_key_matches_first_cert?(Wax.AuthData.t(), X509.Certificate.t())
   :: :ok | {:error, any()}
+
   defp public_key_matches_first_cert?(auth_data, first_cert) do
     pk = auth_data.attested_credential_data.credential_public_key
 

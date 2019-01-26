@@ -18,7 +18,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["sig"])
     and is_list(att_stmt["x5c"])
@@ -30,7 +30,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec extract_and_verify_certificate(Wax.Attestation.Statement) ::
+  @spec extract_and_verify_certificate(Wax.Attestation.Statement.t()) ::
   {:ok, any()} | {:error, any()} #FIXME any()
   defp extract_and_verify_certificate(att_stmt) do
     case att_stmt["x5c"] do

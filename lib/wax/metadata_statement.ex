@@ -278,8 +278,9 @@ defmodule Wax.MetadataStatement do
     }
   end
 
-  @spec from_json(binary) :: t()
-  def from_json(json) do
+  @spec from_json(map() | Keyword.t() | nil) :: t()
+
+  def from_json(%{} = json) do
     %__MODULE__{
       aaid: json["aaid"],
       aaguid: json["aaguid"],
@@ -375,6 +376,8 @@ defmodule Wax.MetadataStatement do
       )
     }
   end
+
+  def from_json(_), do: nil
 
   @spec authentication_algorithm(non_neg_integer()) :: authentication_algorithm()
   defp authentication_algorithm(1), do: :alg_sign_secp256r1_ecdsa_sha256_raw

@@ -81,8 +81,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
          :ok <- version_valid?(att_stmt),
          {:ok, cert_info} <- parse_cert_info(att_stmt["certInfo"]),
          {:ok, pub_area} <- parse_pub_area(att_stmt["pubArea"]),
-         :ok <- verify_public_key(cert_info, auth_data),
-         :ok <- cert_info_valid?(cert_info, pub_area, auth_data, client_data_hash, att_stmt),
+         :ok <- verify_public_key(pub_area, auth_data),
+         :ok <- cert_info_valid?(cert_info, pub_area, auth_data_bin, client_data_hash, att_stmt),
          :ok <- signature_valid?(att_stmt),
          :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data)
     do
@@ -97,7 +97,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {:error, :attestation_tpm_unsupported_ecdaa_signature}
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["ver"])
     and is_integer(att_stmt["alg"])
@@ -223,29 +223,36 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   @spec verify_public_key(map(), Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
 
-  defp verify_public_key(cert_info, auth_data) do
-    cert_info_erlang_public_key = to_erlang_public_key(cert_info)
+  defp verify_public_key(pub_area, auth_data) do
+    pub_area_erlang_public_key = to_erlang_public_key(pub_area)
 
     auth_data_erlang_public_key =
       Wax.CoseKey.to_erlang_public_key(auth_data.attested_credential_data.credential_public_key)
 
-    if cert_info_erlang_public_key == auth_data_erlang_public_key do
+    if pub_area_erlang_public_key == auth_data_erlang_public_key do
       :ok
     else
       {:error, :attestation_tpm_public_key_mismatch}
     end
   end
 
-  @spec cert_info_valid?(map(), map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), map())
+  @spec cert_info_valid?(map(), map(), binary(), Wax.ClientData.hash(), map())
     :: :ok | {:error, any()}
 
-  defp cert_info_valid?(cert_info, pub_area, auth_data, client_data_hash, att_stmt) do
+  defp cert_info_valid?(
+    cert_info,
+    pub_area,
+    auth_data_bin,
+    client_data_hash,
+    att_stmt) do
     # %{3 => val} is a psuedo cose key, 3 being the algorithm
     digest = Wax.CoseKey.to_erlang_digest(%{3 =>att_stmt["alg"]})
 
-    att_to_be_signed = auth_data <> client_data_hash
+    att_to_be_signed = auth_data_bin <> client_data_hash
 
-    pub_area_hash = :crypto.hash(name_alg_to_erlang_digest(pub_area[:name_alg]), pub_area)
+    pub_area_hash =
+      :crypto.hash(name_alg_to_erlang_digest(pub_area[:name_alg]), att_stmt["pubArea"])
+
     attested_name = <<pub_area[:name_alg]::unsigned-big-integer-size(16)>> <> pub_area_hash
 
     if cert_info[:magic] == 0xff544347 # TPM_GENERATED_VALUE

@@ -10,9 +10,15 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     try do
       [header_b64, payload_b64, _sig] = String.split(att_stmt["response"], ".")
 
-      payload = Base.url_decode64!(payload_b64, padding: false)
+      payload =
+        payload_b64
+        |> Base.url_decode64!(padding: false)
+        |> Jason.decode!()
 
-      header = Base.url_decode64!(header_b64, padding: false)
+      header =
+        header_b64
+        |> Base.url_decode64!(padding: false)
+        |> Jason.decode!()
 
       with :ok <- valid_cbor?(att_stmt),
            :ok <- valid_safetynet_response?(payload, att_stmt["ver"]),
@@ -36,7 +42,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["ver"])
     and is_binary(att_stmt["response"])
@@ -48,8 +54,9 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     end
   end
 
-  @spec valid_safetynet_response?(map(), String.t()) :: :ok | {:error, any()}
-  defp valid_safetynet_response?(safetynet_response, _version) do
+  @spec valid_safetynet_response?(map() | Keyword.t() | nil, String.t()) :: :ok | {:error, any()}
+
+  defp valid_safetynet_response?(%{} = safetynet_response, _version) do
     #FIXME: currently unimplementable? see:
     # https://github.com/w3c/webauthn/issues/968
     # besides the spec seems to have an error with the `ctsProfileMatch` (`true` then `true`):
@@ -62,6 +69,8 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
       {:error, :attestation_safetynet_invalid_ctsProfileMatch}
     end
   end
+
+  defp valid_safetynet_response?(_, _), do: {:error, :attestation_safetyney_invalid_payload}
 
   @spec nonce_valid?(binary(), binary(), map())
     :: :ok | {:error, any()}
