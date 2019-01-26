@@ -135,53 +135,29 @@ defmodule Wax.CoseKey do
     }
   end
 
-  #FIXME: implement for other key types
-  #
-  @spec verify(t(), binary(), binary()) :: :ok | {:error, any()}
+  @spec verify(binary(), t(), binary()) :: :ok | {:error, any()}
 
-  def verify(%{@kty => @key_type_EC2, @alg => @es256, -1 => crv, -2 => x, -3 => y}, msg, sig)
-    when crv in unquote(Map.keys(@cose_ec_named_curves))
+  def verify(msg, cose_key, sig)
   do
-    key = {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, @cose_ec_named_curves[crv]}}
+    key = to_erlang_public_key(cose_key)
 
-    if :public_key.verify(msg, :sha256, sig, key) do
+    digest = to_erlang_digest(cose_key)
+
+    if :public_key.verify(msg, digest, sig, key) do
       :ok
     else
       {:error, :invalid_signature}
     end
   end
 
-  def verify(%{@kty => @key_type_EC2, @alg => @es384, -1 => crv, -2 => x, -3 => y}, msg, sig)
-    when crv in unquote(Map.keys(@cose_ec_named_curves))
-  do
-    key = {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, @cose_ec_named_curves[crv]}}
-
-    if :public_key.verify(msg, :sha384, sig, key) do
-      :ok
-    else
-      {:error, :invalid_signature}
-    end
-  end
-
-  def verify(%{@kty => @key_type_EC2, @alg => @es512, -1 => crv, -2 => x, -3 => y}, msg, sig)
-    when crv in unquote(Map.keys(@cose_ec_named_curves))
-  do
-    key = {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, @cose_ec_named_curves[crv]}}
-
-    if :public_key.verify(msg, :sha512, sig, key) do
-      :ok
-    else
-      {:error, :invalid_signature}
-    end
-  end
-
-  @spec to_erlang_public_key(map()) :: :public_key.rsa_public_key() | :public_key.ec_public_key()
+  @spec to_erlang_public_key(t()) :: :public_key.rsa_public_key() | :public_key.ec_public_key()
 
   def to_erlang_public_key(%{@kty => @key_type_EC2, -1 => curve, -2 => x, -3 => y}) do
     {
       {:ECPoint, <<4>> <> x <> y},
       # here we convert the curve name to its OID since certificates against which
       # it may be compared use OIDs
+      # :public_key functions will work the same independantly of the format
       {:namedCurve, :pubkey_cert_records.namedCurves(@cose_ec_named_curves[curve])}
     }
   end
@@ -194,7 +170,7 @@ defmodule Wax.CoseKey do
     {:ed_pub, curve, x}
   end
 
-  @spec to_erlang_digest(map()) :: :crypto.sha1() | :crypto.sha2() | :crypto.sha3()
+  @spec to_erlang_digest(t()) :: :crypto.sha1() | :crypto.sha2() | :crypto.sha3()
   def to_erlang_digest(%{@alg => -65535}), do: :sha
   def to_erlang_digest(%{@alg => -259}), do: :sha512
   def to_erlang_digest(%{@alg => -258}), do: :sha384
