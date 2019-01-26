@@ -52,12 +52,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @spec public_key_matches_first_cert?(Wax.AuthData.t(), X509.Certificate.t())
   :: :ok | {:error, any()}
   defp public_key_matches_first_cert?(auth_data, first_cert) do
-    if Wax.CoseKey.erlang_public_key(auth_data.attested_credential_data.credential_public_key) ==
-      X509.Certificate.public_key(first_cert) do
+    pk = auth_data.attested_credential_data.credential_public_key
+
+    if Wax.CoseKey.to_erlang_public_key(pk) == X509.Certificate.public_key(first_cert) do
         :ok
     else
       {:error, :android_key_keys_mismatch}
-      end
+    end
   end
 
   @spec valid_extension_data?(X509.Certificate.t(), binary()) :: :ok | {:error, any()}

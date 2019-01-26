@@ -22,6 +22,7 @@ defmodule Wax.CoseKey do
   @es256 -7
 
   @cose_alg_string %{
+    -65535 => "RSASSA-PKCS1-v1_5 w/ SHA-1",
     -259 => "RS512 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
     -258 => "RS384 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
     -257 => "RS256 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
@@ -88,7 +89,9 @@ defmodule Wax.CoseKey do
   @cose_ec_named_curves %{
     1 => :secp256r1,
     2 => :secp384r1,
-    3 => :secp521r1
+    3 => :secp521r1,
+    6 => :ed25519,
+    7 => :ed448
   }
 
   @type t :: %{required(integer()) => integer}
@@ -132,6 +135,8 @@ defmodule Wax.CoseKey do
     }
   end
 
+  #FIXME: implement for other key types
+  #
   @spec verify(t(), binary(), binary()) :: :ok | {:error, any()}
 
   def verify(%{@kty => @key_type_EC2, @alg => @es256, -1 => crv, -2 => x, -3 => y}, msg, sig)
@@ -170,11 +175,9 @@ defmodule Wax.CoseKey do
     end
   end
 
-  #FIXME: implement for other key types
+  @spec to_erlang_public_key(map()) :: :public_key.rsa_public_key() | :public_key.ec_public_key()
 
-  @spec erlang_public_key(map) :: :public_key.rsa_public_key() | :public_key.ec_public_key()
-
-  def erlang_public_key(%{@kty => @key_type_EC2, -1 => curve, -2 => x, -3 => y}) do
+  def to_erlang_public_key(%{@kty => @key_type_EC2, -1 => curve, -2 => x, -3 => y}) do
     {
       {:ECPoint, <<4>> <> x <> y},
       # here we convert the curve name to its OID since certificates against which
@@ -183,7 +186,47 @@ defmodule Wax.CoseKey do
     }
   end
 
-  def erlang_public_key(%{@kty => @key_type_RSA, -1 => n, -2 => e}) do
+  def to_erlang_public_key(%{@kty => @key_type_RSA, -1 => n, -2 => e}) do
     {:RSAPublicKey, n, e}
   end
+
+  def to_erlang_public_key(%{@kty => @key_type_OKP, -1 => curve, -2 => x}) do
+    {:ed_pub, curve, x}
+  end
+
+  @spec to_erlang_digest(map()) :: :crypto.sha1() | :crypto.sha2() | :crypto.sha3()
+  def to_erlang_digest(%{@alg => -65535}), do: :sha
+  def to_erlang_digest(%{@alg => -259}), do: :sha512
+  def to_erlang_digest(%{@alg => -258}), do: :sha384
+  def to_erlang_digest(%{@alg => -257}), do: :sha256
+  def to_erlang_digest(%{@alg => -42}), do: :sha512
+  def to_erlang_digest(%{@alg => -41}), do: :sha256
+  #def to_erlang_digest(-40), do:
+  def to_erlang_digest(%{@alg => -39}), do: :sha512
+  def to_erlang_digest(%{@alg => -38}), do: :sha384
+  def to_erlang_digest(%{@alg => -37}), do: :sha256
+  def to_erlang_digest(%{@alg => -36}), do: :sha512
+  def to_erlang_digest(%{@alg => -35}), do: :sha384
+  #def to_erlang_digest(-34), do:
+  #def to_erlang_digest(-33), do:
+  #def to_erlang_digest(-32), do:
+  #def to_erlang_digest(-31), do:
+  #def to_erlang_digest(-30), do:
+  #def to_erlang_digest(-29), do:
+  #def to_erlang_digest(-28), do:
+  #def to_erlang_digest(-27), do:
+  #def to_erlang_digest(-26), do:
+  #def to_erlang_digest(-25), do:
+  #def to_erlang_digest(-13), do:
+  #def to_erlang_digest(-12), do:
+  #def to_erlang_digest(-11), do:
+  #def to_erlang_digest(-10), do:
+  #FIXME: verify correctness of digest for ed curves
+  #def to_erlang_digest(%{@alg => -8, -1 => 6}), do: :sha256   #ed25519
+  #def to_erlang_digest(%{@alg => -8, -1 => 7}), do: :sha3_256 #ed448
+  def to_erlang_digest(%{@alg => -7}), do: :sha256
+  #def to_erlang_digest(%{@alg => -6}), do:
+  #def to_erlang_digest(%{@alg => -5}), do:
+  #def to_erlang_digest(%{@alg => -4}), do:
+  #def to_erlang_digest(%{@alg => -3}), do:
 end

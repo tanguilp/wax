@@ -36,7 +36,7 @@ defmodule Wax.Metadata do
   # server callbacks
 
   def init(_state) do
-    :ets.new(:wax_metadata, [:named_table, :set, :protected])
+    :ets.new(:wax_metadata, [:named_table, :set, :protected, {:read_concurrency, true}])
 
     Process.send(self(), :update_metadata, [])
 
