@@ -12,6 +12,7 @@ defmodule Wax.Attestation do
     | :self
     | :attca
     | :ecdaa
+    | :uncertain
     | :none
 
   @typedoc """

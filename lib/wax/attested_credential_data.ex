@@ -14,7 +14,7 @@ defmodule Wax.AttestedCredentialData do
   @type t :: %__MODULE__{
     aaguid: binary(),
     credential_id: binary(),
-    credential_public_key: map()
+    credential_public_key: Wax.CoseKey.t()
   }
 
   def new(aaguid, credential_id, credential_public_key) do

@@ -296,16 +296,13 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {:Extension, {2, 5, 29, 37}, false, key_ext_vals} =
       X509.Certificate.extension(cert, :ext_key_usage)
 
-    {:Extension, {2, 5, 29, 19}, _, {:BasicConstraints, ca_component, _}} =
-      X509.Certificate.extension(cert, :basic_constraints)
-
-    if certificate_version(cert) == :v3
+    if Wax.Utils.Certificate.version(cert) == :v3
       and X509.Certificate.subject(cert) == {:rdnSequence, []}
       and valid_from < :os.system_time(:second)
       and valid_to > :os.system_time(:second)
       and get_tcpaTpmManufacturer_field(cert) in @tpm_manufacturer_ids
       and {2, 23, 133, 8, 3} in key_ext_vals
-      and ca_component == false
+      and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
     do
       # checking if oid of id-fido-gen-ce-aaguid is present and, if so, aaguid
       case X509.Certificate.extension(cert, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}) do
@@ -323,12 +320,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
       {:error, :attestation_tpm_invalid_certificate}
     end
   end
-
-  defp certificate_version(
-    {:OTPCertificate, {:OTPTBSCertificate, version, _, _, _, _, _, _, _, _, _}, _, _}
-  ) do
-    version
-  end 
 
   @spec parse_cert_datetime(String.t()) :: non_neg_integer()
 
@@ -372,19 +363,18 @@ defmodule Wax.AttestationStatementFormat.TPM do
       |> elem(1)
       |> List.first()
 
-    tcpaTpmManufacturer =
-      Enum.find(
-        directory_name_val,
-        fn
-          {_, {2, 23, 133, 2, 1}, _} ->
-            true
+    Enum.find(
+      directory_name_val,
+      fn
+        {_, {2, 23, 133, 2, 1}, _} ->
+          true
 
-          _ ->
-            false
-        end
-      )
-      |> elem(2) 
-      |> String.slice(2..-1)
+        _ ->
+          false
+      end
+    )
+    |> elem(2) 
+    |> String.slice(2..-1)
   end
 
   @spec to_erlang_curve(non_neg_integer()) :: :crypto.ec_named_curve()

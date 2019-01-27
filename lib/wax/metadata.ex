@@ -25,24 +25,57 @@ defmodule Wax.Metadata do
     |> X509.Certificate.from_pem!()
     |> X509.Certificate.to_der()
 
+  @table :wax_metadata
+
   # client API
 
   def start_link do
-    GenServer.start_link(__MODULE__, %{}, name: Module.concat(__MODULE__, :_updater_genserver))
+    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  end
+
+  @spec get_by_aaguid(binary()) :: Wax.MetadataStatement.t() | nil
+
+  def get_by_aaguid(aaguid) do
+    # it is needed to convert binary aaguid (16 bytes) to its string representation as
+    # used in the metadata service, such as `77010bd7-212a-4fc9-b236-d2ca5e9d4084`
+    <<
+      a::binary-size(8),
+      b::binary-size(4),
+      c::binary-size(4),
+      d::binary-size(4),
+      e::binary-size(12)
+    >> = Base.encode16(aaguid, case: :lower)
+
+    aaguid_str = a <> "-" <> b <> "-" <> c <> "-" <> d <> "-" <> e
+
+    GenServer.call(__MODULE__, {:get, {:aaguid, aaguid_str}})
   end
 
   #@spec get(Wax.AuthenticatorData.t()) :: t() | Wax.MetadataStatement.t()
 
   # server callbacks
 
+  @impl true
   def init(_state) do
-    :ets.new(:wax_metadata, [:named_table, :set, :protected, {:read_concurrency, true}])
+    :ets.new(@table, [:named_table, :set, :protected, {:read_concurrency, true}])
 
     Process.send(self(), :update_metadata, [])
 
     {:ok, []}
   end
 
+  @impl true
+  def handle_call({:get, {type, value}}, _from, state) do
+    case :ets.lookup(@table, {type, value}) do
+      [{_, metadata_statement}] ->
+        {:reply, metadata_statement, state}
+
+      _ ->
+        {:reply, nil, state}
+    end
+  end
+
+  @impl true
   def handle_info(:update_metadata, _state) do
     update_metadata()
 

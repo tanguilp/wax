@@ -110,10 +110,10 @@ defmodule Wax.MetadataStatement do
   | :alg_key_cose
 
   @type attestation_type ::
-  :tag_attestation_cert
-  | :tag_attestation_basic_full
+  :tag_attestation_basic_full
   | :tag_attestation_basic_surrogate
   | :tag_attestation_ecdaa
+  | :tag_attestation_attca
 
   @type verification_method_and_combinations ::
     [Wax.MetadataStatement.VerificationMethodDescriptor.t()]
@@ -398,10 +398,10 @@ defmodule Wax.MetadataStatement do
   defp public_key_representation_format(0x0104), do: :alg_key_cose
 
   @spec attestation_type(non_neg_integer()) :: attestation_type()
-  defp attestation_type(0x2E05), do: :tag_attestation_cert
   defp attestation_type(0x3E07), do: :tag_attestation_basic_full
   defp attestation_type(0x3E08), do: :tag_attestation_basic_surrogate
   defp attestation_type(0x3E09), do: :tag_attestation_ecdaa
+  defp attestation_type(0x3E0A), do: :tag_attestation_attca
 
   @spec user_verification_method(non_neg_integer()) :: user_verification_method()
   defp user_verification_method(0x00000001), do: :user_verify_presence
