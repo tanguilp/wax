@@ -6,7 +6,8 @@ defmodule Wax.AuthenticatorData do
     :flag_attested_credential_data,
     :flag_extension_data_included,
     :sign_count,
-    :attested_credential_data
+    :attested_credential_data,
+    :raw_bytes
   ]
 
   defstruct [
@@ -17,7 +18,8 @@ defmodule Wax.AuthenticatorData do
     :flag_extension_data_included,
     :sign_count,
     :attested_credential_data,
-    :extensions
+    :extensions,
+    :raw_bytes
   ]
 
   @type t :: %__MODULE__{
@@ -28,25 +30,11 @@ defmodule Wax.AuthenticatorData do
     flag_extension_data_included: boolean(),
     sign_count: non_neg_integer(),
     attested_credential_data: Wax.AttestedCredentialData.t(),
-    extensions: any() #FIXME
+    extensions: map(),
+    raw_bytes: binary()
   }
 
   @type credential_id :: binary()
-
-  def new(rp_id_hash, flag_user_present, flag_user_verified, flag_attested_credential_data,
-          flag_extension_data_included, sign_count, attested_credential_data, extensions \\ nil)
-  do
-    %__MODULE__{
-    rp_id_hash: rp_id_hash,
-    flag_user_present: flag_user_present,
-    flag_user_verified: flag_user_verified,
-    flag_attested_credential_data: flag_attested_credential_data,
-    flag_extension_data_included: flag_extension_data_included,
-    sign_count: sign_count,
-    attested_credential_data: attested_credential_data,
-    extensions: extensions
-    }
-  end
 
   @spec decode(binary()) :: {:ok, t()} | {:error, any()}
   def decode(
@@ -60,7 +48,7 @@ defmodule Wax.AuthenticatorData do
       flag_user_present::size(1),
       sign_count::unsigned-big-integer-size(32),
       rest::binary
-      >>
+      >> = authenticator_data
   )
   do
     flag_user_present = to_bool(flag_user_present)
@@ -91,14 +79,15 @@ defmodule Wax.AuthenticatorData do
       end
 
     {:ok, %__MODULE__{
-        rp_id_hash: rp_id_hash,
-        flag_user_present: flag_user_present,
-        flag_user_verified: flag_user_verified,
-        flag_attested_credential_data: flag_attested_credential_data,
-        flag_extension_data_included: flag_extension_data_included,
-        sign_count: sign_count,
-        attested_credential_data: attested_credential_data,
-        extensions: extensions
+      rp_id_hash: rp_id_hash,
+      flag_user_present: flag_user_present,
+      flag_user_verified: flag_user_verified,
+      flag_attested_credential_data: flag_attested_credential_data,
+      flag_extension_data_included: flag_extension_data_included,
+      sign_count: sign_count,
+      attested_credential_data: attested_credential_data,
+      extensions: extensions,
+      raw_bytes: authenticator_data
       }}
   end
 

@@ -26,9 +26,9 @@ defmodule Wax.AttestationStatementFormat.Packed do
   ]
 
   @impl Wax.AttestationStatementFormat
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, auth_data_bin) do
+  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash) do
     with :ok <- valid_cbor?(att_stmt),
-         :ok <- valid_x5c_signature?(att_stmt, auth_data_bin, client_data_hash),
+         :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data)
     do
       attestation_type = determine_attestation_type(auth_data)
@@ -40,14 +40,14 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  def verify(%{"ecdaaKeyId" => _}, _, _, _), do: {:error, :attestation_packed_unimplemented}
+  def verify(%{"ecdaaKeyId" => _}, _, _), do: {:error, :attestation_packed_unimplemented}
 
   # self-attestation case
 
-  def verify(att_stmt, auth_data, client_data_hash, auth_data_bin) do
+  def verify(att_stmt, auth_data, client_data_hash) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- algs_match?(att_stmt, auth_data),
-         :ok <- valid_self_signature?(att_stmt, auth_data, auth_data_bin, client_data_hash)
+         :ok <- valid_self_signature?(att_stmt, auth_data, client_data_hash)
     do
       {:ok, {:self, nil}}
     else
@@ -81,9 +81,10 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_x5c_signature?(map(), binary(), Wax.Client.hash()) :: :ok | {:error, any()}
+  @spec valid_x5c_signature?(map(), Wax.AuthenticatorData.t(), Wax.Client.hash())
+    :: :ok | {:error, any()}
 
-  defp valid_x5c_signature?(att_stmt, auth_data_bin, client_data_hash) do
+  defp valid_x5c_signature?(att_stmt, auth_data, client_data_hash) do
     #FIXME: check if the "alg" matches the certificate's public key?
 
     pub_key = 
@@ -94,23 +95,31 @@ defmodule Wax.AttestationStatementFormat.Packed do
 
     digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
 
-    if :public_key.verify(auth_data_bin <> client_data_hash, digest, att_stmt["sig"], pub_key) do
+    if :public_key.verify(auth_data.raw_bytes <> client_data_hash,
+                          digest,
+                          att_stmt["sig"],
+                          pub_key)
+    do
       :ok
     else
       {:error, :attestation_packed_invalid_signature}
     end
   end
 
-  @spec valid_self_signature?(map(), Wax.AuthenticatorData.t(), binary(), Wax.Client.hash())
+  @spec valid_self_signature?(map(), Wax.AuthenticatorData.t(), Wax.Client.hash())
     :: :ok | {:error, any()}
 
-  defp valid_self_signature?(att_stmt, auth_data, auth_data_bin, client_data_hash) do
+  defp valid_self_signature?(att_stmt, auth_data, client_data_hash) do
     pub_key =
       Wax.CoseKey.to_erlang_public_key(auth_data.attested_credential_data.credential_public_key)
 
     digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
 
-    if :public_key.verify(auth_data_bin <> client_data_hash, digest, att_stmt["sig"], pub_key) do
+    if :public_key.verify(auth_data.raw_bytes <> client_data_hash,
+                          digest,
+                          att_stmt["sig"],
+                          pub_key)
+    do
       :ok
     else
       {:error, :attestation_packed_invalid_signature}

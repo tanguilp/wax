@@ -76,13 +76,13 @@ defmodule Wax.AttestationStatementFormat.TPM do
   ]
 
   @impl Wax.AttestationStatementFormat
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, auth_data_bin) do
+  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- version_valid?(att_stmt),
          {:ok, cert_info} <- parse_cert_info(att_stmt["certInfo"]),
          {:ok, pub_area} <- parse_pub_area(att_stmt["pubArea"]),
          :ok <- verify_public_key(pub_area, auth_data),
-         :ok <- cert_info_valid?(cert_info, pub_area, auth_data_bin, client_data_hash, att_stmt),
+         :ok <- cert_info_valid?(cert_info, pub_area, auth_data, client_data_hash, att_stmt),
          :ok <- signature_valid?(att_stmt),
          :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data)
     do
@@ -236,19 +236,19 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec cert_info_valid?(map(), map(), binary(), Wax.ClientData.hash(), map())
+  @spec cert_info_valid?(map(), map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), map())
     :: :ok | {:error, any()}
 
   defp cert_info_valid?(
     cert_info,
     pub_area,
-    auth_data_bin,
+    auth_data,
     client_data_hash,
     att_stmt) do
     # %{3 => val} is a psuedo cose key, 3 being the algorithm
     digest = Wax.CoseKey.to_erlang_digest(%{3 =>att_stmt["alg"]})
 
-    att_to_be_signed = auth_data_bin <> client_data_hash
+    att_to_be_signed = auth_data.raw_bytes <> client_data_hash
 
     pub_area_hash =
       :crypto.hash(name_alg_to_erlang_digest(pub_area[:name_alg]), att_stmt["pubArea"])

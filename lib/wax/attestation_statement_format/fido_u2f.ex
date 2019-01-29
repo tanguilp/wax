@@ -4,7 +4,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash, _auth_data_bin) do
+  def verify(att_stmt, auth_data, client_data_hash) do
     with :ok <- valid_cbor?(att_stmt),
          {:ok, ec_pk} <- extract_and_verify_certificate(att_stmt),
          public_key_u2f <- get_raw_cose_key(auth_data),

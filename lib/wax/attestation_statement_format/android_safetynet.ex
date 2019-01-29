@@ -6,7 +6,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   @root_cert File.read!("lib/wax/attestation_statement_format/android_safetynet/GSR2.crt")
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, _auth_data, client_data_hash, auth_data_bin) do
+  def verify(att_stmt, auth_data, client_data_hash) do
     try do
       [header_b64, payload_b64, _sig] = String.split(att_stmt["response"], ".")
 
@@ -22,7 +22,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
       with :ok <- valid_cbor?(att_stmt),
            :ok <- valid_safetynet_response?(payload, att_stmt["ver"]),
-           :ok <- nonce_valid?(auth_data_bin, client_data_hash, payload),
+           :ok <- nonce_valid?(auth_data.raw_bytes, client_data_hash, payload),
            :ok <- valid_cert_hostname?(header),
            :ok <- Wax.Utils.JWS.verify(att_stmt["response"], @root_cert)
       do
@@ -72,12 +72,12 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
   defp valid_safetynet_response?(_, _), do: {:error, :attestation_safetyney_invalid_payload}
 
-  @spec nonce_valid?(binary(), binary(), map())
+  @spec nonce_valid?(Wax.AuthenticatorData.t(), binary(), map())
     :: :ok | {:error, any()}
 
-  defp nonce_valid?(auth_data_bin, client_data_hash, payload) do
+  defp nonce_valid?(auth_data, client_data_hash, payload) do
     expected_nonce =
-      Base.encode64(:crypto.hash(:sha256, auth_data_bin <> client_data_hash))
+      Base.encode64(:crypto.hash(:sha256, auth_data.raw_bytes <> client_data_hash))
 
     if payload["nonce"] == expected_nonce do
       :ok
