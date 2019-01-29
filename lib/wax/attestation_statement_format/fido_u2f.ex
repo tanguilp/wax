@@ -26,7 +26,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     do
       :ok
     else
-      {:error, :invalid_attestation_statement_cbor}
+      {:error, :attestation_fidou2f_invalid_cbor}
     end
   end
 
@@ -46,11 +46,11 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
               {:ok, pub_key}
 
           _ ->
-            {:error, :fido_u2f_attestation_invalid_public_key_algorithm}
+            {:error, :attestation_fidou2f_invalid_public_key_algorithm}
         end
 
         _ ->
-          {:error, :fido_u2f_attestation_multiple_x5c}
+          {:error, :attestation_fidou2f_multiple_x5c}
     end
   end
 
@@ -78,7 +78,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     if :public_key.verify(verification_data, :sha256, sig, pub_key) do
       :ok
     else
-      {:error, :fido_u2f_invalid_attestation_signature}
+      {:error, :attestation_fidou2f_invalid_attestation_signature}
     end
   end
 end

@@ -34,7 +34,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     do
       :ok
     else
-      {:error, :invalid_attestation_statement_cbor}
+      {:error, :attestation_androidkey_invalid_cbor}
     end
   end
 
@@ -45,7 +45,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     if :public_key.verify(verification_data, :sha256, sig, public_key) do
       :ok
     else
-      {:error, :android_key_invalid_attestation_signature}
+      {:error, :attestation_androidkey_invalid_signature}
     end
   end
 
@@ -58,7 +58,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     if Wax.CoseKey.to_erlang_public_key(pk) == X509.Certificate.public_key(first_cert) do
         :ok
     else
-      {:error, :android_key_keys_mismatch}
+      {:error, :attestation_androidkey_keys_mismatch}
     end
   end
 
@@ -72,11 +72,11 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
           or asn_v1_valid?(asn, client_data_hash) do
           :ok
         else
-          {:error, :android_key_invalid_asn_attestation}
+          {:error, :attestation_androidkey_invalid_asn_attestation}
         end
     rescue
       _ ->
-        {:error, :android_key_malformed_asn1_record}
+        {:error, :attestation_androidkey_malformed_asn1_record}
     end
   end
 

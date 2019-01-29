@@ -109,7 +109,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     do
       :ok
     else
-      {:error, :invalid_attestation_statement_cbor}
+      {:error, :attestation_tpm_invalid_cbor}
     end
   end
 
