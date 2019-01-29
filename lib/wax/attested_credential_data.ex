@@ -32,7 +32,7 @@ defmodule Wax.AttestedCredentialData do
   (and only when `with_appended_extensions` is `true`
   """
   @spec decode(binary(), boolean())
-    :: {:ok, t()} |{:ok, {t() | non_neg_integer()}} | {:error, any()}
+    :: {:ok, t() | {t(), non_neg_integer()}} | {:error, any()}
 
   def decode(
     <<

@@ -164,8 +164,7 @@ defmodule Wax do
     end
   end
 
-  @spec valid_challenge?(Wax.ClientData.t(),
-    AttestationChallenge.t() | AuthenticationChallenge.t()) :: :ok | {:error, any()}
+  @spec valid_challenge?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, any()}
   def valid_challenge?(client_data, challenge) do
     if client_data.challenge == challenge.bytes do
       :ok
@@ -174,8 +173,7 @@ defmodule Wax do
     end
   end
 
-  @spec valid_origin?(Wax.ClientData.t(),
-    AttestationChallenge.t() | AuthenticationChallenge.t()) :: :ok | {:error, atom()}
+  @spec valid_origin?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, atom()}
   defp valid_origin?(client_data, challenge) do
     if client_data.origin == challenge.origin do
       :ok
@@ -184,8 +182,8 @@ defmodule Wax do
     end
   end
 
-  @spec valid_token_binding_status?(Wax.ClientData.t(),
-    AttestationChallenge.t() | AuthenticationChallenge.t()) :: :ok | {:error, atom()}
+  @spec valid_token_binding_status?(Wax.ClientData.t(), Wax.Challenge.t())
+    :: :ok | {:error, atom()}
   defp valid_token_binding_status?(_client_data, _challenge), do: :ok #FIXME: implement?
 
   defp cbor_decode(cbor) do
@@ -197,8 +195,7 @@ defmodule Wax do
     end
   end
 
-  @spec valid_rp_id?(Wax.AuthenticatorData.t(),
-    AttestationChallenge.t() | AuthenticationChallenge.t()) :: :ok | {:error, atom()}
+  @spec valid_rp_id?(Wax.AuthenticatorData.t(), Wax.Challenge.t()) :: :ok | {:error, atom()}
   defp valid_rp_id?(auth_data, challenge) do
     if auth_data.rp_id_hash == :crypto.hash(:sha256, challenge.rp_id) do
       :ok
@@ -216,8 +213,8 @@ defmodule Wax do
     end
   end
 
-  @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(),
-    AttestationChallenge.t() | AuthenticationChallenge.t()) :: :ok | {:error, atom()}
+  @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(), Wax.Challenge.t())
+    :: :ok | {:error, atom()}
   defp maybe_user_verified_flag_set?(auth_data, challenge) do
     if not challenge.user_verified_required or auth_data.flag_user_verified do
       :ok

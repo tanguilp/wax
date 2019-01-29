@@ -26,7 +26,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["sig"])
     and is_list(att_stmt["x5c"])
@@ -49,7 +49,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec public_key_matches_first_cert?(Wax.AuthData.t(), X509.Certificate.t())
+  @spec public_key_matches_first_cert?(Wax.AuthenticatorData.t(), X509.Certificate.t())
   :: :ok | {:error, any()}
 
   defp public_key_matches_first_cert?(auth_data, first_cert) do

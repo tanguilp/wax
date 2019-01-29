@@ -42,7 +42,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["ver"])
     and is_binary(att_stmt["response"])

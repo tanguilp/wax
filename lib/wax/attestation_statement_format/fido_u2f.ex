@@ -18,7 +18,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["sig"])
     and is_list(att_stmt["x5c"])
@@ -30,7 +30,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec extract_and_verify_certificate(Wax.Attestation.Statement.t()) ::
+  @spec extract_and_verify_certificate(Wax.Attestation.statement()) ::
   {:ok, any()} | {:error, any()} #FIXME any()
   defp extract_and_verify_certificate(att_stmt) do
     case att_stmt["x5c"] do
@@ -62,7 +62,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec get_raw_cose_key(Wax.AuthData.t()) :: binary()
+  @spec get_raw_cose_key(Wax.AuthenticatorData.t()) :: binary()
   def get_raw_cose_key(auth_data) do
     x = auth_data.attested_credential_data.credential_public_key[-2]
     y = auth_data.attested_credential_data.credential_public_key[-3]
@@ -70,7 +70,8 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     <<04>> <> x <> y
   end
 
-  @spec get_verification_data(Wax.AuthData.t(), Wax.ClientData.hash(), binary()) :: binary()
+  @spec get_verification_data(Wax.AuthenticatorData.t(), Wax.ClientData.hash(), binary())
+    :: binary()
   def get_verification_data(auth_data, client_data_hash, public_key_u2f) do
     <<0>>
     <> auth_data.rp_id_hash

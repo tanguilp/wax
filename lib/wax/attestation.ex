@@ -22,7 +22,7 @@ defmodule Wax.Attestation do
 
   @type attestation_statement_format_verify_fun ::
   (
-    Wax.Attestation.statement(), Wax.AuthData.t(), Wax.ClientData.hash() ->
+    Wax.Attestation.statement(), Wax.AuthenticatorData.t(), Wax.ClientData.hash() ->
       {:ok, {type(), trust_path()}} | {:error, any()}
   )
 

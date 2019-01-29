@@ -17,10 +17,6 @@ defmodule Wax.CoseKey do
     @key_type_symmetric => "Symmetric"
   }
 
-  @es512 -36
-  @es384 -35
-  @es256 -7
-
   @cose_alg_string %{
     -65535 => "RSASSA-PKCS1-v1_5 w/ SHA-1",
     -259 => "RS512 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
@@ -150,7 +146,7 @@ defmodule Wax.CoseKey do
     end
   end
 
-  @spec to_erlang_public_key(t()) :: :public_key.rsa_public_key() | :public_key.ec_public_key()
+  @spec to_erlang_public_key(t()) :: :public_key.public_key()
 
   def to_erlang_public_key(%{@kty => @key_type_EC2, -1 => curve, -2 => x, -3 => y}) do
     {
@@ -170,7 +166,7 @@ defmodule Wax.CoseKey do
     {:ed_pub, curve, x}
   end
 
-  @spec to_erlang_digest(t()) :: :crypto.sha1() | :crypto.sha2() | :crypto.sha3()
+  @spec to_erlang_digest(t()) :: :crypto.sha1() | :crypto.sha2()
   def to_erlang_digest(%{@alg => -65535}), do: :sha
   def to_erlang_digest(%{@alg => -259}), do: :sha512
   def to_erlang_digest(%{@alg => -258}), do: :sha384

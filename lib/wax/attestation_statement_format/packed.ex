@@ -56,7 +56,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
 
   defp valid_cbor?(%{"x5c" => _} = att_stmt) do
     if is_integer(att_stmt["alg"])
@@ -81,7 +81,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_x5c_signature?(map(), Wax.AuthenticatorData.t(), Wax.Client.hash())
+  @spec valid_x5c_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash())
     :: :ok | {:error, any()}
 
   defp valid_x5c_signature?(att_stmt, auth_data, client_data_hash) do
@@ -106,7 +106,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_self_signature?(map(), Wax.AuthenticatorData.t(), Wax.Client.hash())
+  @spec valid_self_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash())
     :: :ok | {:error, any()}
 
   defp valid_self_signature?(att_stmt, auth_data, client_data_hash) do

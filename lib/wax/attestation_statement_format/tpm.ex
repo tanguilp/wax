@@ -97,7 +97,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {:error, :attestation_tpm_unsupported_ecdaa_signature}
   end
 
-  @spec valid_cbor?(Wax.Attestation.Statement.t()) :: :ok | {:error, any()}
+  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["ver"])
     and is_integer(att_stmt["alg"])
@@ -388,7 +388,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
   #defp to_erlang_curve(@tpm_ecc_bn_p638), do:
   #defp to_erlang_curve(@tpm_ecc_sm2_p256), do:
 
-  @spec to_erlang_public_key(map()) :: :public_key.rsa_public_key() | :public_key.ec_public_key()
+  @spec to_erlang_public_key(map()) :: :public_key.public_key()
 
   defp to_erlang_public_key(%{type: :rsa, modulus: n, exponent: e}) do
     {:RSAPublicKey, n, e}
@@ -398,8 +398,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, curve}}
   end
 
-  @spec name_alg_to_erlang_digest(non_neg_integer())
-    :: :crypto.sha1() | :crypto.sha2() | :crypto.sha3()
+  @spec name_alg_to_erlang_digest(non_neg_integer()) :: :crypto.sha1() | :crypto.sha2()
   defp name_alg_to_erlang_digest(@tpm_alg_sha1), do: :sha
   defp name_alg_to_erlang_digest(@tpm_alg_sha256), do: :sha256
   defp name_alg_to_erlang_digest(@tpm_alg_sha384), do: :sha384

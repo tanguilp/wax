@@ -10,6 +10,6 @@ defmodule Wax.AttestationStatementFormat do
     | :fido_u2f
     | :none
 
-  @callback verify(Wax.Attestation.statement(), Wax.AuthData.t(), Wax.ClientData.hash())
+  @callback verify(Wax.Attestation.statement(), Wax.AuthenticatorData.t(), Wax.ClientData.hash())
     :: {:ok, {Wax.Attestation.type(), Wax.Attestation.trust_path()}} | {:error, any()}
 end
