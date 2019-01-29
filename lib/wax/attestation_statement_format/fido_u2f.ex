@@ -6,11 +6,13 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   @impl Wax.AttestationStatementFormat
   def verify(att_stmt, auth_data, client_data_hash) do
     with :ok <- valid_cbor?(att_stmt),
-         {:ok, pub_key} <- extract_and_verify_certificate(att_stmt),
+         {:ok, pub_key} <- extract_and_verify_public_key(att_stmt),
          public_key_u2f <- get_raw_cose_key(auth_data),
          verification_data <- get_verification_data(auth_data, client_data_hash, public_key_u2f),
          :ok <- valid_signature?(att_stmt["sig"], verification_data, pub_key)
     do
+      attestation_type = determine_attestation_type(List.first(att_stmt["x5c"]))
+
       {:ok, {:basic, att_stmt["x5c"]}}
     else
       error ->
@@ -30,9 +32,10 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec extract_and_verify_certificate(Wax.Attestation.statement()) ::
-  {:ok, any()} | {:error, any()} #FIXME any()
-  defp extract_and_verify_certificate(att_stmt) do
+  @spec extract_and_verify_public_key(Wax.Attestation.statement())
+    :: {:ok, X509.PublicKey.t()} | {:error, any()}
+
+  defp extract_and_verify_public_key(att_stmt) do
     case att_stmt["x5c"] do
       [der] ->
         pub_key =
@@ -79,6 +82,30 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
       :ok
     else
       {:error, :attestation_fidou2f_invalid_attestation_signature}
+    end
+  end
+
+  @spec determine_attestation_type(binary()) :: Wax.Attestation.type()
+
+  defp determine_attestation_type(cert_der) do
+    acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(cert_der)
+
+    case Wax.Metadata.get_by_acki(acki) do
+      nil ->
+        :uncertain
+
+      #FIXME: here we assume that :basic and :attca are exclusive for a given authenticator
+      # but this seems however unspecified
+      metadata_statement ->
+        if :tag_attestation_basic_full in metadata_statement.attestation_types do
+          :basic
+        else
+          if :tag_attestation_attca in metadata_statement.attestation_types do
+            :attca
+          else
+            :uncertain
+          end
+        end
     end
   end
 end

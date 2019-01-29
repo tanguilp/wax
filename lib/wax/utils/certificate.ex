@@ -17,7 +17,7 @@ defmodule Wax.Utils.Certificate do
       cert
       |> X509.Certificate.subject()
       |> X509.RDNSequence.to_string()
-    # e.g.  "/C=CN/O=Feitian Technologies/OU=Authenticator Attestation/CN=FT BioPass FIDO2 USB"
+      # e.g.  "/C=CN/O=Feitian Technologies/OU=Authenticator Attestation/CN=FT BioPass FIDO2 USB"
 
     Enum.find_value(
       String.split(subject_str, "/"),
@@ -40,5 +40,18 @@ defmodule Wax.Utils.Certificate do
       X509.Certificate.extension(cert, :basic_constraints)
 
     ca_component
+  end
+
+  @spec attestation_certificate_key_identifier(binary()) :: binary()
+
+  # we take the raw certificate into parameter because we'll convert it to TBSCertificate
+  # insted of OTPTBSCertificate
+  def attestation_certificate_key_identifier(cert_der) do
+    {:Certificate,
+      {:TBSCertificate, _, _, _, _, _, _,
+        {:SubjectPublicKeyInfo, _, subject_public_key}, _, _, _},
+      _, _} = X509.Certificate.from_der!(cert_der, :Certificate)
+
+    :crypto.hash(:sha, subject_public_key)
   end
 end

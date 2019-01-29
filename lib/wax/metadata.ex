@@ -35,7 +35,7 @@ defmodule Wax.Metadata do
 
   @spec get_by_aaguid(binary()) :: Wax.MetadataStatement.t() | nil
 
-  def get_by_aaguid(aaguid) do
+  def get_by_aaguid(aaguid_bin) do
     # it is needed to convert binary aaguid (16 bytes) to its string representation as
     # used in the metadata service, such as `77010bd7-212a-4fc9-b236-d2ca5e9d4084`
     <<
@@ -44,14 +44,20 @@ defmodule Wax.Metadata do
       c::binary-size(4),
       d::binary-size(4),
       e::binary-size(12)
-    >> = Base.encode16(aaguid, case: :lower)
+    >> = Base.encode16(aaguid_bin, case: :lower)
 
     aaguid_str = a <> "-" <> b <> "-" <> c <> "-" <> d <> "-" <> e
 
     GenServer.call(__MODULE__, {:get, {:aaguid, aaguid_str}})
   end
 
-  #@spec get(Wax.AuthenticatorData.t()) :: t() | Wax.MetadataStatement.t()
+  @spec get_by_acki(binary()) :: Wax.MetadataStatement.t() | nil
+
+  def get_by_acki(acki_bin) do
+    acki_str = Base.encode16(acki_bin, case: :lower)
+
+    GenServer.call(__MODULE__, {:get, {:acki, acki_str}})
+  end
 
   # server callbacks
 
