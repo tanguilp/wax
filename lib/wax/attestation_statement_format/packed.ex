@@ -87,13 +87,16 @@ defmodule Wax.AttestationStatementFormat.Packed do
   defp valid_x5c_signature?(att_stmt, auth_data, client_data_hash) do
     #FIXME: check if the "alg" matches the certificate's public key?
 
-    pub_key = 
+    pub_key =
       att_stmt["x5c"]
       |> List.first()
       |> X509.Certificate.from_der!()
       |> X509.Certificate.public_key()
 
     digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
+
+    Logger.debug("#{__MODULE__}: verifying signature with public key #{inspect(pub_key)} " <>
+      "(digest: #{inspect(digest)})")
 
     if :public_key.verify(auth_data.raw_bytes <> client_data_hash,
                           digest,
@@ -114,6 +117,9 @@ defmodule Wax.AttestationStatementFormat.Packed do
       Wax.CoseKey.to_erlang_public_key(auth_data.attested_credential_data.credential_public_key)
 
     digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
+
+    Logger.debug("#{__MODULE__}: verifying self-signature with public key #{inspect(pub_key)}" <>
+      " (hash: #{inspect(digest)})")
 
     if :public_key.verify(auth_data.raw_bytes <> client_data_hash,
                           digest,
@@ -142,16 +148,21 @@ defmodule Wax.AttestationStatementFormat.Packed do
   defp valid_attestation_certificate?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
 
+    Logger.debug("#{__MODULE__}: verifying certificate info of #{inspect(cert)}")
+
     if Wax.Utils.Certificate.version(cert) == :v3
       and Wax.Utils.Certificate.subject_component_value(cert, "C") in @iso_3166_codes
       and Wax.Utils.Certificate.subject_component_value(cert, "O") not in [nil, ""]
-      and Wax.Utils.Certificate.subject_component_value(cert, "OU") == "Authenticator Attestation"
+      and Wax.Utils.Certificate.subject_component_value(cert, "OU") ==
+        "Authenticator Attestation"
       and Wax.Utils.Certificate.subject_component_value(cert, "CN") not in [nil, ""]
       and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
     do
       # checking if oid of id-fido-gen-ce-aaguid is present and, if so, aaguid
       case X509.Certificate.extension(cert, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}) do
-        {:Extension, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}, _, aaguid} ->
+        # the <<4, 16>> 2 bytes are the tag for ASN octet string (aaguid is embedded twice)
+        # see also: https://www.w3.org/TR/2019/PR-webauthn-20190117/#packed-attestation-cert-requirements
+        {:Extension, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}, _, <<4, 16, aaguid::binary>>} ->
           if aaguid == auth_data.attested_credential_data.aaguid do
             :ok
           else
@@ -169,7 +180,11 @@ defmodule Wax.AttestationStatementFormat.Packed do
   @spec determine_attestation_type(Wax.AuthenticatorData.t()) :: Wax.Attestation.type()
 
   defp determine_attestation_type(auth_data) do
-    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
+    aaguid = auth_data.attested_credential_data.aaguid
+
+    Logger.debug("#{__MODULE__}: determining attestation type for aaguid=#{aaguid}")
+
+    case Wax.Metadata.get_by_aaguid(aaguid) do
       nil ->
         :uncertain
 

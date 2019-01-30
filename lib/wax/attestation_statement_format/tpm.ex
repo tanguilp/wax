@@ -306,7 +306,9 @@ defmodule Wax.AttestationStatementFormat.TPM do
     do
       # checking if oid of id-fido-gen-ce-aaguid is present and, if so, aaguid
       case X509.Certificate.extension(cert, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}) do
-        {:Extension, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}, _, aaguid} ->
+        # the <<4, 16>> 2 bytes are the tag for ASN octet string (aaguid is embedded twice)
+        # see also: https://www.w3.org/TR/2019/PR-webauthn-20190117/#packed-attestation-cert-requirements
+        {:Extension, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}, _, <<4, 16, aaguid::binary>>} ->
           if aaguid == auth_data.attested_credential_data.aaguid do
             :ok
           else

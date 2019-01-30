@@ -13,7 +13,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     do
       attestation_type = determine_attestation_type(List.first(att_stmt["x5c"]))
 
-      {:ok, {:basic, att_stmt["x5c"]}}
+      {:ok, {attestation_type, att_stmt["x5c"]}}
     else
       error ->
         error

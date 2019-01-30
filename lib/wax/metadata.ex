@@ -67,7 +67,7 @@ defmodule Wax.Metadata do
 
     Process.send(self(), :update_metadata, [])
 
-    {:ok, []}
+    {:ok, [serial_number: 0]}
   end
 
   @impl true
@@ -82,12 +82,19 @@ defmodule Wax.Metadata do
   end
 
   @impl true
-  def handle_info(:update_metadata, _state) do
-    update_metadata()
+  def handle_info(:update_metadata, state) do
+    serial_number =
+      case update_metadata(state[:serial_number]) do
+        new_serial_number when is_integer(new_serial_number) ->
+          new_serial_number
+
+        _ ->
+          state[:serial_number]
+      end
 
     schedule_update()
 
-    {:noreply, []}
+    {:noreply, [serial_number: serial_number]}
   end
 
   defp schedule_update() do
@@ -96,10 +103,9 @@ defmodule Wax.Metadata do
       Application.get_env(:wax, :metadata_update_interval, 12 * 3600) * 1000)
   end
 
-  def update_metadata() do
+  def update_metadata(serial_number) do
     #FIXME: handle
     #   verify sig
-    #   verify hash
     #   revoked certs & other revocation mecanisms
     Logger.info("Starting FIDO metadata update process")
 
@@ -108,8 +114,7 @@ defmodule Wax.Metadata do
     if access_token do
       case HTTPoison.get("https://mds2.fidoalliance.org/?token=" <> access_token) do
         {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-          File.write("toc.jws", body)
-          process_metadata_toc(body)
+          process_metadata_toc(body, serial_number)
 
         e ->
           Logger.warn("Unable to download metadata (#{inspect(e)})")
@@ -120,59 +125,72 @@ defmodule Wax.Metadata do
     end
   end
 
-  @spec process_metadata_toc(String.t()) :: no_return()
+  @spec process_metadata_toc(String.t(), non_neg_integer()) :: no_return()
 
-  defp process_metadata_toc(jws) do
+  defp process_metadata_toc(jws, serial_number) do
     case Wax.Utils.JWS.verify(jws, @fido_alliance_root_cer_der) do
       _ ->
       #:ok ->
       # FIXME: JWS doesn't work for this specific JWT
         {%{"alg" => alg}, metadata} = parse_jwt(jws)
 
-        # one of sha256, sha512, etc
-        digest_alg = digest_from_jws_alg(alg)
+        if metadata["no"] > serial_number do
+          # one of sha256, sha512, etc
+          digest_alg = digest_from_jws_alg(alg)
 
-        tasks = Enum.map(
-          metadata["entries"],
-          fn entry ->
-            Task.async(fn -> update_metadata_statement(entry, digest_alg) end)
-          end
-        )
-
-        Enum.each(
-          tasks,
-          fn task ->
-            metadata_statement = Task.await(task)
-
-            case metadata_statement do
-              %Wax.MetadataStatement{aaguid: aaguid} when is_binary(aaguid) ->
-                Logger.debug("Saving metadata for aaguid `#{aaguid}` " <>
-                  "(#{metadata_statement.description})")
-
-                :ets.insert(:wax_metadata, {{:aaguid, aaguid}, metadata_statement})
-
-              %Wax.MetadataStatement{aaid: aaid} when is_binary(aaid) ->
-                Logger.debug("Saving metadata for aaid `#{aaid}` " <>
-                  "(#{metadata_statement.description})")
-
-                :ets.insert(:wax_metadata, {{:aaid, aaid}, metadata_statement})
-
-              %Wax.MetadataStatement{attestation_certificate_key_identifiers: acki_list} ->
-                Enum.each(
-                  acki_list,
-                  fn acki ->
-                    Logger.debug("Saving metadata for attestation certificate key identifier " <>
-                      "`#{acki}` (#{metadata_statement.description})")
-
-                    :ets.insert(:wax_metadata, {{:acki, acki}, metadata_statement})
-                  end
-                )
-
-              _ ->
-                :ok
+          tasks = Enum.map(
+            metadata["entries"],
+            fn entry ->
+              Task.async(fn -> update_metadata_statement(entry, digest_alg) end)
             end
-          end
-        )
+          )
+
+          # cleaning it first to avoid having to deal with diffing
+          # since this GenServer call is blocking, no concurrent access
+          # to the empty table can be made
+          :ets.delete_all_objects(:wax_metadata)
+
+          Enum.each(
+            tasks,
+            fn task ->
+              metadata_statement = Task.await(task)
+
+              case metadata_statement do
+                %Wax.MetadataStatement{aaguid: aaguid} when is_binary(aaguid) ->
+                  Logger.debug("Saving metadata for aaguid `#{aaguid}` " <>
+                    "(#{metadata_statement.description})")
+
+                  :ets.insert(:wax_metadata, {{:aaguid, aaguid}, metadata_statement})
+
+                %Wax.MetadataStatement{aaid: aaid} when is_binary(aaid) ->
+                  Logger.debug("Saving metadata for aaid `#{aaid}` " <>
+                    "(#{metadata_statement.description})")
+
+                  :ets.insert(:wax_metadata, {{:aaid, aaid}, metadata_statement})
+
+                %Wax.MetadataStatement{attestation_certificate_key_identifiers: acki_list} ->
+                  Enum.each(
+                    acki_list,
+                    fn acki ->
+                      Logger.debug("Saving metadata for attestation certificate key identifier " <>
+                        "`#{acki}` (#{metadata_statement.description})")
+
+                      :ets.insert(:wax_metadata, {{:acki, acki}, metadata_statement})
+                    end
+                  )
+
+                _ ->
+                  :ok
+              end
+            end
+          )
+
+          metadata["no"]
+        else
+          Logger.info("Metadata not updated (`no` has not changed)")
+
+          :no_update
+        end
 
       #{:error, reason} ->
         #Logger.warn("Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")

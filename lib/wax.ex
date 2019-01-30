@@ -216,7 +216,7 @@ defmodule Wax do
   @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(), Wax.Challenge.t())
     :: :ok | {:error, atom()}
   defp maybe_user_verified_flag_set?(auth_data, challenge) do
-    if not challenge.user_verified_required or auth_data.flag_user_verified do
+    if !challenge.user_verified_required or auth_data.flag_user_verified do
       :ok
     else
       {:error, :user_not_verified}
