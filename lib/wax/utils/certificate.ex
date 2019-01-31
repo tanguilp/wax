@@ -54,4 +54,24 @@ defmodule Wax.Utils.Certificate do
 
     :crypto.hash(:sha, subject_public_key)
   end
+
+  @spec signature_algorithm(X509.Certificate.t()) :: tuple()
+
+  def signature_algorithm(cert) do
+    {:OTPCertificate,
+      {:OTPTBSCertificate, :v3, _,
+        {:SignatureAlgorithm, sig_alg_1, _},
+        _,
+        _,
+        _,
+        _, _, _,
+        _}, {:SignatureAlgorithm, sig_alg_2, _},
+      _} = cert
+
+    if sig_alg_1 == sig_alg_2 do
+      sig_alg_1
+    else
+      raise "Different sig algs in the same certificate"
+    end
+  end
 end

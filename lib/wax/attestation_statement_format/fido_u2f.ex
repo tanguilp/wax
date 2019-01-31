@@ -38,18 +38,18 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   defp extract_and_verify_public_key(att_stmt) do
     case att_stmt["x5c"] do
       [der] ->
-        pub_key =
-          der
-          |> X509.Certificate.from_der!()
-          |> X509.Certificate.public_key()
+        cert = X509.Certificate.from_der!(der)
 
-        case pub_key do
-          {:PublicKeyAlgorithm, {1, 2, 840, 10045, 2, 1},
-            {:namedCurve, {1, 2, 840, 10045, 3, 1, 7}}} ->
-              {:ok, pub_key}
+        pub_key = X509.Certificate.public_key(cert)
 
-          _ ->
-            {:error, :attestation_fidou2f_invalid_public_key_algorithm}
+        Logger.debug("#{__MODULE__}: verifying validity of public key for certificate " <>
+          "#{inspect(cert)}")
+
+        if Wax.Utils.Certificate.signature_algorithm(cert) == {1, 2, 840, 113549, 1, 1, 11}
+          and elem(pub_key, 1) == {:namedCurve, {1, 2, 840, 10045, 3, 1, 7}} do
+          {:ok, pub_key}
+        else
+          {:error, :attestation_fidou2f_invalid_public_key_algorithm}
         end
 
         _ ->
@@ -77,7 +77,10 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
   @spec valid_signature?(binary(), binary(), X509.PublicKey.t()) :: :ok | {:error, any()}
   def valid_signature?(sig, verification_data, pub_key) do
-    #FIXME: use X509 module instead
+    Logger.debug("#{__MODULE__}: verifying signature #{inspect(sig)} " <>
+      "of data #{inspect(verification_data)} " <>
+      "with public key #{inspect(pub_key)}")
+
     if :public_key.verify(verification_data, :sha256, sig, pub_key) do
       :ok
     else
@@ -89,6 +92,8 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
   defp determine_attestation_type(cert_der) do
     acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(cert_der)
+
+    Logger.debug("#{__MODULE__}: determining attestation type for acki=#{acki}")
 
     case Wax.Metadata.get_by_acki(acki) do
       nil ->

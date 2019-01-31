@@ -182,7 +182,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
   defp determine_attestation_type(auth_data) do
     aaguid = auth_data.attested_credential_data.aaguid
 
-    Logger.debug("#{__MODULE__}: determining attestation type for aaguid=#{aaguid}")
+    Logger.debug("#{__MODULE__}: determining attestation type for aaguid=#{inspect(aaguid)}")
 
     case Wax.Metadata.get_by_aaguid(aaguid) do
       nil ->
