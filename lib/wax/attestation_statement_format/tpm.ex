@@ -122,7 +122,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
   def parse_cert_info(
     <<
       magic::unsigned-big-integer-size(32),
-      type::binary-size(2),
+      type::unsigned-big-integer-size(16),
       qualified_signer_length::unsigned-big-integer-size(16),
       qualified_signer::binary-size(qualified_signer_length),
       extra_data_length::unsigned-big-integer-size(16),
@@ -170,7 +170,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
       unique_length::unsigned-big-integer-size(16),
       unique::unsigned-big-integer-size(unique_length)-unit(8)
     >>) do
-    {:ok, %{
+    cert_info = {:ok, %{
       type: :rsa,
       name_alg: name_alg,
       object_attributes: object_attributes,
@@ -187,6 +187,10 @@ defmodule Wax.AttestationStatementFormat.TPM do
       unique_length: unique_length,
       modulus: unique}
     }
+
+    Logger.debug("#{__MODULE__}: decoded cert_info: #{inspect(cert_info)}")
+
+    cert_info
   end
 
   def parse_pub_area(
@@ -206,7 +210,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
       unique_y_length::unsigned-big-integer-size(16),
       unique_y::binary-size(unique_y_length),
     >>) do
-    {:ok, %{
+    pub_area = {:ok, %{
       type: :ecc,
       name_alg: name_alg,
       object_attributes: object_attributes,
@@ -217,6 +221,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
       x: unique_x,
       y: unique_y}
     }
+
+    Logger.debug("#{__MODULE__}: decoded pub_area: #{inspect(pub_area)}")
   end
 
   def parse_pub_area(_), do: {:error, :attestation_tpm_invalid_pub_area}
@@ -228,6 +234,10 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
     auth_data_erlang_public_key =
       Wax.CoseKey.to_erlang_public_key(auth_data.attested_credential_data.credential_public_key)
+
+    Logger.debug("#{__MODULE__}: verifying public keys, " <>
+      "pub_area: #{inspect(pub_area_erlang_public_key)} ; " <>
+      "auth_data: #{inspect(auth_data_erlang_public_key)}")
 
     if pub_area_erlang_public_key == auth_data_erlang_public_key do
       :ok
@@ -254,6 +264,12 @@ defmodule Wax.AttestationStatementFormat.TPM do
       :crypto.hash(name_alg_to_erlang_digest(pub_area[:name_alg]), att_stmt["pubArea"])
 
     attested_name = <<pub_area[:name_alg]::unsigned-big-integer-size(16)>> <> pub_area_hash
+
+    Logger.debug("#{__MODULE__}: verifying cert_info is valid: digest: #{inspect(digest)} ; " <>
+      "att to be signed: #{inspect(att_to_be_signed)} ; " <>
+      "pub_area hash: #{inspect(pub_area_hash)} ; " <>
+      "attested name: #{inspect(attested_name)}"
+      )
 
     if cert_info[:magic] == 0xff544347 # TPM_GENERATED_VALUE
       and cert_info[:type] == 0x8017   # TPM_ST_ATTEST_CERTIFY
@@ -291,6 +307,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
   defp aik_cert_valid?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
 
+    Logger.debug("#{__MODULE__}: verifying validity of aik certificate: #{inspect(cert)}")
+
     {:Validity, {:utcTime, valid_from}, {:utcTime, valid_to}} = X509.Certificate.validity(cert)
 
     {:Extension, {2, 5, 29, 37}, false, key_ext_vals} =
@@ -298,8 +316,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
     if Wax.Utils.Certificate.version(cert) == :v3
       and X509.Certificate.subject(cert) == {:rdnSequence, []}
-      and valid_from < :os.system_time(:second)
-      and valid_to > :os.system_time(:second)
+      and parse_cert_datetime(valid_from) < Wax.Utils.Timestamp.get_timestamp()
+      and parse_cert_datetime(valid_to) > Wax.Utils.Timestamp.get_timestamp()
       and get_tcpaTpmManufacturer_field(cert) in @tpm_manufacturer_ids
       and {2, 23, 133, 8, 3} in key_ext_vals
       and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
@@ -323,9 +341,9 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec parse_cert_datetime(String.t()) :: non_neg_integer()
+  @spec parse_cert_datetime(charlist()) :: non_neg_integer()
 
-  def parse_cert_datetime(
+  def parse_cert_datetime(datetime) do
     <<
       day::binary-size(2),
       month::binary-size(2),
@@ -333,7 +351,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
       hour::binary-size(2),
       minute::binary-size(2),
       "Z"::utf8
-    >>) do
+    >> = :erlang.list_to_binary(datetime)
+
     year <> "-" <> month <> "-" <> day <> "T" <> hour <> ":" <> minute <> ":00Z"
     |> DateTime.from_iso8601()
     |> elem(1)

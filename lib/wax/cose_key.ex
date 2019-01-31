@@ -158,8 +158,14 @@ defmodule Wax.CoseKey do
     }
   end
 
-  def to_erlang_public_key(%{@kty => @key_type_RSA, -1 => n, -2 => e}) do
-    {:RSAPublicKey, n, e}
+  def to_erlang_public_key(%{@kty => @key_type_RSA, -1 => n, -2 => e} = arg) do
+    nb_bytes_n = byte_size(n)
+    nb_bytes_e = byte_size(e)
+
+    <<n_int::unsigned-big-integer-size(nb_bytes_n)-unit(8)>> = n
+    <<e_int::unsigned-big-integer-size(nb_bytes_e)-unit(8)>> = e
+
+    {:RSAPublicKey, n_int, e_int}
   end
 
   def to_erlang_public_key(%{@kty => @key_type_OKP, -1 => curve, -2 => x}) do

@@ -89,12 +89,7 @@ defmodule Wax do
            <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),
          :ok <- attestation_trustworthy?(auth_data, attestation_type, trust_path)
     do
-      {:ok,
-        {
-          auth_data.attested_credential_data.credential_id,
-          auth_data.attested_credential_data.credential_public_key
-        }
-      }
+      {:ok, {attestation_type, trust_path}}
     else
       error ->
         error
