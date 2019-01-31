@@ -65,9 +65,23 @@ defmodule Wax.Metadata do
   def init(_state) do
     :ets.new(@table, [:named_table, :set, :protected, {:read_concurrency, true}])
 
-    Process.send(self(), :update_metadata, [])
+    {:ok, [serial_number: 0], {:continue, :update_metadata}}
+  end
 
-    {:ok, [serial_number: 0]}
+  @impl true
+  def handle_continue(:update_metadata, state) do
+    serial_number =
+      case update_metadata(state[:serial_number]) do
+        new_serial_number when is_integer(new_serial_number) ->
+          new_serial_number
+
+        _ ->
+          state[:serial_number]
+      end
+
+    schedule_update()
+
+    {:noreply, [serial_number: serial_number]}
   end
 
   @impl true
