@@ -19,7 +19,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
          :ok <- public_key_matches_first_cert?(auth_data, leaf_cert),
          :ok <- valid_extension_data?(leaf_cert, client_data_hash)
     do
-      {:ok, {:basic, att_stmt["x5c"]}}
+      {:ok, {:basic, att_stmt["x5c"], nil}}
     else
       error ->
         error
@@ -81,7 +81,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   end
 
   @spec asn_v1_valid?(binary(), binary) :: boolean
-  def asn_v1_valid?(asn, client_data_hash) do
+  defp asn_v1_valid?(asn, client_data_hash) do
     case :AndroidKeyAttestationV1.decode(:AndroidKeyAttestationV1, asn) do
       {:ok,
         {:AndroidKeyAttestationV1, 1, _, _, _,
@@ -151,7 +151,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   end
 
   @spec asn_v2_valid?(binary(), binary) :: boolean
-  def asn_v2_valid?(asn, client_data_hash) do
+  defp asn_v2_valid?(asn, client_data_hash) do
     case :AndroidKeyAttestationV2.decode(:AndroidKeyAttestationV2, asn) do
       {:ok,
         {:AndroidKeyAttestationV2, 2, _, _, _,
@@ -239,7 +239,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   end
 
   @spec asn_v3_valid?(binary(), binary) :: boolean
-  def asn_v3_valid?(asn, client_data_hash) do
+  defp asn_v3_valid?(asn, client_data_hash) do
     case :AndroidKeyAttestationV3.decode(:AndroidKeyAttestationV3, asn) do
       {:ok,
         {:AndroidKeyAttestationV3, 3, _, _, _,
@@ -329,6 +329,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
         false
     end
   end
+
   @doc """
   Parse the ASN files and create the ASN modules
 
@@ -336,6 +337,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   """
 
   @spec install_asn1_module() :: :ok
+
   def install_asn1_module() do
     File.mkdir(@asn_output_dir)
     #FIXME: does it work once used in an erlang release?

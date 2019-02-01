@@ -11,9 +11,10 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
          verification_data <- get_verification_data(auth_data, client_data_hash, public_key_u2f),
          :ok <- valid_signature?(att_stmt["sig"], verification_data, pub_key)
     do
-      attestation_type = determine_attestation_type(List.first(att_stmt["x5c"]))
+      {attestation_type, metadata_statement} =
+        determine_attestation_type(List.first(att_stmt["x5c"]))
 
-      {:ok, {attestation_type, att_stmt["x5c"]}}
+      {:ok, {attestation_type, att_stmt["x5c"], metadata_statement}}
     else
       error ->
         error
@@ -58,7 +59,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   end
 
   @spec get_raw_cose_key(Wax.AuthenticatorData.t()) :: binary()
-  def get_raw_cose_key(auth_data) do
+  defp get_raw_cose_key(auth_data) do
     x = auth_data.attested_credential_data.credential_public_key[-2]
     y = auth_data.attested_credential_data.credential_public_key[-3]
 
@@ -67,7 +68,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
   @spec get_verification_data(Wax.AuthenticatorData.t(), Wax.ClientData.hash(), binary())
     :: binary()
-  def get_verification_data(auth_data, client_data_hash, public_key_u2f) do
+  defp get_verification_data(auth_data, client_data_hash, public_key_u2f) do
     <<0>>
     <> auth_data.rp_id_hash
     <> client_data_hash
@@ -76,7 +77,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   end
 
   @spec valid_signature?(binary(), binary(), X509.PublicKey.t()) :: :ok | {:error, any()}
-  def valid_signature?(sig, verification_data, pub_key) do
+  defp valid_signature?(sig, verification_data, pub_key) do
     Logger.debug("#{__MODULE__}: verifying signature #{inspect(sig)} " <>
       "of data #{inspect(verification_data)} " <>
       "with public key #{inspect(pub_key)}")
@@ -88,7 +89,8 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec determine_attestation_type(binary()) :: Wax.Attestation.type()
+  @spec determine_attestation_type(binary())
+    :: {Wax.Attestation.type(), Wax.MetadataStatement.t() | nil}
 
   defp determine_attestation_type(cert_der) do
     acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(cert_der)
@@ -97,18 +99,18 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
     case Wax.Metadata.get_by_acki(acki) do
       nil ->
-        :uncertain
+        {:uncertain, nil}
 
       #FIXME: here we assume that :basic and :attca are exclusive for a given authenticator
       # but this seems however unspecified
       metadata_statement ->
         if :tag_attestation_basic_full in metadata_statement.attestation_types do
-          :basic
+          {:basic, metadata_statement}
         else
           if :tag_attestation_attca in metadata_statement.attestation_types do
-            :attca
+            {:attca, metadata_statement}
           else
-            :uncertain
+            {:uncertain, nil}
           end
         end
     end

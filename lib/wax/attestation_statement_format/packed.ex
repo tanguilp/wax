@@ -31,9 +31,24 @@ defmodule Wax.AttestationStatementFormat.Packed do
          :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data)
     do
-      attestation_type = determine_attestation_type(auth_data)
+      aaguid = auth_data.attested_credential_data.aaguid
 
-      {:ok, {attestation_type, att_stmt["x5c"]}}
+      case determine_attestation_type(auth_data) do
+        :basic ->
+          {:ok, {:basic, att_stmt["x5c"], Wax.Metadata.get_by_aaguid(aaguid)}}
+
+        :attca ->
+          case attestation_path_valid?(att_stmt["x5c"], auth_data) do
+            {:ok, metadata_statement} ->
+              {:ok, {:attca, att_stmt["x5c"], metadata_statement}}
+
+            {:error, _} = error ->
+              error
+          end
+
+        :uncertain ->
+          {:ok, {:uncertain, att_stmt["x5c"], Wax.Metadata.get_by_aaguid(aaguid)}}
+      end
     else
       error ->
         error
@@ -200,6 +215,26 @@ defmodule Wax.AttestationStatementFormat.Packed do
             :uncertain
           end
         end
+    end
+  end
+
+  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t())
+    :: {:ok, Wax.AttestationStatement.t()} | {:error, any()}
+
+  defp attestation_path_valid?(der_list, auth_data) do
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
+      %Wax.MetadataStatement{attestation_root_certificates: arcs} = metadata_statement ->
+        if Enum.any?(
+          arcs,
+          fn arc -> :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) end
+        ) do
+          {:ok, metadata_statement}
+        else
+          {:error, :attestation_tpm_no_attestation_root_certificate_found}
+        end
+
+      _ ->
+        {:error, :attestation_tpm_no_attestation_metadata_statement_found}
     end
   end
 end

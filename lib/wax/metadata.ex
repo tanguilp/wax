@@ -136,10 +136,12 @@ defmodule Wax.Metadata do
     else
       Logger.warn("No access token configured for FIDO metadata, metadata not updated. " <>
         "Some attestation formats and types won't be supported")
+
+      :not_updated
     end
   end
 
-  @spec process_metadata_toc(String.t(), non_neg_integer()) :: no_return()
+  @spec process_metadata_toc(String.t(), non_neg_integer()) :: non_neg_integer() | :not_updated
 
   defp process_metadata_toc(jws, serial_number) do
     case Wax.Utils.JWS.verify(jws, @fido_alliance_root_cer_der) do
@@ -203,7 +205,7 @@ defmodule Wax.Metadata do
         else
           Logger.info("Metadata not updated (`no` has not changed)")
 
-          :no_update
+          :not_updated
         end
 
       #{:error, reason} ->

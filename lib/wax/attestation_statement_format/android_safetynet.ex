@@ -31,7 +31,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           |> List.first()
           |> Base.decode64!()
 
-        {:ok, {:basic, leaf_cert}}
+        {:ok, {:basic, leaf_cert, nil}}
       else
         error ->
           error

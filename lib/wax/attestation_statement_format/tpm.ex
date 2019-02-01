@@ -5,52 +5,52 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   @behaviour Wax.AttestationStatementFormat
 
-  @tpm_alg_error  0x0000
+  #@tpm_alg_error  0x0000
   @tpm_alg_rsa  0x0001
-  @tpm_alg_sha  0x0004
+  #@tpm_alg_sha  0x0004
   @tpm_alg_sha1 0x0004
-  @tpm_alg_hmac 0x0005
-  @tpm_alg_aes  0x0006
-  @tpm_alg_mgf1 0x0007
-  @tpm_alg_keyedhash 0x0008
-  @tpm_alg_xor  0x000a
+  #@tpm_alg_hmac 0x0005
+  #@tpm_alg_aes  0x0006
+  #@tpm_alg_mgf1 0x0007
+  #@tpm_alg_keyedhash 0x0008
+  #@tpm_alg_xor  0x000a
   @tpm_alg_sha256 0x000b
   @tpm_alg_sha384 0x000c
   @tpm_alg_sha512 0x000d
   @tpm_alg_null 0x0010
-  @tpm_alg_sm3_256  0x0012
-  @tpm_alg_sm4  0x0013
-  @tpm_alg_rsassa 0x0014
-  @tpm_alg_rsaes  0x0015
-  @tpm_alg_rsapss 0x0016
-  @tpm_alg_oaep 0x0017
-  @tpm_alg_ecdsa  0x0018
-  @tpm_alg_ecdh 0x0019
-  @tpm_alg_ecdaa  0x001a
-  @tpm_alg_sm2  0x001b
-  @tpm_alg_ecschnorr  0x001c
-  @tpm_alg_ecmqv  0x001d
-  @tpm_alg_kdf1_sp800_56a 0x0020
-  @tpm_alg_kdf2 0x0021
-  @tpm_alg_kdf1_sp800_108 0x0022
+  #@tpm_alg_sm3_256  0x0012
+  #@tpm_alg_sm4  0x0013
+  #@tpm_alg_rsassa 0x0014
+  #@tpm_alg_rsaes  0x0015
+  #@tpm_alg_rsapss 0x0016
+  #@tpm_alg_oaep 0x0017
+  #@tpm_alg_ecdsa  0x0018
+  #@tpm_alg_ecdh 0x0019
+  #@tpm_alg_ecdaa  0x001a
+  #@tpm_alg_sm2  0x001b
+  #@tpm_alg_ecschnorr  0x001c
+  #@tpm_alg_ecmqv  0x001d
+  #@tpm_alg_kdf1_sp800_56a 0x0020
+  #@tpm_alg_kdf2 0x0021
+  #@tpm_alg_kdf1_sp800_108 0x0022
   @tpm_alg_ecc  0x0023
-  @tpm_alg_symcipher 0x0025
-  @tpm_alg_camellia 0x0026
-  @tpm_alg_ctr  0x0040
-  @tpm_alg_ofb  0x0041
-  @tpm_alg_cbc  0x0042
-  @tpm_alg_cfb  0x0043
-  @tpm_alg_ecb  0x0044
+  #@tpm_alg_symcipher 0x0025
+  #@tpm_alg_camellia 0x0026
+  #@tpm_alg_ctr  0x0040
+  #@tpm_alg_ofb  0x0041
+  #@tpm_alg_cbc  0x0042
+  #@tpm_alg_cfb  0x0043
+  #@tpm_alg_ecb  0x0044
 
-  @tpm_ecc_none 0x0000
+  #@tpm_ecc_none 0x0000
   @tpm_ecc_nist_p192  0x0001
   @tpm_ecc_nist_p224  0x0002
   @tpm_ecc_nist_p256  0x0003
   @tpm_ecc_nist_p384  0x0004
   @tpm_ecc_nist_p521  0x0005
-  @tpm_ecc_bn_p256  0x0010
-  @tpm_ecc_bn_p638  0x0011
-  @tpm_ecc_sm2_p256 0x0020
+  #@tpm_ecc_bn_p256  0x0010
+  #@tpm_ecc_bn_p638  0x0011
+  #@tpm_ecc_sm2_p256 0x0020
 
   # from https://medium.com/@herrjemand/verifying-fido-tpm2-0-attestation-fc7243847498
   # FIXME: find official source and think about better update process than hardcoded values
@@ -84,9 +84,10 @@ defmodule Wax.AttestationStatementFormat.TPM do
          :ok <- verify_public_key(pub_area, auth_data),
          :ok <- cert_info_valid?(cert_info, pub_area, auth_data, client_data_hash, att_stmt),
          :ok <- signature_valid?(att_stmt),
-         :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data)
+         :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data),
+         {:ok, metadata_statement} <- attestation_path_valid?(att_stmt["x5c"], auth_data)
     do
-      {:ok, {:basic, att_stmt["x5c"]}}
+      {:ok, {:basic, att_stmt["x5c"], metadata_statement}}
     else
       error ->
         error
@@ -119,7 +120,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   @spec parse_cert_info(binary) :: {:ok, map()} | {:error, any()}
 
-  def parse_cert_info(
+  defp parse_cert_info(
     <<
       magic::unsigned-big-integer-size(32),
       type::unsigned-big-integer-size(16),
@@ -152,20 +153,20 @@ defmodule Wax.AttestationStatementFormat.TPM do
     }}
   end
 
-  def parse_cert_info(_), do: {:error, :attestation_tpm_invalid_cert_info}
+  defp parse_cert_info(_), do: {:error, :attestation_tpm_invalid_cert_info}
 
   @spec parse_pub_area(binary) :: {:ok, map()} | {:error, any()}
 
-  def parse_pub_area(
+  defp parse_pub_area(
     <<
       @tpm_alg_rsa::unsigned-big-integer-size(16),
       name_alg::unsigned-big-integer-size(16),
-      object_attributes::binary-size(4),
+      _object_attributes::binary-size(4),
       auth_policy_length::unsigned-big-integer-size(16),
-      auth_policy::binary-size(auth_policy_length),
+      _auth_policy::binary-size(auth_policy_length),
       @tpm_alg_null::unsigned-big-integer-size(16), # symmetric
-      alg_rsa_scheme::unsigned-big-integer-size(16),
-      alg_rsa_key_bits::unsigned-big-integer-size(16),
+      _alg_rsa_scheme::unsigned-big-integer-size(16),
+      _alg_rsa_key_bits::unsigned-big-integer-size(16),
       alg_rsa_exponent::unsigned-big-integer-size(32),
       unique_length::unsigned-big-integer-size(16),
       unique::unsigned-big-integer-size(unique_length)-unit(8)
@@ -173,11 +174,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
     cert_info = {:ok, %{
       type: :rsa,
       name_alg: name_alg,
-      object_attributes: object_attributes,
-      auth_policy_length: auth_policy_length,
-      auth_policy: auth_policy,
-      alg_rsa_scheme: alg_rsa_scheme,
-      alg_rsa_key_bits: alg_rsa_key_bits,
       exponent:
         if alg_rsa_exponent == 0 do
           65537 # default value if 0
@@ -193,15 +189,15 @@ defmodule Wax.AttestationStatementFormat.TPM do
     cert_info
   end
 
-  def parse_pub_area(
+  defp parse_pub_area(
     <<
       @tpm_alg_ecc::unsigned-big-integer-size(16),
       name_alg::unsigned-big-integer-size(16),
-      object_attributes::binary-size(4),
+      _object_attributes::binary-size(4),
       auth_policy_length::unsigned-big-integer-size(16),
-      auth_policy::binary-size(auth_policy_length),
+      _auth_policy::binary-size(auth_policy_length),
       @tpm_alg_null::unsigned-big-integer-size(16), # symmetric
-      alg_ecc_scheme::unsigned-big-integer-size(16),
+      _alg_ecc_scheme::unsigned-big-integer-size(16),
       alg_ecc_curve_id::unsigned-big-integer-size(16),
       @tpm_alg_null::unsigned-big-integer-size(16), # kdf
       _unique_length::unsigned-big-integer-size(16),
@@ -213,19 +209,17 @@ defmodule Wax.AttestationStatementFormat.TPM do
     pub_area = {:ok, %{
       type: :ecc,
       name_alg: name_alg,
-      object_attributes: object_attributes,
-      auth_policy_length: auth_policy_length,
-      auth_policy: auth_policy,
-      alg_ecc_scheme: alg_ecc_scheme,
       curve: to_erlang_curve(alg_ecc_curve_id),
       x: unique_x,
       y: unique_y}
     }
 
     Logger.debug("#{__MODULE__}: decoded pub_area: #{inspect(pub_area)}")
+
+    pub_area
   end
 
-  def parse_pub_area(_), do: {:error, :attestation_tpm_invalid_pub_area}
+  defp parse_pub_area(_), do: {:error, :attestation_tpm_invalid_pub_area}
 
   @spec verify_public_key(map(), Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
 
@@ -343,7 +337,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   @spec parse_cert_datetime(charlist()) :: non_neg_integer()
 
-  def parse_cert_datetime(datetime) do
+  defp parse_cert_datetime(datetime) do
     <<
       day::binary-size(2),
       month::binary-size(2),
@@ -357,6 +351,26 @@ defmodule Wax.AttestationStatementFormat.TPM do
     |> DateTime.from_iso8601()
     |> elem(1)
     |> DateTime.to_unix()
+  end
+
+  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t())
+    :: {:ok, Wax.AttestationStatement.t()} | {:error, any()}
+
+  defp attestation_path_valid?(der_list, auth_data) do
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
+      %Wax.MetadataStatement{attestation_root_certificates: arcs} = metadata_statement ->
+        if Enum.any?(
+          arcs,
+          fn arc -> :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) end
+        ) do
+          {:ok, metadata_statement}
+        else
+          {:error, :attestation_tpm_no_attestation_root_certificate_found}
+        end
+
+      _ ->
+        {:error, :attestation_tpm_no_attestation_metadata_statement_found}
+    end
   end
 
   @spec get_tcpaTpmManufacturer_field(any()) :: String.t()
@@ -375,7 +389,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
   #     ]}
   #  ]}
 
-  def get_tcpaTpmManufacturer_field(cert) do
+  defp get_tcpaTpmManufacturer_field(cert) do
     {:Extension, {2, 5, 29, 17}, true, ext_val} =
       X509.Certificate.extension(cert, :subject_alt_name)
 

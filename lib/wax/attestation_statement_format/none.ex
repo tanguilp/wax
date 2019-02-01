@@ -3,6 +3,6 @@ defmodule Wax.AttestationStatementFormat.None do
 
   @impl Wax.AttestationStatementFormat
   def verify(_attstmt, _auth_data, _client_data_hash) do
-    {:ok, {:none, nil}}
+    {:ok, {:none, nil, nil}}
   end
 end
