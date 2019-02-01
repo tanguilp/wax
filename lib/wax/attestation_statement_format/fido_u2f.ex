@@ -84,7 +84,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     if :public_key.verify(verification_data, :sha256, sig, pub_key) do
       :ok
     else
-      {:error, :attestation_fidou2f_invalid_attestation_signature}
+      {:error, :attestation_fidou2f_invalid_signature}
     end
   end
 
@@ -93,7 +93,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   defp determine_attestation_type(cert_der) do
     acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(cert_der)
 
-    Logger.debug("#{__MODULE__}: determining attestation type for acki=#{acki}")
+    Logger.debug("#{__MODULE__}: determining attestation type for acki=#{inspect(acki)}")
 
     case Wax.Metadata.get_by_acki(acki) do
       nil ->
