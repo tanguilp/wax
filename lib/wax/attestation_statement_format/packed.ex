@@ -29,26 +29,16 @@ defmodule Wax.AttestationStatementFormat.Packed do
   def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
-         :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data)
+         :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
+         :ok <- attestation_path_valid?(att_stmt["x5c"], auth_data)
     do
-      aaguid = auth_data.attested_credential_data.aaguid
-
-      case determine_attestation_type(auth_data) do
-        :basic ->
-          {:ok, {:basic, att_stmt["x5c"], Wax.Metadata.get_by_aaguid(aaguid)}}
-
-        :attca ->
-          case attestation_path_valid?(att_stmt["x5c"], auth_data) do
-            {:ok, metadata_statement} ->
-              {:ok, {:attca, att_stmt["x5c"], metadata_statement}}
-
-            {:error, _} = error ->
-              error
-          end
-
-        :uncertain ->
-          {:ok, {:uncertain, att_stmt["x5c"], Wax.Metadata.get_by_aaguid(aaguid)}}
-      end
+      {:ok,
+        {
+          determine_attestation_type(auth_data),
+          att_stmt["x5c"],
+          Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid)
+        }
+      }
     else
       error ->
         error
@@ -64,7 +54,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
          :ok <- algs_match?(att_stmt, auth_data),
          :ok <- valid_self_signature?(att_stmt, auth_data, client_data_hash)
     do
-      {:ok, {:self, nil}}
+      {:ok, {:self, nil, nil}}
     else
       error ->
         error
@@ -222,19 +212,28 @@ defmodule Wax.AttestationStatementFormat.Packed do
     :: {:ok, Wax.AttestationStatement.t()} | {:error, any()}
 
   defp attestation_path_valid?(der_list, auth_data) do
+    root_cert =
+      der_list
+      |> Enum.reverse()
+      |> List.first()
+
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
       %Wax.MetadataStatement{attestation_root_certificates: arcs} = metadata_statement ->
         if Enum.any?(
           arcs,
-          fn arc -> :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) end
+          &Kernel.==(root_cert, &1)
         ) do
-          {:ok, metadata_statement}
+          if :public_key.pkix_path_validation(root_cert, Enum.reverse(der_list), []) do
+            {:ok, metadata_statement}
+          else
+            {:error, :attestation_packed_invalid_x5c_path}
+          end
         else
-          {:error, :attestation_tpm_no_attestation_root_certificate_found}
+          {:error, :attestation_packed_no_attestation_root_certificate_found}
         end
 
       _ ->
-        {:error, :attestation_tpm_no_attestation_metadata_statement_found}
+        {:error, :attestation_packed_no_attestation_metadata_statement_found}
     end
   end
 end
