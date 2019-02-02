@@ -11,6 +11,5 @@ defmodule Wax.AttestationStatementFormat do
     | :none
 
   @callback verify(Wax.Attestation.statement(), Wax.AuthenticatorData.t(), Wax.ClientData.hash())
-  :: {:ok, {Wax.Attestation.type(), Wax.Attestation.trust_path(), Wax.MetadataStatement.t()}}
-  | {:error, any()}
+  :: {:ok, Wax.Attestation.attestation_result()} | {:error, any()}
 end

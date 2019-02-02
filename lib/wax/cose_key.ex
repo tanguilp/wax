@@ -1,9 +1,9 @@
 defmodule Wax.CoseKey do
   @kty 1
-  @kid 2
+  #@kid 2
   @alg 3
-  @key_ops 4
-  @base_IV 5
+  #@key_ops 4
+  #@base_IV 5
 
   @key_type_OKP 1
   @key_type_EC2 2
@@ -158,7 +158,7 @@ defmodule Wax.CoseKey do
     }
   end
 
-  def to_erlang_public_key(%{@kty => @key_type_RSA, -1 => n, -2 => e} = arg) do
+  def to_erlang_public_key(%{@kty => @key_type_RSA, -1 => n, -2 => e}) do
     nb_bytes_n = byte_size(n)
     nb_bytes_e = byte_size(e)
 

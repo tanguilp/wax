@@ -209,7 +209,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
   end
 
   @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t())
-    :: {:ok, Wax.AttestationStatement.t()} | {:error, any()}
+    :: :ok | {:error, any()}
 
   defp attestation_path_valid?(der_list, auth_data) do
     root_cert =
@@ -218,15 +218,17 @@ defmodule Wax.AttestationStatementFormat.Packed do
       |> List.first()
 
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
-      %Wax.MetadataStatement{attestation_root_certificates: arcs} = metadata_statement ->
+      %Wax.MetadataStatement{attestation_root_certificates: arcs} ->
         if Enum.any?(
           arcs,
           &Kernel.==(root_cert, &1)
         ) do
-          if :public_key.pkix_path_validation(root_cert, Enum.reverse(der_list), []) do
-            {:ok, metadata_statement}
-          else
-            {:error, :attestation_packed_invalid_x5c_path}
+          case :public_key.pkix_path_validation(root_cert, Enum.reverse(der_list), []) do
+            {:ok, _} ->
+              :ok
+
+            {:error, _} ->
+              {:error, :attestation_packed_invalid_x5c_path}
           end
         else
           {:error, :attestation_packed_no_attestation_root_certificate_found}

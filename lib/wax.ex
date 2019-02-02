@@ -51,7 +51,8 @@ defmodule Wax do
           kw[:user_verified_required]
         else
           Application.get_env(:wax, :user_verified_required, false)
-        end
+        end,
+      trusted_attestation_types: [:basic, :uncertain, :attca, :self]
     }
   end
 
@@ -85,11 +86,11 @@ defmodule Wax do
          #FIXME: verify extensions
          {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
-         {:ok, {attestation_type, trust_path}}
+         {:ok, attestation_result_data}
            <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),
-         :ok <- attestation_trustworthy?(auth_data, attestation_type, trust_path)
+         :ok <- attestation_trustworthy?(attestation_result_data, challenge)
     do
-      {:ok, {attestation_type, trust_path}}
+      {:ok, attestation_result_data}
     else
       error ->
         error
@@ -218,8 +219,28 @@ defmodule Wax do
     end
   end
 
-  defp attestation_trustworthy?(_auth_data, _attestation_type, _trust_path) do
-    :ok #FIXME: implement policy
+  @spec attestation_trustworthy?(Wax.Attestation.attestation_result(), Wax.Challenge.t())
+    :: :ok | {:error, any()}
+
+  defp attestation_trustworthy?({type, _, _}, %Wax.Challenge{trusted_attestation_types: tatl})
+    when is_list(tatl)
+  do
+    if type in tatl do
+      :ok
+    else
+      {:error, :untrusted_attestation_type}
+    end
+  end
+
+  defp attestation_trustworthy?(attestation_result,
+                                %Wax.Challenge{trusted_attestation_types: tatf})
+    when is_function(tatf, 1)
+  do
+    if tatf.(attestation_result) do
+      :ok
+    else
+      {:error, :untrusted_attestation_type}
+    end
   end
 
   @spec cose_key_from_credential_id(credential_id(), Wax.Challenge.t())

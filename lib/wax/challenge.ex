@@ -1,5 +1,5 @@
 defmodule Wax.Challenge do
-  @enforce_keys [:bytes, :user, :origin, :rp_id]
+  @enforce_keys [:bytes, :user, :origin, :rp_id, :trusted_attestation_types]
 
   defstruct [
     :bytes,
@@ -9,7 +9,8 @@ defmodule Wax.Challenge do
     :user_verified_required,
     :exp,
     :token_binding_status,
-    :allow_credentials
+    :allow_credentials,
+    :trusted_attestation_types
   ]
 
   @type t :: %__MODULE__{
@@ -20,13 +21,19 @@ defmodule Wax.Challenge do
     user_verified_required: boolean(),
     exp: non_neg_integer() | nil,
     token_binding_status: any(),
-    allow_credentials: [binary()]
+    allow_credentials: [binary()],
+    trusted_attestation_types: [Wax.Attestation.type()] |
+    (Wax.Attestation.result() -> boolean())
   }
 
   @spec new(Wax.User.t(), Wax.parsed_opts()) :: t()
   def new(user,
           allow_credentials \\ [],
-          %{origin: origin, rp_id: rp_id, user_verified_required: uvr})
+          %{origin: origin,
+            rp_id: rp_id,
+            user_verified_required: uvr,
+            trusted_attestation_types: trusted_attestation_types
+          })
   do
     %__MODULE__{
       bytes: random_bytes(),
@@ -34,7 +41,8 @@ defmodule Wax.Challenge do
       origin: origin,
       rp_id: rp_id,
       user_verified_required: uvr,
-      allow_credentials: allow_credentials
+      allow_credentials: allow_credentials,
+      trusted_attestation_types: trusted_attestation_types
     }
   end
 

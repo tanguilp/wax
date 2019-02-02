@@ -3,4 +3,5 @@ use Mix.Config
 config :wax,
   origin: "http://localhost:4000",
   rp_id: :auto,
-  metadata_update_interval: 3600
+  metadata_update_interval: 3600,
+  allowed_attestation_types: [:basic, :uncertain, :attca, :self]
