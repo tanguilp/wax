@@ -343,16 +343,17 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     #FIXME: does it work once used in an erlang release?
 
     :asn1ct.compile(
-      'lib/wax/attestation_statement_format/android_key/AndroidKeyAttestationV1.asn1',
+      :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV1.asn1',
       [{:outdir, @asn_output_dir}]
     )
 
     :asn1ct.compile(
-      'lib/wax/attestation_statement_format/android_key/AndroidKeyAttestationV2.asn1',
+      :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV2.asn1',
       [{:outdir, @asn_output_dir}]
     )
+
     :asn1ct.compile(
-      'lib/wax/attestation_statement_format/android_key/AndroidKeyAttestationV3.asn1',
+      :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV3.asn1',
       [{:outdir, @asn_output_dir}]
     )
   end
