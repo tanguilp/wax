@@ -2,7 +2,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   #FIXME: test cert can be found at https://fidoalliance.org/wp-content/uploads/Hardware-backed_Keystore_White_Paper_June2018.pdf
   require Logger
 
-  @asn_output_dir 'priv/android_key/asn_generated'
+  @asn_output_dir 'android_key/asn_generated'
 
   # from https://github.com/NuclearAndroidProject1/android_hardware_libhardware/blob/master/include/hardware/keymaster_defs.h
   @km_origin_generated 0
@@ -339,22 +339,22 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @spec install_asn1_module() :: :ok
 
   def install_asn1_module() do
-    File.mkdir(@asn_output_dir)
+    File.mkdir(:code.priv_dir(:wax) ++ '/' ++ @asn_output_dir)
     #FIXME: does it work once used in an erlang release?
 
     :asn1ct.compile(
       :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV1.asn1',
-      [{:outdir, @asn_output_dir}]
+      [{:outdir, :code.priv_dir(:wax) ++ '/' ++ @asn_output_dir}]
     )
 
     :asn1ct.compile(
       :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV2.asn1',
-      [{:outdir, @asn_output_dir}]
+      [{:outdir, :code.priv_dir(:wax) ++ '/' ++ @asn_output_dir}]
     )
 
     :asn1ct.compile(
       :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV3.asn1',
-      [{:outdir, @asn_output_dir}]
+      [{:outdir, :code.priv_dir(:wax) ++ '/' ++ @asn_output_dir}]
     )
   end
 end
