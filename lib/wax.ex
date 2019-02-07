@@ -52,7 +52,7 @@ defmodule Wax do
         else
           Application.get_env(:wax, :user_verified_required, false)
         end,
-      trusted_attestation_types: [:basic, :uncertain, :attca, :self]
+      trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self]
     }
   end
 
@@ -90,7 +90,10 @@ defmodule Wax do
            <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),
          :ok <- attestation_trustworthy?(attestation_result_data, challenge)
     do
-      {:ok, attestation_result_data}
+      {:ok, {
+        auth_data.attested_credential_data.credential_public_key,
+        attestation_result_data
+      }}
     else
       error ->
         error

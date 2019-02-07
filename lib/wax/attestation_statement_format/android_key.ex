@@ -2,7 +2,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   #FIXME: test cert can be found at https://fidoalliance.org/wp-content/uploads/Hardware-backed_Keystore_White_Paper_June2018.pdf
   require Logger
 
-  @asn_output_dir 'asn_files'
+  @asn_output_dir 'priv/android_key/asn_generated'
 
   # from https://github.com/NuclearAndroidProject1/android_hardware_libhardware/blob/master/include/hardware/keymaster_defs.h
   @km_origin_generated 0
