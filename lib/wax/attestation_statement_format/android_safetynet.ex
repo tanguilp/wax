@@ -32,7 +32,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   |> X509.Certificate.to_der()
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash) do
+  def verify(att_stmt, auth_data, client_data_hash, _verify_trust_root) do
     try do
       [header_b64, payload_b64, _sig] = String.split(att_stmt["response"], ".")
 

@@ -76,7 +76,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
   ]
 
   @impl Wax.AttestationStatementFormat
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash) do
+
+  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, _verify_trust_root) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- version_valid?(att_stmt),
          {:ok, cert_info} <- parse_cert_info(att_stmt["certInfo"]),

@@ -4,17 +4,23 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash) do
+  def verify(att_stmt, auth_data, client_data_hash, verify_trust_root) do
     with :ok <- valid_cbor?(att_stmt),
          {:ok, pub_key} <- extract_and_verify_public_key(att_stmt),
          public_key_u2f <- get_raw_cose_key(auth_data),
          verification_data <- get_verification_data(auth_data, client_data_hash, public_key_u2f),
-         :ok <- valid_signature?(att_stmt["sig"], verification_data, pub_key)
+         :ok <- valid_signature?(att_stmt["sig"], verification_data, pub_key),
+         :ok <-
+           (if verify_trust_root, do: attestation_certificate_valid?(att_stmt["x5c"]), else: :ok)
     do
-      {attestation_type, metadata_statement} =
-        determine_attestation_type(List.first(att_stmt["x5c"]))
+      {attestation_type, metadata_statement} = determine_attestation_type(att_stmt["x5c"])
 
-      {:ok, {attestation_type, att_stmt["x5c"], metadata_statement}}
+      {:ok,
+        {attestation_type,
+          att_stmt["x5c"],
+          metadata_statement
+        }
+      }
     else
       error ->
         error
@@ -89,11 +95,25 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec determine_attestation_type(binary())
+  @spec attestation_certificate_valid?([binary()]) :: :ok | {:error, any()}
+
+  def attestation_certificate_valid?([leaf_cert | _]) do
+    acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(leaf_cert)
+
+    case Wax.Metadata.get_by_acki(acki) do
+      %Wax.MetadataStatement{} ->
+        :ok
+
+      nil ->
+        {:error, :attestation_fidou2f_root_trust_certificate_not_found}
+    end
+  end
+
+  @spec determine_attestation_type([binary()])
     :: {Wax.Attestation.type(), Wax.MetadataStatement.t() | nil}
 
-  defp determine_attestation_type(cert_der) do
-    acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(cert_der)
+  defp determine_attestation_type([leaf_cert | _]) do
+    acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(leaf_cert)
 
     Logger.debug("#{__MODULE__}: determining attestation type for acki=#{inspect(acki)}")
 

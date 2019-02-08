@@ -6,6 +6,7 @@ defmodule Wax do
   @type parsed_opts :: %{required(atom()) => any()}
 
   @spec set_opts(opts()) :: parsed_opts()
+
   def set_opts(kw) do
     origin =
       if is_binary(kw[:origin]) do
@@ -50,7 +51,13 @@ defmodule Wax do
         else
           Application.get_env(:wax, :user_verified_required, false)
         end,
-      trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self]
+      trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
+      verify_trust_root:
+        if is_boolean(kw[:verify_trust_root]) do
+          kw[:verify_trust_root]
+        else
+          Application.get_env(:wax, :verify_trust_root, true)
+        end
     }
   end
 
@@ -83,7 +90,10 @@ defmodule Wax do
          {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
          {:ok, attestation_result_data}
-           <- valid_attestation_statement_format?.(att_stmt, auth_data, client_data_hash),
+         <- valid_attestation_statement_format?.(att_stmt,
+                                                 auth_data,
+                                                 client_data_hash,
+                                                 challenge.verify_trust_root),
          :ok <- attestation_trustworthy?(attestation_result_data, challenge)
     do
       {:ok, {

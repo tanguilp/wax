@@ -24,7 +24,7 @@ defmodule Wax.Attestation do
 
   @type attestation_statement_format_verify_fun ::
   (
-    Wax.Attestation.statement(), Wax.AuthenticatorData.t(), Wax.ClientData.hash() ->
+    Wax.Attestation.statement(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), boolean() ->
       {:ok, __MODULE__.result()} | {:error, any()}
   )
 
@@ -34,27 +34,27 @@ defmodule Wax.Attestation do
   #FIXME: the spec says we should US-ASCII => is that ok to pattern-match like this?
   # Pattern-matching should be performed on binaries, but should be checked
   def statement_verify_fun("none") do
-    {:ok, &Wax.AttestationStatementFormat.None.verify/3}
+    {:ok, &Wax.AttestationStatementFormat.None.verify/4}
   end
 
   def statement_verify_fun("fido-u2f") do
-    {:ok, &Wax.AttestationStatementFormat.FIDOU2F.verify/3}
+    {:ok, &Wax.AttestationStatementFormat.FIDOU2F.verify/4}
   end
 
   def statement_verify_fun("android-key") do
-    {:ok, &Wax.AttestationStatementFormat.AndroidKey.verify/3}
+    {:ok, &Wax.AttestationStatementFormat.AndroidKey.verify/4}
   end
 
   def statement_verify_fun("android-safetynet") do
-    {:ok, &Wax.AttestationStatementFormat.AndroidSafetynet.verify/3}
+    {:ok, &Wax.AttestationStatementFormat.AndroidSafetynet.verify/4}
   end
 
   def statement_verify_fun("tpm") do
-    {:ok, &Wax.AttestationStatementFormat.TPM.verify/3}
+    {:ok, &Wax.AttestationStatementFormat.TPM.verify/4}
   end
 
   def statement_verify_fun("packed") do
-    {:ok, &Wax.AttestationStatementFormat.Packed.verify/3}
+    {:ok, &Wax.AttestationStatementFormat.Packed.verify/4}
   end
 
   def statement_verify_fun(_) do

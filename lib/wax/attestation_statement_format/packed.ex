@@ -26,11 +26,17 @@ defmodule Wax.AttestationStatementFormat.Packed do
   ]
 
   @impl Wax.AttestationStatementFormat
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash) do
+  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, verify_trust_root) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
-         :ok <- attestation_path_valid?(att_stmt["x5c"], auth_data)
+         :ok <- (
+           if verify_trust_root do
+             attestation_path_valid?(att_stmt["x5c"], auth_data)
+           else
+             :ok
+           end
+         )
     do
       {:ok,
         {
@@ -45,11 +51,11 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  def verify(%{"ecdaaKeyId" => _}, _, _), do: {:error, :attestation_packed_unimplemented}
+  def verify(%{"ecdaaKeyId" => _}, _, _, _), do: {:error, :attestation_packed_unimplemented}
 
   # self-attestation case
 
-  def verify(att_stmt, auth_data, client_data_hash) do
+  def verify(att_stmt, auth_data, client_data_hash, _verify_trust_root) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- algs_match?(att_stmt, auth_data),
          :ok <- valid_self_signature?(att_stmt, auth_data, client_data_hash)
