@@ -17,7 +17,15 @@ defmodule Wax.ClientData do
 
   @type hash :: binary()
 
-  @spec parse_raw_json(binary()) :: {:ok, t()} | {:error, any()}
+  @typedoc """
+  The raw string as returned by the javascript WebAuthn API
+
+  Example: `{"challenge":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaY","clientExtensions":{},"hashAlgorithm":"SHA-256","origin":"http://localhost:4000","type":"webauthn.create"}`
+  """
+
+  @type raw_string :: String.t()
+
+  @spec parse_raw_json(raw_string()) :: {:ok, t()} | {:error, any()}
   def parse_raw_json(client_data_json_raw) do
     #FIXME: implement https://encoding.spec.whatwg.org/#utf-8-decode ?
     

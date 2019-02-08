@@ -5,8 +5,6 @@ defmodule Wax do
 
   @type parsed_opts :: %{required(atom()) => any()}
 
-  @type credential_id :: binary()
-
   @spec set_opts(opts()) :: parsed_opts()
   def set_opts(kw) do
     origin =
@@ -56,18 +54,16 @@ defmodule Wax do
     }
   end
 
-  @type client_data :: map()
-
-  def test(attestation_obj, client_data, challenge) do
-    new_credential_verify(Base.decode64!(attestation_obj), client_data, challenge)
-  end
-
   @spec new_credential_challenge(Wax.User.t(), opts()) :: Wax.Challenge.t()
+
   def new_credential_challenge(user, opts) do
     opts = set_opts(opts)
 
     Wax.Challenge.new(user, opts)
   end
+
+  @spec new_credential_verify(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t())
+  :: {:ok, {Wax.CoseKey.t(), Wax.Attestation.result()}} | {:error, atom()}
 
   def new_credential_verify(attestation_object_cbor, client_data_json_raw, challenge) do
 
@@ -100,7 +96,7 @@ defmodule Wax do
     end
   end
 
-  @spec authentication_challenge(Wax.User.t(), [{credential_id(), Wax.CoseKey.t()}], opts())
+  @spec authentication_challenge(Wax.User.t(), [{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts())
     :: Wax.Challenge.t()
 
   def authentication_challenge(user, allow_credentials, opts) do
@@ -109,15 +105,12 @@ defmodule Wax do
     Wax.Challenge.new(user,allow_credentials, opts)
   end
 
-  def auth_test(credential_id, auth_data, sig, client_data, challenge) do
-    authenticate(
-      Base.url_decode64!(credential_id, padding: false),
-      Base.decode64!(auth_data),
-      Base.decode64!(sig),
-      client_data,
-      challenge
-    )
-  end
+  @spec authenticate(Wax.CredentialId.t(),
+                     binary(),
+                     binary(),
+                     Wax.ClientData.raw_string(),
+                     Wax.Challenge.t()
+  ) :: {:ok, non_neg_integer()} | {:error, any()}
 
   def authenticate(credential_id,
                    auth_data_bin,
@@ -146,6 +139,7 @@ defmodule Wax do
   end
 
   @spec type_create?(Wax.ClientData.t()) :: :ok | {:error, atom()}
+
   defp type_create?(client_data) do
     if client_data.type == :create do
       :ok
@@ -154,7 +148,8 @@ defmodule Wax do
     end
   end
 
-  @spec type_get?(client_data) :: :ok | {:error, atom()}
+  @spec type_get?(Wax.ClientData.t()) :: :ok | {:error, atom()}
+
   defp type_get?(client_data) do
     if client_data.type == :get do
       :ok
@@ -164,6 +159,7 @@ defmodule Wax do
   end
 
   @spec valid_challenge?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, any()}
+
   def valid_challenge?(client_data, challenge) do
     if client_data.challenge == challenge.bytes do
       :ok
@@ -173,6 +169,7 @@ defmodule Wax do
   end
 
   @spec valid_origin?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, atom()}
+
   defp valid_origin?(client_data, challenge) do
     if client_data.origin == challenge.origin do
       :ok
@@ -183,11 +180,13 @@ defmodule Wax do
 
   @spec valid_token_binding_status?(Wax.ClientData.t(), Wax.Challenge.t())
     :: :ok | {:error, atom()}
+
   defp valid_token_binding_status?(_client_data, _challenge), do: :ok #FIXME: implement?
 
   defp cbor_decode(cbor) do
     try do
-      Logger.debug("#{__MODULE__}: decoded cbor: #{inspect(:cbor.decode(cbor), pretty: true)}")
+      Logger.debug("#{__MODULE__}: decoded attestation object: " <>
+        "#{inspect(:cbor.decode(cbor), pretty: true)}")
       {:ok, :cbor.decode(cbor)}
     catch
       _ -> {:error, :invalid_cbor}
@@ -222,7 +221,7 @@ defmodule Wax do
     end
   end
 
-  @spec attestation_trustworthy?(Wax.Attestation.attestation_result(), Wax.Challenge.t())
+  @spec attestation_trustworthy?(Wax.Attestation.result(), Wax.Challenge.t())
     :: :ok | {:error, any()}
 
   defp attestation_trustworthy?({type, _, _}, %Wax.Challenge{trusted_attestation_types: tatl})
@@ -246,8 +245,9 @@ defmodule Wax do
     end
   end
 
-  @spec cose_key_from_credential_id(credential_id(), Wax.Challenge.t())
+  @spec cose_key_from_credential_id(Wax.CredentialId.t(), Wax.Challenge.t())
     :: {:ok, Wax.CoseKey.t()} | {:error, any()}
+
   defp cose_key_from_credential_id(credential_id, challenge) do
     case List.keyfind(challenge.allow_credentials, credential_id, 0) do
       {_, cose_key} ->

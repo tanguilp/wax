@@ -354,7 +354,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
   end
 
   @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t())
-    :: {:ok, Wax.AttestationStatement.t()} | {:error, any()}
+    :: {:ok, Wax.MetadataStatement.t()} | {:error, any()}
 
   defp attestation_path_valid?(der_list, auth_data) do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
