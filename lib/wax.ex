@@ -90,10 +90,10 @@ defmodule Wax do
          {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
          {:ok, attestation_result_data}
-         <- valid_attestation_statement_format?.(att_stmt,
-                                                 auth_data,
-                                                 client_data_hash,
-                                                 challenge.verify_trust_root),
+           <- valid_attestation_statement_format?.(att_stmt,
+                                                   auth_data,
+                                                   client_data_hash,
+                                                   challenge.verify_trust_root),
          :ok <- attestation_trustworthy?(attestation_result_data, challenge)
     do
       {:ok, {
