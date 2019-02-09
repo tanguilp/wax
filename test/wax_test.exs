@@ -31,7 +31,7 @@ defmodule WaxTest do
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
     attestation_object = Base.url_decode64!(test_data[:response][:attestationObject], padding: false)
 
-    assert {:ok, _} = Wax.new_credential_verify(attestation_object, client_data_json, challenge)
+    assert {:ok, _} = Wax.register(attestation_object, client_data_json, challenge)
   end
 
   test "invalid packed attestation statement (invalid sig)" do
@@ -71,7 +71,7 @@ defmodule WaxTest do
       |> :erlang.iolist_to_binary
 
     assert {:error, :attestation_packed_invalid_signature} ==
-      Wax.new_credential_verify(attestation_object, client_data_json, challenge)
+      Wax.register(attestation_object, client_data_json, challenge)
   end
 
   test "valid tpm attestation statement" do
@@ -111,7 +111,7 @@ defmodule WaxTest do
     # test data doesn't have a valid root attestation in FIDO2 MDS and disabling it through
     # the `verify_trust` option works only for `packed` and `u2f` attestation formats
     assert {:error, :attestation_tpm_no_attestation_metadata_statement_found} ==
-      Wax.new_credential_verify(attestation_object, client_data_json, challenge)
+      Wax.register(attestation_object, client_data_json, challenge)
   end
 
   test "invalid tpm attestation statement (invalid sig)" do
@@ -156,7 +156,7 @@ defmodule WaxTest do
     |> Wax.Utils.Timestamp.TimeTravel.set_timestamp()
 
     assert {:error, :attestation_tpm_invalid_signature} ==
-      Wax.new_credential_verify(attestation_object, client_data_json, challenge)
+      Wax.register(attestation_object, client_data_json, challenge)
   end
 
   # test is invalid, since it doesn't contain the type attribute in client json data
@@ -267,7 +267,7 @@ defmodule WaxTest do
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
     attestation_object = Base.url_decode64!(test_data[:response][:attestationObject], padding: false)
 
-    assert {:ok, _} = Wax.new_credential_verify(attestation_object, client_data_json, challenge)
+    assert {:ok, _} = Wax.register(attestation_object, client_data_json, challenge)
   end
 
   test "Invalid u2f attestation statement (invalid_sig)" do
@@ -307,6 +307,6 @@ defmodule WaxTest do
       |> :erlang.iolist_to_binary
 
     assert {:error, :attestation_fidou2f_invalid_signature} ==
-      Wax.new_credential_verify(attestation_object, client_data_json, challenge)
+      Wax.register(attestation_object, client_data_json, challenge)
   end
 end

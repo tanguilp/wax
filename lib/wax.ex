@@ -68,18 +68,18 @@ defmodule Wax do
     }
   end
 
-  @spec new_credential_challenge(Wax.User.t(), opts()) :: Wax.Challenge.t()
+  @spec new_registration_challenge(Wax.User.t(), opts()) :: Wax.Challenge.t()
 
-  def new_credential_challenge(user, opts) do
+  def new_registration_challenge(user, opts) do
     opts = set_opts(opts)
 
     Wax.Challenge.new(user, opts)
   end
 
-  @spec new_credential_verify(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t())
+  @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t())
   :: {:ok, {Wax.CoseKey.t(), Wax.Attestation.result()}} | {:error, atom()}
 
-  def new_credential_verify(attestation_object_cbor, client_data_json_raw, challenge) do
+  def register(attestation_object_cbor, client_data_json_raw, challenge) do
 
     with {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
          :ok <- type_create?(client_data),
@@ -113,10 +113,10 @@ defmodule Wax do
     end
   end
 
-  @spec authentication_challenge(Wax.User.t(), [{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts())
+  @spec new_authentication_challenge(Wax.User.t(), [{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts())
     :: Wax.Challenge.t()
 
-  def authentication_challenge(user, allow_credentials, opts) do
+  def new_authentication_challenge(user, allow_credentials, opts) do
     opts = set_opts(opts)
 
     Wax.Challenge.new(user,allow_credentials, opts)
