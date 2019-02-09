@@ -1,3 +1,3 @@
 defmodule Wax.User do
-  @type t :: binary()
+  @type t :: String.t()
 end

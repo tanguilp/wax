@@ -1,13 +1,64 @@
 defmodule Wax do
   require Logger
 
+  @moduledoc """
+  Functions for FIDO2 registration and authentication
+
+  ## Options
+  The options are set when generating the challenge (for both registration and
+  authentication). Options can be configured either globally in the configuration
+  file or when generating the challenge. Some also have default values.
+
+  Option values set during challenge generation take precedence over globally configured
+  options, which takes precedence over default values.
+
+  These options are:
+
+  |  Option       |  Type         |  Applies to       |  Default value                | Notes |
+  |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
+  |`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | Mandatory. Example: `https://www.example.com` |
+  |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
+  |`user_verified_required`|`boolean()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `false`| |
+  |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
+  |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
+
+  ## FIDO2 Metadata service (MDS) configuration
+
+  The FIDO Alliance provides with a list of metadata statements of certified authenticators.
+  A metadata statement contains trust anchors (root certificates) to verify attestations.
+  Wax can automatically keep this metadata up to date but needs a access token which is
+  provided by the FIDO Alliance. One can request it here:
+  [https://mds2.fidoalliance.org/tokens/](https://mds2.fidoalliance.org/tokens/).
+
+  Once the token has been granted, it has to be added in the configuration file (consider
+  adding it to your `*.secret.exs` files) with the `:metadata_access_token` key. The update
+  frquency can be configured with the `:metadata_update_interval` key (in seconds, defaults
+  to 12 hours). Example:
+
+  `config/dev.exs`:
+  ```elixir
+  use Mix.Config
+
+  config :wax,
+    metadata_update_interval: 3600,
+  ```
+
+  `config/dev.secret.exs`:
+  ```elixir
+  use Mix.Config
+
+  config :wax,
+    metadata_access_token: "d4904acd10a36f62d7a7d33e4c9a86628a2b0eea0c3b1a6c"
+  ```
+  """
+
   @type opts :: Keyword.t()
 
   @type parsed_opts :: %{required(atom()) => any()}
 
   @spec set_opts(opts()) :: parsed_opts()
 
-  def set_opts(kw) do
+  defp set_opts(kw) do
     origin =
       if is_binary(kw[:origin]) do
         kw[:origin]
@@ -67,6 +118,37 @@ defmodule Wax do
         end
     }
   end
+
+  @doc """
+  Generates a new challenge for registration
+
+  The returned structure:
+  - Contains the challenge bytes under the `bytes` key (e.g.: `challenge.bytes`). This is a
+  random value that must be used by the javascript WebAuthn call
+  - Must be passed backed to `register/3`
+
+  Typically, this structure is stored in the session (cookie...) for the time the WebAuthn
+  process is performed on the client side.
+
+  ## Example:
+  ```elixir
+  iex> Wax.new_registration_challenge("Georges", [trusted_attestation_types: [:basic, :attca]])
+  %Wax.Challenge{
+    allow_credentials: [],
+    bytes: <<107, 108, 196, 138, 218, 172, 248, 168, 167, 89, 174, 213, 32, 60,
+      236, 116, 180, 47, 11, 3, 233, 16, 210, 225, 146, 231, 219, 168, 251, 51,
+      228, 224>>,
+    exp: nil,
+    origin: "http://localhost:4000",
+    rp_id: "localhost",
+    token_binding_status: nil,
+    trusted_attestation_types: [:basic, :attca],
+    user: "Georges",
+    user_verified_required: false,
+    verify_trust_root: true
+  }
+  ```
+  """
 
   @spec new_registration_challenge(Wax.User.t(), opts()) :: Wax.Challenge.t()
 

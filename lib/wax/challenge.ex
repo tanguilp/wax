@@ -1,9 +1,8 @@
 defmodule Wax.Challenge do
-  @enforce_keys [:bytes, :user, :origin, :rp_id, :trusted_attestation_types, :verify_trust_root]
+  @enforce_keys [:bytes, :origin, :rp_id, :trusted_attestation_types, :verify_trust_root]
 
   defstruct [
     :bytes,
-    :user,
     :origin,
     :rp_id,
     :user_verified_required,
@@ -16,7 +15,6 @@ defmodule Wax.Challenge do
 
   @type t :: %__MODULE__{
     bytes: binary(),
-    user: Wax.User.t(),
     origin: String.t(),
     rp_id: String.t(),
     user_verified_required: boolean(),
@@ -27,9 +25,8 @@ defmodule Wax.Challenge do
     verify_trust_root: boolean()
   }
 
-  @spec new(Wax.User.t(), Wax.parsed_opts()) :: t()
-  def new(user,
-          allow_credentials \\ [],
+  @spec new(Wax.parsed_opts()) :: t()
+  def new(allow_credentials \\ [],
           %{origin: origin,
             rp_id: rp_id,
             user_verified_required: uvr,
@@ -39,7 +36,6 @@ defmodule Wax.Challenge do
   do
     %__MODULE__{
       bytes: random_bytes(),
-      user: user,
       origin: origin,
       rp_id: rp_id,
       user_verified_required: uvr,
