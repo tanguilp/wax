@@ -51,7 +51,14 @@ defmodule Wax do
         else
           Application.get_env(:wax, :user_verified_required, false)
         end,
-      trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
+      trusted_attestation_types:
+      if is_list(kw[:trusted_attestation_types]) do
+        kw[:trusted_attestation_types]
+      else
+        Application.get_env(:wax,
+                            :trusted_attestation_types,
+                            [:none, :basic, :uncertain, :attca, :self])
+      end,
       verify_trust_root:
         if is_boolean(kw[:verify_trust_root]) do
           kw[:verify_trust_root]
