@@ -1,4 +1,6 @@
 defmodule Wax.Utils.JWS do
+  @moduledoc false
+
   @spec verify(String.t(), binary()) :: :ok | {:error, any()}
   def verify(jws, root_cert_der) do
     try do

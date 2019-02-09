@@ -1,6 +1,8 @@
 defmodule Wax.AttestationStatementFormat.FIDOU2F do
   require Logger
 
+  @moduledoc false
+
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat

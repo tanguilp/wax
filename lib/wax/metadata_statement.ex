@@ -278,6 +278,8 @@ defmodule Wax.MetadataStatement do
     }
   end
 
+  @doc false
+
   @spec from_json(map() | Keyword.t() | nil) :: t()
 
   def from_json(%{} = json) do

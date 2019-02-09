@@ -1,4 +1,6 @@
 defmodule Wax.Utils.Timestamp.TimeTravel do
+  @moduledoc false
+
   @spec get_timestamp() :: non_neg_integer()
 
   def get_timestamp() do

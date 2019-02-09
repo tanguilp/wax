@@ -1,6 +1,8 @@
 defmodule Wax.AttestationStatementFormat.Packed do
   require Logger
 
+  @moduledoc false
+
   @behaviour Wax.AttestationStatementFormat
 
   # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements

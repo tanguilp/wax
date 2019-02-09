@@ -1,4 +1,6 @@
 defmodule Wax.AuthenticatorData do
+  @moduledoc false
+
   @enforce_keys [
     :rp_id_hash,
     :flag_user_present,

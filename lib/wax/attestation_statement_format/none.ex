@@ -1,4 +1,6 @@
 defmodule Wax.AttestationStatementFormat.None do
+  @moduledoc false
+
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat

@@ -1,4 +1,6 @@
 defmodule Wax.Utils.Certificate do
+  @moduledoc false 
+
   @spec version(X509.Certificate.t()) :: atom()
 
   def version(

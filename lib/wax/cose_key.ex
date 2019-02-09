@@ -94,6 +94,10 @@ defmodule Wax.CoseKey do
 
   @type cose_alg :: integer()
 
+  @doc """
+  Returns a cose key map with fancy keys
+  """
+
   @spec pretty_map(t()) :: map()
 
   def pretty_map(%{@kty => @key_type_OKP, @alg => alg} = key) do
@@ -131,6 +135,8 @@ defmodule Wax.CoseKey do
     }
   end
 
+  @doc false
+
   @spec verify(binary(), t(), binary()) :: :ok | {:error, any()}
 
   def verify(msg, cose_key, sig)
@@ -145,6 +151,8 @@ defmodule Wax.CoseKey do
       {:error, :invalid_signature}
     end
   end
+
+  @doc false
 
   @spec to_erlang_public_key(t()) :: :public_key.public_key()
 
@@ -171,6 +179,8 @@ defmodule Wax.CoseKey do
   def to_erlang_public_key(%{@kty => @key_type_OKP, -1 => curve, -2 => x}) do
     {:ed_pub, curve, x}
   end
+
+  @doc false
 
   @spec to_erlang_digest(t()) :: atom()
   def to_erlang_digest(%{@alg => -65535}), do: :sha

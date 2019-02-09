@@ -25,7 +25,10 @@ defmodule Wax.ClientData do
 
   @type raw_string :: String.t()
 
+  @doc false
+
   @spec parse_raw_json(raw_string()) :: {:ok, t()} | {:error, any()}
+
   def parse_raw_json(client_data_json_raw) do
     #FIXME: implement https://encoding.spec.whatwg.org/#utf-8-decode ?
     

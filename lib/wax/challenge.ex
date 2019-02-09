@@ -25,6 +25,8 @@ defmodule Wax.Challenge do
     verify_trust_root: boolean()
   }
 
+  @doc false
+
   @spec new(Wax.parsed_opts()) :: t()
   def new(allow_credentials \\ [],
           %{origin: origin,
@@ -46,7 +48,7 @@ defmodule Wax.Challenge do
   end
 
   @spec random_bytes() :: binary
-  def random_bytes() do
+  defp random_bytes() do
     :crypto.strong_rand_bytes(32)
   end
 end

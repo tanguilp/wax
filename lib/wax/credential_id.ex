@@ -8,6 +8,8 @@ defmodule Wax.CredentialId do
   ```elixir
   Base.url_decode64!(credential_id, padding: false)
   ```
+
+  or keep it and store it with its base64 format
   """
 
   @type t :: binary()

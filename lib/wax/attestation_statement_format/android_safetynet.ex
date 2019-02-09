@@ -1,6 +1,8 @@
 defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   require Logger
 
+  @moduledoc false
+
   @behaviour Wax.AttestationStatementFormat
 
   # GSR2 root certificate

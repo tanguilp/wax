@@ -1,6 +1,8 @@
 defmodule Wax.AttestationStatementFormat.TPM do
   require Logger
 
+  @moduledoc false
+
   #structures described in http://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
 
   @behaviour Wax.AttestationStatementFormat

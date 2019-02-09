@@ -28,6 +28,8 @@ defmodule Wax.Attestation do
       {:ok, __MODULE__.result()} | {:error, any()}
   )
 
+  @doc false
+
   @spec statement_verify_fun(binary()) ::
     {:ok, attestation_statement_format_verify_fun} | {:error, any()}
 

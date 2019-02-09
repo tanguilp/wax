@@ -2,6 +2,8 @@ defmodule Wax.Metadata do
   require Logger
   use GenServer
 
+  @moduledoc false
+
   @fido_alliance_root_cer_pem """
     -----BEGIN CERTIFICATE-----
     MIICQzCCAcigAwIBAgIORqmxkzowRM99NQZJurcwCgYIKoZIzj0EAwMwUzELMAkG
