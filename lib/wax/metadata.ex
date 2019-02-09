@@ -213,7 +213,7 @@ defmodule Wax.Metadata do
     end
   end
 
-  @spec update_metadata_statement(map(), :crypto.sha1() | :crypto.sha2())
+  @spec update_metadata_statement(map(), atom())
     :: any()
   def update_metadata_statement(entry, digest_alg) do
     case HTTPoison.get(
@@ -250,7 +250,7 @@ defmodule Wax.Metadata do
   end
 
   #see section 3.1 of https://www.rfc-editor.org/rfc/rfc7518.txt
-  @spec digest_from_jws_alg(String.t()) :: :crypto.sha1() | :crypto.sha2()
+  @spec digest_from_jws_alg(String.t()) :: atom()
   defp digest_from_jws_alg("HS256"), do: :sha256
   defp digest_from_jws_alg("HS384"), do: :sha384
   defp digest_from_jws_alg("HS512"), do: :sha512

@@ -172,7 +172,7 @@ defmodule Wax.CoseKey do
     {:ed_pub, curve, x}
   end
 
-  @spec to_erlang_digest(t()) :: :crypto.sha1() | :crypto.sha2()
+  @spec to_erlang_digest(t()) :: atom()
   def to_erlang_digest(%{@alg => -65535}), do: :sha
   def to_erlang_digest(%{@alg => -259}), do: :sha512
   def to_erlang_digest(%{@alg => -258}), do: :sha384

@@ -413,7 +413,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     |> String.slice(2..-1)
   end
 
-  @spec to_erlang_curve(non_neg_integer()) :: :crypto.ec_named_curve()
+  @spec to_erlang_curve(non_neg_integer()) :: tuple()
   defp to_erlang_curve(@tpm_ecc_nist_p192), do: :pubkey_cert_records.namedCurves(:secp192r1)
   defp to_erlang_curve(@tpm_ecc_nist_p224), do: :pubkey_cert_records.namedCurves(:secp224r1)
   defp to_erlang_curve(@tpm_ecc_nist_p256), do: :pubkey_cert_records.namedCurves(:secp256r1)
@@ -434,7 +434,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, curve}}
   end
 
-  @spec name_alg_to_erlang_digest(non_neg_integer()) :: :crypto.sha1() | :crypto.sha2()
+  @spec name_alg_to_erlang_digest(non_neg_integer()) :: atom()
   defp name_alg_to_erlang_digest(@tpm_alg_sha1), do: :sha
   defp name_alg_to_erlang_digest(@tpm_alg_sha256), do: :sha256
   defp name_alg_to_erlang_digest(@tpm_alg_sha384), do: :sha384
