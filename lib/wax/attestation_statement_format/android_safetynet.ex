@@ -50,10 +50,10 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
       with :ok <- valid_cbor?(att_stmt),
            :ok <- valid_safetynet_response?(payload, att_stmt["ver"]),
-           :ok <- nonce_valid?(auth_data.raw_bytes, client_data_hash, payload),
+           :ok <- nonce_valid?(auth_data, client_data_hash, payload),
            :ok <- valid_cert_hostname?(header),
            :ok <- Wax.Utils.JWS.verify(att_stmt["response"], @root_cert)
-      do
+    do
         leaf_cert =
           header["x5c"]
           |> List.first()
@@ -65,7 +65,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           error
       end
     rescue
-      _ ->
+      e ->
         {:error, :attestation_safetynet_invalid_att_stmt}
     end
   end
@@ -91,6 +91,9 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     # https://developer.android.com/training/safetynet/attestation#compat-check-response
     #
     # Therefore for now we just check `ctsProfileMatch`
+    Logger.debug("#{__MODULE__}: verifying SafetyNet response validity: " <>
+      "#{inspect(safetynet_response)}")
+
     if safetynet_response["ctsProfileMatch"] == true do
       :ok
     else
@@ -121,6 +124,8 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
       |> List.first()
       |> Base.decode64!()
       |> X509.Certificate.from_der!()
+
+    Logger.debug("#{__MODULE__}: verifying certificate: #{inspect(leaf_cert)}")
 
     #FIXME: verify it's indeed the SAN that must be checked
     # since spec says `hostname` (couldn't it be the CN?, both?)
