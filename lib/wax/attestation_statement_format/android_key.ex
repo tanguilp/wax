@@ -4,8 +4,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
 
   @moduledoc false
 
-  @asn_output_dir 'android_key/asn_generated'
-
   # from https://github.com/NuclearAndroidProject1/android_hardware_libhardware/blob/master/include/hardware/keymaster_defs.h
   @km_origin_generated 0
   @km_purpose_sign 2
@@ -330,33 +328,5 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
       _ ->
         false
     end
-  end
-
-  @doc """
-  Parse the ASN files and create the ASN modules
-
-  See ASN schema at https://developer.android.com/training/articles/security-key-attestation#certificate_schema
-  """
-
-  @spec install_asn1_module() :: :ok
-
-  def install_asn1_module() do
-    File.mkdir(:code.priv_dir(:wax) ++ '/' ++ @asn_output_dir)
-    #FIXME: does it work once used in an erlang release?
-
-    :asn1ct.compile(
-      :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV1.asn1',
-      [{:outdir, :code.priv_dir(:wax) ++ '/' ++ @asn_output_dir}]
-    )
-
-    :asn1ct.compile(
-      :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV2.asn1',
-      [{:outdir, :code.priv_dir(:wax) ++ '/' ++ @asn_output_dir}]
-    )
-
-    :asn1ct.compile(
-      :code.priv_dir(:wax) ++ '/android_key/AndroidKeyAttestationV3.asn1',
-      [{:outdir, :code.priv_dir(:wax) ++ '/' ++ @asn_output_dir}]
-    )
   end
 end

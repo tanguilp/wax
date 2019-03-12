@@ -65,7 +65,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           error
       end
     rescue
-      e ->
+      _ ->
         {:error, :attestation_safetynet_invalid_att_stmt}
     end
   end

@@ -6,6 +6,7 @@ defmodule Wax.MixProject do
       app: :wax,
       version: "0.1.1",
       elixir: "~> 1.7",
+      compilers: [:asn1] ++ Mix.compilers,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: [
@@ -26,6 +27,7 @@ defmodule Wax.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:asn1ex, github: "vicentfg/asn1ex", ref: "0255348e2fffbdfd1eef7b46f71dc733318a36a0"},
       {:jason, "~> 1.1"},
       {:httpoison, github: "edgurgel/httpoison", tag: "v1.5.0"},
       {:cbor, github: "yjh0502/cbor-erlang", ref: "b5c9dbc2de15753b2db15e13d88c11738c2ac292"},

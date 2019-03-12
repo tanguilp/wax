@@ -5,8 +5,6 @@ defmodule Wax.Application do
     import Supervisor.Spec
 
   def start(_type, _args) do
-    Wax.AttestationStatementFormat.AndroidKey.install_asn1_module()
-
     children = [
       worker(Wax.Metadata, [])
     ]
