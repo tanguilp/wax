@@ -32,6 +32,10 @@ it at your own risks or blindly trust its author!
 issue with the output of the javascript WebAuthn call and that'll be fixed as fast as
 possible
 
+## Compatibility
+
+OTP21+
+
 ## Installation
 
 Add the following line to your list of dependencies in `mix.exs`:
@@ -39,7 +43,7 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax, github: "tanguilp/wax", tag: "0.1.1"}
+    {:wax, github: "tanguilp/wax", tag: "0.1.2"}
   ]
 end
 ```
