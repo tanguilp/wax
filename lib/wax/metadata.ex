@@ -28,6 +28,7 @@ defmodule Wax.Metadata do
     |> X509.Certificate.to_der()
 
   @table :wax_metadata
+  @table_2 :wax_metadata_2
 
   # client API
 
@@ -66,8 +67,9 @@ defmodule Wax.Metadata do
   @impl true
   def init(_state) do
     :ets.new(@table, [:named_table, :set, :protected, {:read_concurrency, true}])
+    :ets.new(@table_2, [:named_table, :set, :protected, {:read_concurrency, true}])
 
-    {:ok, [serial_number: 0], {:continue, :update_metadata}}
+    {:ok, [serial_number: 0, serial_number_2: 0], {:continue, :update_metadata}}
   end
 
   @impl true
@@ -81,9 +83,18 @@ defmodule Wax.Metadata do
           state[:serial_number]
       end
 
+    serial_number_2 =
+      case update_metadata_2(state[:serial_number_2]) do
+        new_serial_number_2 when is_integer(new_serial_number_2) ->
+          new_serial_number_2
+
+        _ ->
+          state[:serial_number_2]
+      end
+
     schedule_update()
 
-    {:noreply, [serial_number: serial_number]}
+    {:noreply, [serial_number: serial_number, serial_number_2: serial_number_2]}
   end
 
   @impl true
@@ -93,7 +104,13 @@ defmodule Wax.Metadata do
         {:reply, metadata_statement, state}
 
       _ ->
-        {:reply, nil, state}
+        case :ets.lookup(@table_2, {type, value}) do
+          [{_, metadata_statement}] ->
+            {:reply, metadata_statement, state}
+
+          _ ->
+            {:reply, nil, state}
+        end
     end
   end
 
@@ -108,9 +125,18 @@ defmodule Wax.Metadata do
           state[:serial_number]
       end
 
+    serial_number_2 =
+      case update_metadata_2(state[:serial_number_2]) do
+        new_serial_number_2 when is_integer(new_serial_number_2) ->
+          new_serial_number_2
+
+        _ ->
+          state[:serial_number_2]
+      end
+
     schedule_update()
 
-    {:noreply, [serial_number: serial_number]}
+    {:noreply, [serial_number: serial_number, serial_number_2: serial_number_2]}
   end
 
   defp schedule_update() do
@@ -123,14 +149,29 @@ defmodule Wax.Metadata do
     #FIXME: handle
     #   verify sig
     #   revoked certs & other revocation mecanisms
-    Logger.info("Starting FIDO metadata update process")
+    Logger.info("Starting FIDO metadata (1) update process")
+
+    case HTTPoison.get("https://mds.fidoalliance.org") do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        process_metadata_toc(body, serial_number, @table)
+
+      e ->
+        Logger.warn("Unable to download metadata (#{inspect(e)})")
+    end
+  end
+
+  def update_metadata_2(serial_number) do
+    #FIXME: handle
+    #   verify sig
+    #   revoked certs & other revocation mecanisms
+    Logger.info("Starting FIDO metadata (2) update process")
 
     access_token = Application.get_env(:wax, :metadata_access_token)
 
     if access_token do
       case HTTPoison.get("https://mds2.fidoalliance.org/?token=" <> access_token) do
         {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-          process_metadata_toc(body, serial_number)
+          process_metadata_toc(body, serial_number, @table_2)
 
         e ->
           Logger.warn("Unable to download metadata (#{inspect(e)})")
@@ -143,9 +184,9 @@ defmodule Wax.Metadata do
     end
   end
 
-  @spec process_metadata_toc(String.t(), non_neg_integer()) :: non_neg_integer() | :not_updated
+  @spec process_metadata_toc(String.t(), non_neg_integer(), atom()) :: non_neg_integer() | :not_updated
 
-  defp process_metadata_toc(jws, serial_number) do
+  defp process_metadata_toc(jws, serial_number, table) do
     case Wax.Utils.JWS.verify(jws, @fido_alliance_root_cer_der) do
       _ ->
       #:ok ->
@@ -166,7 +207,7 @@ defmodule Wax.Metadata do
           # cleaning it first to avoid having to deal with diffing
           # since this GenServer call is blocking, no concurrent access
           # to the empty table can be made
-          :ets.delete_all_objects(:wax_metadata)
+          :ets.delete_all_objects(table)
 
           Enum.each(
             tasks,
@@ -178,13 +219,13 @@ defmodule Wax.Metadata do
                   Logger.debug("Saving metadata for aaguid `#{aaguid}` " <>
                     "(#{metadata_statement.description})")
 
-                  :ets.insert(:wax_metadata, {{:aaguid, aaguid}, metadata_statement})
+                  :ets.insert(table, {{:aaguid, aaguid}, metadata_statement})
 
                 %Wax.MetadataStatement{aaid: aaid} when is_binary(aaid) ->
                   Logger.debug("Saving metadata for aaid `#{aaid}` " <>
                     "(#{metadata_statement.description})")
 
-                  :ets.insert(:wax_metadata, {{:aaid, aaid}, metadata_statement})
+                  :ets.insert(table, {{:aaid, aaid}, metadata_statement})
 
                 %Wax.MetadataStatement{attestation_certificate_key_identifiers: acki_list} ->
                   Enum.each(
@@ -193,7 +234,7 @@ defmodule Wax.Metadata do
                       Logger.debug("Saving metadata for attestation certificate key identifier " <>
                         "`#{acki}` (#{metadata_statement.description})")
 
-                      :ets.insert(:wax_metadata, {{:acki, acki}, metadata_statement})
+                      :ets.insert(table, {{:acki, acki}, metadata_statement})
                     end
                   )
 
@@ -218,8 +259,16 @@ defmodule Wax.Metadata do
   @spec update_metadata_statement(map(), atom())
     :: any()
   def update_metadata_statement(entry, digest_alg) do
+    access_token = Application.get_env(:wax, :metadata_access_token)
+
+    url = if access_token do
+      entry["url"] <> "?token=" <> access_token
+    else
+      entry["url"]
+    end
+
     case HTTPoison.get(
-      entry["url"] <> "?token=" <> Application.get_env(:wax, :metadata_access_token),
+      url,
       [],
       follow_redirect: true) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
