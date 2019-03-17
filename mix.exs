@@ -29,7 +29,7 @@ defmodule Wax.MixProject do
     [
       {:asn1ex, github: "vicentfg/asn1ex", ref: "0255348e2fffbdfd1eef7b46f71dc733318a36a0"},
       {:jason, "~> 1.1"},
-      {:httpoison, github: "edgurgel/httpoison", tag: "v1.5.0"},
+      {:httpoison, "~> 1.5"},
       {:cbor, github: "yjh0502/cbor-erlang", ref: "b5c9dbc2de15753b2db15e13d88c11738c2ac292"},
       {:x509, github: "voltone/x509", tag: "v0.5.1"},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
