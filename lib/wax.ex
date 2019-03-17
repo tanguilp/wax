@@ -214,7 +214,7 @@ defmodule Wax do
   """
 
   @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t())
-  :: {:ok, {Wax.CoseKey.t(), Wax.Attestation.result()}} | {:error, atom()}
+  :: {:ok, {Wax.CoseKey.t(), Wax.Attestation.result(), Wax.AuthenticatorData.t()}} | {:error, atom()}
 
   def register(attestation_object_cbor, client_data_json_raw, challenge) do
 
@@ -242,7 +242,8 @@ defmodule Wax do
     do
       {:ok, {
         auth_data.attested_credential_data.credential_public_key,
-        attestation_result_data
+        attestation_result_data,
+        auth_data
       }}
     else
       error ->
@@ -372,7 +373,7 @@ defmodule Wax do
                      binary(),
                      Wax.ClientData.raw_string(),
                      Wax.Challenge.t()
-  ) :: {:ok, non_neg_integer()} | {:error, any()}
+  ) :: {:ok, non_neg_integer(), Wax.AuthenticatorData.t()} | {:error, any()}
 
   def authenticate(credential_id,
                    auth_data_bin,
@@ -393,7 +394,7 @@ defmodule Wax do
          client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),
          :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig)
     do
-      {:ok, auth_data.sign_count}
+      {:ok, auth_data.sign_count, auth_data}
     else
       error ->
         error
