@@ -405,18 +405,34 @@ defmodule Wax.MetadataStatement do
   defp attestation_type(0x3E09), do: :tag_attestation_ecdaa
   defp attestation_type(0x3E0A), do: :tag_attestation_attca
 
-  @spec user_verification_method(non_neg_integer()) :: user_verification_method()
-  defp user_verification_method(0x00000001), do: :user_verify_presence
-  defp user_verification_method(0x00000002), do: :user_verify_fingerprint
-  defp user_verification_method(0x00000004), do: :user_verify_passcode
-  defp user_verification_method(0x00000008), do: :user_verify_voiceprint
-  defp user_verification_method(0x00000010), do: :user_verify_faceprint
-  defp user_verification_method(0x00000020), do: :user_verify_location
-  defp user_verification_method(0x00000040), do: :user_verify_eyeprint
-  defp user_verification_method(0x00000080), do: :user_verify_pattern
-  defp user_verification_method(0x00000100), do: :user_verify_handprint
-  defp user_verification_method(0x00000200), do: :user_verify_none
-  defp user_verification_method(0x00000400), do: :user_verify_all
+  # https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-registry-v2.0-id-20180227.html#user-verification-methods
+  @spec user_verification_method(non_neg_integer()) :: [user_verification_method()]
+  defp user_verification_method(user_verify) do
+    <<_unused::size(21), all::1, none::1, handprint::1, pattern::1, eyeprint::1, location::1, faceprint::1, voiceprint::1, passcode::1, fingerprint::1, presence::1>> = <<user_verify::32>>
+    require Logger
+
+    bit_list = [
+      {all, :user_verify_all},
+      {none, :user_verify_none},
+      {handprint, :user_verify_handprint},
+      {pattern, :user_verify_pattern},
+      {eyeprint, :user_verify_eyeprint},
+      {location, :user_verify_location},
+      {faceprint, :user_verify_faceprint},
+      {voiceprint, :user_verify_voiceprint},
+      {passcode, :user_verify_passcode},
+      {fingerprint, :user_verify_fingerprint},
+      {presence, :user_verify_presence},
+    ]
+
+    Enum.reduce bit_list, [], fn {bit, atom}, acc ->
+      if bit == 1 do
+        [atom | acc]
+      else
+        acc
+      end
+    end
+  end
 
   @spec code_accuracy_descriptor(map()) ::
     Wax.MetadataStatement.VerificationMethodDescriptor.CodeAccuracyDescriptor.t()
