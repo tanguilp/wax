@@ -18,7 +18,7 @@ You can try out and study WebAuthn authentication with Wax thanks to the
 See alos a video demonstration of an authentication flow which allows replacing the password
 authentication scheme by a WebAuthn password-less authentication:
 
-[![Demo screenshot](https://raw.githubusercontent.com/tanguilp/wax_demo/master/assets/static/images/demo_screenshot.png)](https://rutube.ru/video/c1d10dbcdea2403e3760e603d6da7ac2/)
+[![Demo screenshot](https://raw.githubusercontent.com/tanguilp/wax_demo/master/assets/static/images/demo_screenshot.png)](https://vimeo.com/358361625)
 
 ## Project status
 
