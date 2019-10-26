@@ -2,7 +2,7 @@
 
 WebAuthn library for elixir
 
-<img src="doc/wax.png" width="128"/>
+<img src="https://github.com/tanguilp/wax/blob/master/asset/wax.png" width="128"/>
 
 Goal: implement a *comprehensive* FIDO2 library on the server side
 (*Relying party* or RP in the WebAuthn terminology) to authenticate users with WebAuthn.
@@ -48,7 +48,8 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc) by
+typing `mix docs` in the project's root.
 
 ## Usage
 
@@ -228,6 +229,10 @@ HTTPS and the CDNs serving it)
 - This library has **not** be reviewed by independent security / FIDO2 specialists - use
 it at your own risks or blindly trust its author! If you're knowledgeable about
 FIDO2 and willing to help reviewing it, please contact the author
+
+## Changes
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Support of FIDO2
 
