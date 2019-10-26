@@ -224,8 +224,6 @@ roadmap as of September 2019.
 - Make sure to understand the implications of not using attested credentials before
 accepting `none` or `self` attestation types, or disabling it for `packed` and `u2f`
 formats by disabling it with the `verify_trust_root` option
-- The FIDO MDS TOC signature is not verified (therefore its integrity relies on
-HTTPS and the CDNs serving it)
 - This library has **not** be reviewed by independent security / FIDO2 specialists - use
 it at your own risks or blindly trust its author! If you're knowledgeable about
 FIDO2 and willing to help reviewing it, please contact the author

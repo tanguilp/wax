@@ -4,7 +4,8 @@ defmodule Wax.Metadata do
 
   @moduledoc false
 
-  @fido_alliance_root_cer_pem """
+  @fido_alliance_root_cer_der \
+    """
     -----BEGIN CERTIFICATE-----
     MIICQzCCAcigAwIBAgIORqmxkzowRM99NQZJurcwCgYIKoZIzj0EAwMwUzELMAkG
     A1UEBhMCVVMxFjAUBgNVBAoTDUZJRE8gQWxsaWFuY2UxHTAbBgNVBAsTFE1ldGFk
@@ -21,9 +22,6 @@ defmodule Wax.Metadata do
     YjdBz56jSA==
     -----END CERTIFICATE-----
     """
-
-  @fido_alliance_root_cer_der\
-    @fido_alliance_root_cer_pem
     |> X509.Certificate.from_pem!()
     |> X509.Certificate.to_der()
 
@@ -97,6 +95,11 @@ defmodule Wax.Metadata do
     end
   end
 
+  def handle_call(_, _, state), do: {:noreply, state}
+
+  @impl true
+  def handle_cast(_, state), do: {:noreply, state}
+
   @impl true
   def handle_info(:update_metadata, state) do
     serial_number =
@@ -113,6 +116,10 @@ defmodule Wax.Metadata do
     {:noreply, [serial_number: serial_number]}
   end
 
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   defp schedule_update() do
     Process.send_after(self(),
       :update_metadata,
@@ -121,7 +128,6 @@ defmodule Wax.Metadata do
 
   def update_metadata(serial_number) do
     #FIXME: handle
-    #   verify sig
     #   revoked certs & other revocation mecanisms
     Logger.info("Starting FIDO metadata update process")
 
@@ -129,11 +135,13 @@ defmodule Wax.Metadata do
 
     if access_token do
       case HTTPoison.get("https://mds2.fidoalliance.org/?token=" <> access_token) do
-        {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-          process_metadata_toc(body, serial_number)
+        {:ok, %HTTPoison.Response{status_code: 200, body: jws_toc}} ->
+          process_metadata_toc(jws_toc, serial_number)
 
         e ->
           Logger.warn("Unable to download metadata (#{inspect(e)})")
+
+          :not_updated
       end
     else
       Logger.warn("No access token configured for FIDO metadata, metadata not updated. " <>
@@ -147,9 +155,7 @@ defmodule Wax.Metadata do
 
   defp process_metadata_toc(jws, serial_number) do
     case Wax.Utils.JWS.verify(jws, @fido_alliance_root_cer_der) do
-      _ ->
-      #:ok ->
-      # FIXME: JWS doesn't work for this specific JWT
+      :ok ->
         {%{"alg" => alg}, metadata} = parse_jwt(jws)
 
         if metadata["no"] > serial_number do
@@ -210,18 +216,20 @@ defmodule Wax.Metadata do
           :not_updated
         end
 
-      #{:error, reason} ->
-        #Logger.warn("Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")
+      {:error, reason} ->
+        Logger.warn(
+          "Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")
     end
   end
 
   @spec update_metadata_statement(map(), atom())
     :: any()
   def update_metadata_statement(entry, digest_alg) do
-    case HTTPoison.get(
+    HTTPoison.get(
       entry["url"] <> "?token=" <> Application.get_env(:wax, :metadata_access_token),
       [],
-      follow_redirect: true) do
+      follow_redirect: true)
+    |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         if :crypto.hash(digest_alg, body) == Base.url_decode64!(entry["hash"]) do
           body
@@ -230,10 +238,14 @@ defmodule Wax.Metadata do
           |> Wax.MetadataStatement.from_json()
         else
           Logger.warn("Invalid hash for metadata entry at " <> entry["url"])
+
+          :error
         end
 
       _ ->
         Logger.warn("Failed to download metadata statement at " <> entry["url"])
+
+        :error
     end
   end
 

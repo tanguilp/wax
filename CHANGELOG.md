@@ -10,3 +10,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 - [Wax] `Wax.register/3` and `Wax.authenticate/5` signatures change and now return the whole
 authenticator data.
+
+### Fixed
+
+- [Wax.Metadata] TOC JWS signature is verified against FIDO Fundation certificate
