@@ -136,13 +136,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
           }}} ->
         #FIXME: see https://github.com/w3c/webauthn/issues/1022
         (
-          origin_software_enforced == @km_origin_generated and
-          purpose_software_enforced == @km_purpose_sign
+          @km_origin_generated == origin_software_enforced and
+          @km_purpose_sign in purpose_software_enforced
         )
         or
         (
-          origin_tee_enforced == @km_origin_generated and
-          purpose_tee_enforced == @km_purpose_sign
+          @km_origin_generated == origin_tee_enforced and
+          @km_purpose_sign in purpose_tee_enforced
         )
 
       _ ->
@@ -224,13 +224,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
           }}} ->
         #FIXME: see https://github.com/w3c/webauthn/issues/1022
         (
-          origin_software_enforced == @km_origin_generated and
-          purpose_software_enforced == @km_purpose_sign
+          @km_origin_generated == origin_software_enforced and
+          @km_purpose_sign in purpose_software_enforced
         )
         or
         (
-          origin_tee_enforced == @km_origin_generated and
-          purpose_tee_enforced == @km_purpose_sign
+          @km_origin_generated == origin_tee_enforced and
+          @km_purpose_sign in purpose_tee_enforced
         )
 
       _ ->
@@ -252,6 +252,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
             _padding,
             _ecCurve,
             _rsaPublicExponent,
+            _rollback_persistence,
             _activeDateTime,
             _originationExpireDateTime,
             _usageExpireDateTime,
@@ -259,11 +260,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
             _userAuthType,
             _authTimeout,
             _allowWhileOnBody,
+            _trustedUserPresenceRequired,
+            _trustedConfirmationRequired,
+            _unlockedDeviceRequired,
             :asn1_NOVALUE, # allApplications
             _applicationId,
             _creationDateTime,
             origin_software_enforced,
-            _rollbackResistant,
             _rootOfTrust,
             _osVersion,
             _osPatchLevel,
@@ -287,6 +290,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
             _padding_te,
             _ecCurve_te,
             _rsaPublicExponent_te,
+            _rollback_persistence_te,
             _activeDateTime_te,
             _originationExpireDateTime_te,
             _usageExpireDateTime_te,
@@ -294,11 +298,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
             _userAuthType_te,
             _authTimeout_te,
             _allowWhileOnBody_te,
+            _trustedUserPresenceRequired_te,
+            _trustedConfirmationRequired_te,
+            _unlockedDeviceRequired_te,
             :asn1_NOVALUE, # allApplications
             _applicationId_te,
             _creationDateTime_te,
             origin_tee_enforced,
-            _rollbackResistant_te,
             _rootOfTrust_te,
             _osVersion_te,
             _osPatchLevel_te,
@@ -316,13 +322,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
           }}} ->
         #FIXME: see https://github.com/w3c/webauthn/issues/1022
         (
-          origin_software_enforced == @km_origin_generated and
-          purpose_software_enforced == @km_purpose_sign
+          @km_origin_generated == origin_software_enforced and
+          @km_purpose_sign in purpose_software_enforced
         )
         or
         (
-          origin_tee_enforced == @km_origin_generated and
-          purpose_tee_enforced == @km_purpose_sign
+          @km_origin_generated == origin_tee_enforced and
+          @km_purpose_sign in purpose_tee_enforced
         )
 
       _ ->
