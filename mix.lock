@@ -19,5 +19,5 @@
   "parse_trans": {:hex, :parse_trans, "3.3.0", "09765507a3c7590a784615cfd421d101aec25098d50b89d7aa1d66646bc571c1", [:rebar3], [], "hexpm"},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.4", "f0eafff810d2041e93f915ef59899c923f4568f4585904d010387ed74988e77b", [:make, :mix, :rebar3], [], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.4.1", "d869e4c68901dd9531385bb0c8c40444ebf624e60b6962d95952775cac5e90cd", [:rebar3], [], "hexpm"},
-  "x509": {:git, "https://github.com/voltone/x509.git", "1fae253f68dbccde0420873fae910dd3cd76df62", [tag: "v0.5.1"]},
+  "x509": {:git, "https://github.com/voltone/x509.git", "1058f5dcc66d06e0186b503ea9ca675635ebcc94", [tag: "v0.7.0"]},
 }
