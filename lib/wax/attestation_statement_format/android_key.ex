@@ -11,7 +11,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash, _verify_trust_root) do
+  def verify(att_stmt, auth_data, client_data_hash, _challenge) do
     #FIXME: shall we verify the cert chain?
     with :ok <- valid_cbor?(att_stmt),
          {:ok, leaf_cert} <- X509.Certificate.from_der(List.first(att_stmt["x5c"])),

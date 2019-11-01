@@ -17,18 +17,19 @@ defmodule Wax do
 
   |  Option       |  Type         |  Applies to       |  Default value                | Notes |
   |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
-  |`origin`|`String.t()`|registration & authentication| | Mandatory. Example: `https://www.example.com` |
-  |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
-  |`user_verified_required`|`boolean()`|registration & authentication| `false`| |
-  |`trusted_attestation_types`|`[Wax.Attestation.type()]`|registration|`[:none, :basic, :uncertain, :attca, :self]`| |
-  |`verify_trust_root`|`boolean()`|registration|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
+  |`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | Mandatory. Example: `https://www.example.com` |
+  |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
+  |`user_verified_required`|`boolean()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `false`| |
+  |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
+  |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
+  |`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
 
   ## FIDO2 Metadata service (MDS) configuration
 
-  The FIDO Alliance provides with a list of metadata statements of certified authenticators.
-  A metadata statement contains trust anchors (root certificates) to verify attestations.
-  Wax can automatically keep this metadata up to date but needs a access token which is
-  provided by the FIDO Alliance. One can request it here:
+  The FIDO Alliance provides with a list of metadata statements of certified **FIDO2**
+  authenticators. A metadata statement contains trust anchors (root certificates) to verify
+  attestations. Wax can automatically keep this metadata up to date but needs a access token which
+  is provided by the FIDO Alliance. One can request it here:
   [https://mds2.fidoalliance.org/tokens/](https://mds2.fidoalliance.org/tokens/).
 
   Once the token has been granted, it has to be added in the configuration file (consider
@@ -51,6 +52,16 @@ defmodule Wax do
   config :wax,
     metadata_access_token: "d4904acd10a36f62d7a7d33e4c9a86628a2b0eea0c3b1a6c"
   ```
+
+  Note that some **FIDO1** certififed authenticators, such as Yubikeys, won't be present in this
+  list and Wax doesn't load data from the former ("FIDO1") metadata Web Service. The FIDO
+  Alliance plans to provides with a web service having both FIDO1 and FIDO2, but there is no
+  roadmap as of September 2019.
+
+  During the registration process, when trust root is verified against FIDO2 metadata, only
+  metadata entries whose last status is whitelisted by the `:acceptable_authenticator_statuses`
+  will be used. Otherwise a warning is logged and the registration process fails. Metadata is still
+  loaded for debugging purpose in the `:wax_metadata` ETS table.
   """
 
   @type opts :: Keyword.t()
@@ -98,25 +109,29 @@ defmodule Wax do
       origin: origin,
       rp_id: rp_id,
       user_verified_required:
-        if is_boolean(kw[:user_verified_required]) do
-          kw[:user_verified_required]
-        else
-          Application.get_env(:wax, :user_verified_required, false)
-        end,
+        kw[:user_verified_required] || Application.get_env(:wax, :user_verified_required, false),
       trusted_attestation_types:
-      if is_list(kw[:trusted_attestation_types]) do
-        kw[:trusted_attestation_types]
-      else
-        Application.get_env(:wax,
-                            :trusted_attestation_types,
-                            [:none, :basic, :uncertain, :attca, :self])
-      end,
+        kw[:trusted_attestation_types] || Application.get_env(
+          :wax,
+          :trusted_attestation_types,
+          [:none, :basic, :uncertain, :attca, :self]
+        ),
       verify_trust_root:
-        if is_boolean(kw[:verify_trust_root]) do
-          kw[:verify_trust_root]
-        else
-          Application.get_env(:wax, :verify_trust_root, true)
-        end
+        kw[:verify_trust_root] || Application.get_env(:wax, :verify_trust_root, true),
+      acceptable_authenticator_statuses:
+        kw[:acceptable_authenticator_statuses] || Application.get_env(
+          :wax,
+          :acceptable_authenticator_statuses,
+          [
+            :fido_certified,
+            :fido_certified_l1,
+            :fido_certified_l1plus,
+            :fido_certified_l2,
+            :fido_certified_l2plus,
+            :fido_certified_l3,
+            :fido_certified_l3plus
+          ]
+        )
     }
   end
 
@@ -244,11 +259,12 @@ defmodule Wax do
          #FIXME: verify extensions
          {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
-         {:ok, attestation_result_data}
-           <- valid_attestation_statement_format?.(att_stmt,
-                                                   auth_data,
-                                                   client_data_hash,
-                                                   challenge.verify_trust_root),
+         {:ok, attestation_result_data} <- valid_attestation_statement_format?.(
+           att_stmt,
+           auth_data,
+           client_data_hash,
+           challenge
+         ),
          :ok <- attestation_trustworthy?(attestation_result_data, challenge)
     do
       {:ok, {auth_data, attestation_result_data}}

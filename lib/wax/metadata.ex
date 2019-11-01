@@ -33,9 +33,12 @@ defmodule Wax.Metadata do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  @spec get_by_aaguid(binary()) :: Wax.MetadataStatement.t() | nil
+  @spec get_by_aaguid(binary(), Wax.Challenge.t()) :: Wax.Metadata.Statement.t() | nil
 
-  def get_by_aaguid(aaguid_bin) do
+  def get_by_aaguid(
+    aaguid_bin,
+    %Wax.Challenge{acceptable_authenticator_statuses: acceptable_authenticator_statuses}
+  ) do
     # it is needed to convert binary aaguid (16 bytes) to its string representation as
     # used in the metadata service, such as `77010bd7-212a-4fc9-b236-d2ca5e9d4084`
     <<
@@ -48,15 +51,59 @@ defmodule Wax.Metadata do
 
     aaguid_str = a <> "-" <> b <> "-" <> c <> "-" <> d <> "-" <> e
 
-    GenServer.call(__MODULE__, {:get, {:aaguid, aaguid_str}})
+    case GenServer.call(__MODULE__, {:get, {:aaguid, aaguid_str}}) do
+      {toc_entry, metadata_statement} ->
+        if authenticator_status_allowed?(toc_entry, acceptable_authenticator_statuses) do
+          metadata_statement
+        else
+          Logger.warn(
+            "Authenticator `#{metadata_statement}` was not used because its status is " <>
+            "not whitelisted (TOC entry: `#{toc_entry}`)"
+          )
+
+          nil
+        end
+
+      _ ->
+        nil
+    end
   end
 
-  @spec get_by_acki(binary()) :: Wax.MetadataStatement.t() | nil
+  @spec get_by_acki(binary(), Wax.Challenge.t()) :: Wax.Metadata.Statement.t() | nil
 
-  def get_by_acki(acki_bin) do
+  def get_by_acki(
+    acki_bin,
+    %Wax.Challenge{acceptable_authenticator_statuses: acceptable_authenticator_statuses}
+  ) do
     acki_str = Base.encode16(acki_bin, case: :lower)
 
-    GenServer.call(__MODULE__, {:get, {:acki, acki_str}})
+    case GenServer.call(__MODULE__, {:get, {:acki, acki_str}}) do
+      {toc_entry, metadata_statement} ->
+        if authenticator_status_allowed?(toc_entry, acceptable_authenticator_statuses) do
+          metadata_statement
+        else
+          Logger.warn(
+            "Authenticator `#{metadata_statement}` was not used because its status is " <>
+            "not whitelisted (TOC entry: `#{toc_entry}`)"
+          )
+
+          nil
+        end
+
+      nil ->
+        nil
+    end
+  end
+
+  @spec authenticator_status_allowed?(map(), [Wax.Metadata.TOCEntry.StatusReport.status()]) ::
+    bool()
+  defp authenticator_status_allowed?(
+    %{status_reports: status_reports},
+    acceptable_authenticator_statuses
+  ) do
+    latest_report = List.last(status_reports)
+
+    latest_report.status in acceptable_authenticator_statuses
   end
 
   # server callbacks
@@ -87,8 +134,8 @@ defmodule Wax.Metadata do
   @impl true
   def handle_call({:get, {type, value}}, _from, state) do
     case :ets.lookup(@table, {type, value}) do
-      [{_, metadata_statement}] ->
-        {:reply, metadata_statement, state}
+      [{_, toc_payload_entry, metadata_statement}] ->
+        {:reply, {toc_payload_entry, metadata_statement}, state}
 
       _ ->
         {:reply, nil, state}
@@ -169,41 +216,45 @@ defmodule Wax.Metadata do
             end
           )
 
+          toc_payload_entry = Enum.map(metadata["entries"], &build_toc_payload_entry/1)
+
           # cleaning it first to avoid having to deal with diffing
           # since this GenServer call is blocking, no concurrent access
           # to the empty table can be made
           :ets.delete_all_objects(:wax_metadata)
 
           Enum.each(
-            tasks,
-            fn task ->
+            Enum.zip(toc_payload_entry, tasks),
+            fn {toc_entry, task} ->
               metadata_statement = Task.await(task)
 
               case metadata_statement do
-                %Wax.MetadataStatement{aaguid: aaguid} when is_binary(aaguid) ->
+                %Wax.Metadata.Statement{aaguid: aaguid} when is_binary(aaguid) ->
                   Logger.debug("Saving metadata for aaguid `#{aaguid}` " <>
                     "(#{metadata_statement.description})")
 
-                  :ets.insert(:wax_metadata, {{:aaguid, aaguid}, metadata_statement})
+                  :ets.insert(:wax_metadata, {{:aaguid, aaguid}, toc_entry, metadata_statement})
 
-                %Wax.MetadataStatement{aaid: aaid} when is_binary(aaid) ->
+                %Wax.Metadata.Statement{aaid: aaid} when is_binary(aaid) ->
                   Logger.debug("Saving metadata for aaid `#{aaid}` " <>
                     "(#{metadata_statement.description})")
 
-                  :ets.insert(:wax_metadata, {{:aaid, aaid}, metadata_statement})
+                  :ets.insert(:wax_metadata, {{:aaid, aaid}, toc_entry, metadata_statement})
 
-                %Wax.MetadataStatement{attestation_certificate_key_identifiers: acki_list} ->
+                %Wax.Metadata.Statement{attestation_certificate_key_identifiers: acki_list} ->
                   Enum.each(
                     acki_list,
                     fn acki ->
                       Logger.debug("Saving metadata for attestation certificate key identifier " <>
                         "`#{acki}` (#{metadata_statement.description})")
 
-                      :ets.insert(:wax_metadata, {{:acki, acki}, metadata_statement})
+                      :ets.insert(:wax_metadata, {{:acki, acki}, toc_entry, metadata_statement})
                     end
                   )
 
                 _ ->
+                  Logger.error("Failed to load data for TOC entry `#{inspect(toc_entry)}`")
+
                   :ok
               end
             end
@@ -235,7 +286,7 @@ defmodule Wax.Metadata do
           body
           |> Base.url_decode64!()
           |> Jason.decode!()
-          |> Wax.MetadataStatement.from_json()
+          |> Wax.Metadata.Statement.from_json()
         else
           Logger.warn("Invalid hash for metadata entry at " <> entry["url"])
 
@@ -262,6 +313,76 @@ defmodule Wax.Metadata do
       |> Jason.decode!(),
     }
   end
+
+  @spec build_toc_payload_entry(map()) :: Wax.Metadata.TOCEntry.t()
+  defp build_toc_payload_entry(entry) do
+    %Wax.Metadata.TOCEntry{
+      aaid: entry["aaid"],
+      aaguid: entry["aaguid"],
+      attestation_certificate_key_identifiers: entry["attestationCertificateKeyIdentifiers"],
+      hash: entry["hash"],
+      url: entry["url"],
+      biometric_status_reports:
+        Enum.map(entry["biometricStatusReports"] || [], &build_biometric_status_report/1),
+      status_reports: Enum.map(entry["statusReports"], &build_status_report/1),
+      time_of_last_status_change:
+        if entry["timeOfLastStatusChange"] do
+          Date.from_iso8601!(entry["timeOfLastStatusChange"])
+        end,
+      rogue_list_url: entry["rogueListURL"],
+      rogue_list_hash: entry["rogueListHash"]
+    }
+  end
+
+  @spec build_biometric_status_report(map()) :: Wax.Metadata.TOCEntry.BiometricStatusReport.t()
+  defp build_biometric_status_report(status) do
+    %Wax.Metadata.TOCEntry.BiometricStatusReport{
+      cert_level: status["certLevel"],
+      modality: status["modality"],
+      effective_date:
+        if status["effectiveDate"] do
+          Date.from_iso8601!(status["effectiveDate"])
+        end,
+      certification_descriptor: status["certificationDescriptor"],
+      certificate_number: status["certificateNumber"],
+      certification_policy_version: status["certificationPolicyVersion"],
+      certification_requirements_version: status["certificationRequirementsVersion"]
+    }
+  end
+
+  @spec build_status_report(map()) :: Wax.Metadata.TOCEntry.StatusReport.t()
+  defp build_status_report(status) do
+    %Wax.Metadata.TOCEntry.StatusReport{
+      status: authenticator_status(status["status"]),
+      effective_date:
+        if status["effectiveDate"] do
+          Date.from_iso8601!(status["effectiveDate"])
+        end,
+      certificate: status["certificate"],
+      url: status["url"],
+      certification_descriptor: status["certificationDescriptor"],
+      certificate_number: status["certificateNumber"],
+      certification_policy_version: status["certificationPolicyVersion"],
+      certification_requirements_version: status["certificationRequirementsVersion"]
+    }
+  end
+
+  @spec authenticator_status(String.t()) :: Wax.Metadata.TOCEntry.StatusReport.status()
+  defp authenticator_status("NOT_FIDO_CERTIFIED"), do: :not_fido_certified
+  defp authenticator_status("FIDO_CERTIFIED"), do: :fido_certified
+  defp authenticator_status("USER_VERIFICATION_BYPASS"), do: :user_verification_bypass
+  defp authenticator_status("ATTESTATION_KEY_COMPROMISE"), do: :attestation_key_compromise
+  defp authenticator_status("USER_KEY_REMOTE_COMPROMISE"), do: :user_key_remote_compromise
+  defp authenticator_status("USER_KEY_PHYSICAL_COMPROMISE"), do: :user_key_physical_compromise
+  defp authenticator_status("UPDATE_AVAILABLE"), do: :update_available
+  defp authenticator_status("REVOKED"), do: :revoked
+  defp authenticator_status("SELF_ASSERTION_SUBMITTED"), do: :self_assertion_submitted
+  defp authenticator_status("FIDO_CERTIFIED_L1"), do: :fido_certified_l1
+  defp authenticator_status("FIDO_CERTIFIED_L1plus"), do: :fido_certified_l1plus
+  defp authenticator_status("FIDO_CERTIFIED_L2"), do: :fido_certified_l2
+  defp authenticator_status("FIDO_CERTIFIED_L2plus"), do: :fido_certified_l2plus
+  defp authenticator_status("FIDO_CERTIFIED_L3"), do: :fido_certified_l3
+  defp authenticator_status("FIDO_CERTIFIED_L3plus"), do: :fido_certified_l3plus
 
   #see section 3.1 of https://www.rfc-editor.org/rfc/rfc7518.txt
   @spec digest_from_jws_alg(String.t()) :: atom()

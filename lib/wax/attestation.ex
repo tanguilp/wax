@@ -20,11 +20,15 @@ defmodule Wax.Attestation do
   """
   @type trust_path :: [binary()] | binary() | nil
 
-  @type result :: {__MODULE__.type(), __MODULE__.trust_path() | nil, Wax.MetadataStatement.t() | nil}
+  @type result ::
+  {__MODULE__.type(), __MODULE__.trust_path() | nil, Wax.Metadata.Statement.t() | nil}
 
   @type attestation_statement_format_verify_fun ::
   (
-    Wax.Attestation.statement(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), boolean() ->
+    Wax.Attestation.statement(),
+    Wax.AuthenticatorData.t(),
+    Wax.ClientData.hash(),
+    Wax.Challenge.t() ->
       {:ok, __MODULE__.result()} | {:error, any()}
   )
 

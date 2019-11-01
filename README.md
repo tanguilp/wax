@@ -184,6 +184,7 @@ These options are:
 |`user_verified_required`|`boolean()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `false`| |
 |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
 |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
+|`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
 
 ## FIDO2 Metadata service (MDS) configuration
 
@@ -219,6 +220,11 @@ list and Wax doesn't load data from the former ("FIDO1") metadata Web Service. T
 Alliance plans to provides with a web service having both FIDO1 and FIDO2, but there is no
 roadmap as of September 2019.
 
+During the registration process, when trust root is verified against FIDO2 metadata, only
+metadata entries whose last status is whitelisted by the `:acceptable_authenticator_statuses`
+will be used. Otherwise a warning is logged and the registration process fails. Metadata is still
+loaded for debugging purpose in the `:wax_metadata` ETS table.
+
 ## Security considerations
 
 - Make sure to understand the implications of not using attested credentials before
@@ -233,6 +239,8 @@ FIDO2 and willing to help reviewing it, please contact the author
 See [CHANGELOG.md](CHANGELOG.md).
 
 ## Support of FIDO2
+
+### Server Requirements and Transport Binding Profile
 
 [2. Registration and Attestations](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#registration-and-attestation)
 - [x] **Mandatory**: registration support
@@ -284,3 +292,12 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 [7. Transport Binding Profile](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#transport-binding-profile)
   - [ ] *optional*: API implementation
+
+### FIDO Metadata Service
+
+[3.1.8 Metadata TOC object processing rules](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-metadata-service-v2.0-rd-20180702.html#metadata-toc-object-processing-rules)
+  - [ ] TOC verification against the `x5u` attribute (note: doesn't seem to be used)
+  - [x] TOC verification against the `x5c` attribute
+  - [x] Loading and verification of metadata statements against the hased value of the TOC
+  - [x] Handling of the status of the authenticator (through whitelisting, see the
+  `:acceptable_authenticator_statuses` option)

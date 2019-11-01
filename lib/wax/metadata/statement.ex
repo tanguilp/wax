@@ -1,4 +1,4 @@
-defmodule Wax.MetadataStatement do
+defmodule Wax.Metadata.Statement do
   @moduledoc """
   Structure representing a FIDO2 metadata statement
 
@@ -69,13 +69,13 @@ defmodule Wax.MetadataStatement do
     description: String.t(),
     authenticator_version: non_neg_integer(),
     protocol_family: String.t(),
-    upv: [Wax.MetadataStatement.UPV.t()],
+    upv: [Wax.Metadata.Statement.UPV.t()],
     assertion_scheme: String.t(),
-    authentication_algorithm: Wax.MetadataStatement.authentication_algorithm(),
-    authentication_algorithms: [Wax.MetadataStatement.authentication_algorithm()],
-    public_key_alg_and_encoding: Wax.MetadataStatement.public_key_representation_format(),
-    public_key_alg_and_encodings: [Wax.MetadataStatement.public_key_representation_format()],
-    attestation_types: [Wax.MetadataStatement.attestation_type()],
+    authentication_algorithm: Wax.Metadata.Statement.authentication_algorithm(),
+    authentication_algorithms: [Wax.Metadata.Statement.authentication_algorithm()],
+    public_key_alg_and_encoding: Wax.Metadata.Statement.public_key_representation_format(),
+    public_key_alg_and_encodings: [Wax.Metadata.Statement.public_key_representation_format()],
+    attestation_types: [Wax.Metadata.Statement.attestation_type()],
     user_verification_details: [verification_method_and_combinations()],
     key_protection: [key_protection()],
     is_key_restricted: boolean(),
@@ -87,8 +87,8 @@ defmodule Wax.MetadataStatement do
     is_second_factor_only: boolean(),
     tc_display: [tc_display()],
     attestation_root_certificates: [:public_key.der_encoded()],
-    ecdaa_trust_anchors: [Wax.MetadataStatement.EcdaaTrustAnchor],
-    supported_extensions: [Wax.MetadataStatement.ExtensionDescriptor]
+    ecdaa_trust_anchors: [Wax.Metadata.Statement.EcdaaTrustAnchor],
+    supported_extensions: [Wax.Metadata.Statement.ExtensionDescriptor]
   }
 
   @type authentication_algorithm ::
@@ -116,7 +116,7 @@ defmodule Wax.MetadataStatement do
   | :tag_attestation_attca
 
   @type verification_method_and_combinations ::
-    [Wax.MetadataStatement.VerificationMethodDescriptor.t()]
+    [Wax.Metadata.Statement.VerificationMethodDescriptor.t()]
 
   defmodule UPV do
     @enforce_keys [:minor, :major]
@@ -140,13 +140,13 @@ defmodule Wax.MetadataStatement do
     ]
 
     @type t :: %__MODULE__{
-      user_verification: Wax.MetadataStatement.user_verification_method(),
+      user_verification: Wax.Metadata.Statement.user_verification_method(),
       code_accuracy_descriptor:
-        Wax.MetadataStatement.VerificationMethodDescriptor.CodeAccuracyDescriptor.t(),
+        Wax.Metadata.Statement.VerificationMethodDescriptor.CodeAccuracyDescriptor.t(),
       biometric_accuracy_descriptor:
-        Wax.MetadataStatement.VerificationMethodDescriptor.BiometricAccuracyDescriptor.t(),
+        Wax.Metadata.Statement.VerificationMethodDescriptor.BiometricAccuracyDescriptor.t(),
       pattern_accuracy_descriptor:
-        Wax.MetadataStatement.VerificationMethodDescriptor.PatternAccuracyDescriptor.t()
+        Wax.Metadata.Statement.VerificationMethodDescriptor.PatternAccuracyDescriptor.t()
     }
 
     defmodule CodeAccuracyDescriptor do
@@ -293,7 +293,7 @@ defmodule Wax.MetadataStatement do
       upv: Enum.map(
         json["upv"] || [],
         fn %{"minor" => minor, "major" => major} ->
-          %Wax.MetadataStatement.UPV{
+          %Wax.Metadata.Statement.UPV{
             major: major,
             minor: minor
           }
@@ -327,7 +327,7 @@ defmodule Wax.MetadataStatement do
           Enum.map(
             list,
             fn uvd ->
-              %Wax.MetadataStatement.VerificationMethodDescriptor{
+              %Wax.Metadata.Statement.VerificationMethodDescriptor{
                 user_verification: user_verification_method(uvd["userVerification"]),
                 code_accuracy_descriptor: code_accuracy_descriptor(uvd["caDesc"]),
                 biometric_accuracy_descriptor: biometric_accuracy_descriptor(uvd["baDesc"]),
@@ -355,7 +355,7 @@ defmodule Wax.MetadataStatement do
       ecdaa_trust_anchors: Enum.map(
         json["ecdaaTrustAnchors"] || [],
         fn map ->
-          %Wax.MetadataStatement.EcdaaTrustAnchor{
+          %Wax.Metadata.Statement.EcdaaTrustAnchor{
             x: map["X"],
             y: map["Y"],
             c: map["c"],
@@ -368,7 +368,7 @@ defmodule Wax.MetadataStatement do
       supported_extensions: Enum.map(
         json["supportedExtensions"] || [],
         fn map ->
-          %Wax.MetadataStatement.ExtensionDescriptor{
+          %Wax.Metadata.Statement.ExtensionDescriptor{
             id: map["id"],
             tag: map["tag"],
             data: map["data"],
@@ -419,12 +419,12 @@ defmodule Wax.MetadataStatement do
   defp user_verification_method(0x00000400), do: :user_verify_all
 
   @spec code_accuracy_descriptor(map()) ::
-    Wax.MetadataStatement.VerificationMethodDescriptor.CodeAccuracyDescriptor.t()
+    Wax.Metadata.Statement.VerificationMethodDescriptor.CodeAccuracyDescriptor.t()
 
   defp code_accuracy_descriptor(nil), do: nil
   defp code_accuracy_descriptor(map)
   do
-    %Wax.MetadataStatement.VerificationMethodDescriptor.CodeAccuracyDescriptor{
+    %Wax.Metadata.Statement.VerificationMethodDescriptor.CodeAccuracyDescriptor{
       base: map["base"],
       min_length: map["minLength"],
       max_retries: map["maxRetries"],
@@ -433,12 +433,12 @@ defmodule Wax.MetadataStatement do
   end
 
   @spec biometric_accuracy_descriptor(map()) ::
-    Wax.MetadataStatement.VerificationMethodDescriptor.BiometricAccuracyDescriptor.t()
+    Wax.Metadata.Statement.VerificationMethodDescriptor.BiometricAccuracyDescriptor.t()
 
   defp biometric_accuracy_descriptor(nil), do: nil
   defp biometric_accuracy_descriptor(map)
   do
-    %Wax.MetadataStatement.VerificationMethodDescriptor.BiometricAccuracyDescriptor{
+    %Wax.Metadata.Statement.VerificationMethodDescriptor.BiometricAccuracyDescriptor{
       far: map["FAR"],
       frr: map["FRR"],
       eer: map["EER"],
@@ -450,12 +450,12 @@ defmodule Wax.MetadataStatement do
   end
 
   @spec pattern_accuracy_descriptor(map()) ::
-    Wax.MetadataStatement.VerificationMethodDescriptor.PatternAccuracyDescriptor.t()
+    Wax.Metadata.Statement.VerificationMethodDescriptor.PatternAccuracyDescriptor.t()
 
   defp pattern_accuracy_descriptor(nil), do: nil
   defp pattern_accuracy_descriptor(map)
   do
-    %Wax.MetadataStatement.VerificationMethodDescriptor.PatternAccuracyDescriptor{
+    %Wax.Metadata.Statement.VerificationMethodDescriptor.PatternAccuracyDescriptor{
       min_complexity: map["minComplexity"],
       max_retries: map["maxRetries"],
       block_slowdown: map["blockSlowdown"]

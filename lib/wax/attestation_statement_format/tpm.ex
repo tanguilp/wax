@@ -79,7 +79,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   @impl Wax.AttestationStatementFormat
 
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, _verify_trust_root) do
+  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, challenge) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- version_valid?(att_stmt),
          {:ok, cert_info} <- parse_cert_info(att_stmt["certInfo"]),
@@ -88,7 +88,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
          :ok <- cert_info_valid?(cert_info, pub_area, auth_data, client_data_hash, att_stmt),
          :ok <- signature_valid?(att_stmt),
          :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data),
-         {:ok, metadata_statement} <- attestation_path_valid?(att_stmt["x5c"], auth_data)
+         {:ok, metadata_statement} <- attestation_path_valid?(att_stmt["x5c"], auth_data, challenge)
     do
       {:ok, {:basic, att_stmt["x5c"], metadata_statement}}
     else
@@ -356,12 +356,13 @@ defmodule Wax.AttestationStatementFormat.TPM do
     |> DateTime.to_unix()
   end
 
-  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t())
-    :: {:ok, Wax.MetadataStatement.t()} | {:error, any()}
+  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t(), Wax.Challenge.t()) ::
+  {:ok, Wax.Metadata.Statement.t()}
+  | {:error, any()}
 
-  defp attestation_path_valid?(der_list, auth_data) do
-    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
-      %Wax.MetadataStatement{attestation_root_certificates: arcs} = metadata_statement ->
+  defp attestation_path_valid?(der_list, auth_data, challenge) do
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+      %Wax.Metadata.Statement{attestation_root_certificates: arcs} = metadata_statement ->
         if Enum.any?(
           arcs,
           fn arc -> :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) end

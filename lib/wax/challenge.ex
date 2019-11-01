@@ -10,7 +10,8 @@ defmodule Wax.Challenge do
     :token_binding_status,
     :allow_credentials,
     :trusted_attestation_types,
-    :verify_trust_root
+    :verify_trust_root,
+    :acceptable_authenticator_statuses
   ]
 
   @type t :: %__MODULE__{
@@ -22,18 +23,20 @@ defmodule Wax.Challenge do
     token_binding_status: any(),
     allow_credentials: [binary()],
     trusted_attestation_types: [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
-    verify_trust_root: boolean()
+    verify_trust_root: boolean(),
+    acceptable_authenticator_statuses: [Wax.Metadata.TOCEntry.StatusReport.status()]
   }
 
   @doc false
 
-  @spec new(Wax.parsed_opts()) :: t()
+  @spec new([{Wax.CredentialId.t(), Wax.CoseKey.t()}], Wax.parsed_opts()) :: t()
   def new(allow_credentials \\ [],
           %{origin: origin,
             rp_id: rp_id,
             user_verified_required: uvr,
             trusted_attestation_types: trusted_attestation_types,
-            verify_trust_root: verify_trust_root
+            verify_trust_root: verify_trust_root,
+            acceptable_authenticator_statuses: acceptable_authenticator_statuses
           })
   do
     %__MODULE__{
@@ -43,7 +46,8 @@ defmodule Wax.Challenge do
       user_verified_required: uvr,
       allow_credentials: allow_credentials,
       trusted_attestation_types: trusted_attestation_types,
-      verify_trust_root: verify_trust_root
+      verify_trust_root: verify_trust_root,
+      acceptable_authenticator_statuses: acceptable_authenticator_statuses
     }
   end
 

@@ -6,6 +6,11 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [0.2.0] #FIXME date
 
+### Added
+
+- [Wax] When verifying trust root, `Wax.register/3` checks the authenticator status against the
+values whitelisted by the `:acceptable_authenticator_statuses` option
+
 ### Changed
 
 - [Wax] `Wax.register/3` and `Wax.authenticate/5` signatures change and now return the whole
