@@ -157,12 +157,21 @@ defmodule Wax.AttestationStatementFormat.Packed do
 
     Logger.debug("#{__MODULE__}: verifying certificate info of #{inspect(cert)}")
 
+    subject = X509.Certificate.subject(cert)
+
+    # here we interpret the specification "Subject field MUST be set to:"
+    # (https://www.w3.org/TR/webauthn/#packed-attestation-cert-requirements)
+    # as if only one value is authorized, per attribute
+    [subject_c] = X509.RDNSequence.get_attr(subject, "C")
+    [subject_o] = X509.RDNSequence.get_attr(subject, "O")
+    [subject_ou] = X509.RDNSequence.get_attr(subject, "OU")
+    [subject_cn] = X509.RDNSequence.get_attr(subject, "CN")
+
     if Wax.Utils.Certificate.version(cert) == :v3
-      and Wax.Utils.Certificate.subject_component_value(cert, "C") in @iso_3166_codes
-      and Wax.Utils.Certificate.subject_component_value(cert, "O") not in [nil, ""]
-      and Wax.Utils.Certificate.subject_component_value(cert, "OU") ==
-        "Authenticator Attestation"
-      and Wax.Utils.Certificate.subject_component_value(cert, "CN") not in [nil, ""]
+      and subject_c in @iso_3166_codes
+      and is_binary(subject_o) and subject_o != ""
+      and subject_ou == "Authenticator Attestation"
+      and is_binary(subject_cn) and subject_cn != ""
       and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
     do
       # checking if oid of id-fido-gen-ce-aaguid is present and, if so, aaguid
@@ -182,6 +191,9 @@ defmodule Wax.AttestationStatementFormat.Packed do
     else
       {:error, :attestation_packed_invalid_attestation_cert}
     end
+  rescue
+    MatchError ->
+      {:error, :attestation_packed_invalid_attestation_subject_field}
   end
 
   @spec determine_attestation_type(Wax.AuthenticatorData.t(), Wax.Challenge.t()) :: Wax.Attestation.type()

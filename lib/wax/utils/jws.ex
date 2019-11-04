@@ -25,7 +25,6 @@ defmodule Wax.Utils.JWS do
         |> Kernel.++([root_cert_der])
 
       case :public_key.pkix_path_validation(root_cert_der, Enum.reverse(cert_chain), []) do
-        #FIXME: shall we check the CRL? Or are FIDO MDS sufficient?
         {:ok, _} ->
           public_key =
             cert_chain
