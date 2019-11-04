@@ -174,8 +174,6 @@ defmodule Wax.Metadata do
   end
 
   def update_metadata(serial_number) do
-    #FIXME: handle
-    #   revoked certs & other revocation mecanisms
     Logger.info("Starting FIDO metadata update process")
 
     access_token = Application.get_env(:wax, :metadata_access_token)

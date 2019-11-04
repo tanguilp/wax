@@ -298,6 +298,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 [3.1.8 Metadata TOC object processing rules](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-metadata-service-v2.0-rd-20180702.html#metadata-toc-object-processing-rules)
   - [ ] TOC verification against the `x5u` attribute (note: doesn't seem to be used)
   - [x] TOC verification against the `x5c` attribute
+  - [ ] TOC CRLs verification
   - [x] Loading and verification of metadata statements against the hased value of the TOC
   - [x] Handling of the status of the authenticator (through whitelisting, see the
   `:acceptable_authenticator_statuses` option)

@@ -37,8 +37,6 @@ defmodule Wax.Utils.JWS do
 
           message = header_b64 <> "." <> payload_b64
 
-          File.write("testouille", message)
-
           sig = der_encoded_sig(sig_b64)
 
           if :public_key.verify(message, digest_alg, sig, public_key) do
