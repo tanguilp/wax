@@ -223,7 +223,7 @@ defmodule Wax.Metadata do
       [],
       follow_redirect: true) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        if :crypto.hash(digest_alg, body) == Base.url_decode64!(entry["hash"]) do
+        if :crypto.hash(digest_alg, body) == Base.url_decode64!(entry["hash"], padding: false) do
           body
           |> Base.url_decode64!()
           |> Jason.decode!()
