@@ -43,7 +43,7 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax, github: "tanguilp/wax", tag: "0.1.2"}
+    {:wax, github: "tanguilp/wax", tag: "0.1.3"}
   ]
 end
 ```
