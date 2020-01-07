@@ -163,7 +163,7 @@ defmodule Wax.Metadata do
     {:noreply, [serial_number: serial_number]}
   end
 
-  def handle_info(_, state) do
+  def handle_info(_reason, state) do
     {:noreply, state}
   end
 

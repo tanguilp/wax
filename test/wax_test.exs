@@ -23,8 +23,9 @@ defmodule WaxTest do
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      verify_trust_root: false # this example doesn't have a valid attestation root
-                               # in FIDO2 MDS
+      verify_trust_root: false, # this example doesn't have a valid attestation root in FIDO2 MDS
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -55,7 +56,9 @@ defmodule WaxTest do
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      verify_trust_root: true
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -94,7 +97,9 @@ defmodule WaxTest do
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      verify_trust_root: true
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -133,7 +138,9 @@ defmodule WaxTest do
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      verify_trust_root: true
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -178,7 +185,9 @@ defmodule WaxTest do
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      verify_trust_root: true
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -209,7 +218,9 @@ defmodule WaxTest do
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      verify_trust_root: false
+      verify_trust_root: false,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -240,7 +251,9 @@ defmodule WaxTest do
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      verify_trust_root: true
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -273,7 +286,10 @@ defmodule WaxTest do
       token_binding_status: nil,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       user_verified_required: false,
-      verify_trust_root: true}
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
+      }
 
     raw_id = "DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ=="
 
@@ -302,7 +318,10 @@ defmodule WaxTest do
       token_binding_status: nil,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       user_verified_required: false,
-      verify_trust_root: true}
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100
+      }
 
     raw_id = "DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ=="
 

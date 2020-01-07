@@ -1,5 +1,13 @@
 defmodule Wax.Challenge do
-  @enforce_keys [:bytes, :origin, :rp_id, :trusted_attestation_types, :verify_trust_root]
+  @enforce_keys [
+    :bytes,
+    :origin,
+    :rp_id,
+    :trusted_attestation_types,
+    :verify_trust_root,
+    :issued_at,
+    :timeout
+  ]
 
   defstruct [
     :bytes,
@@ -11,7 +19,9 @@ defmodule Wax.Challenge do
     :allow_credentials,
     :trusted_attestation_types,
     :verify_trust_root,
-    :acceptable_authenticator_statuses
+    :acceptable_authenticator_statuses,
+    :issued_at,
+    :timeout
   ]
 
   @type t :: %__MODULE__{
@@ -24,7 +34,9 @@ defmodule Wax.Challenge do
     allow_credentials: [binary()],
     trusted_attestation_types: [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
     verify_trust_root: boolean(),
-    acceptable_authenticator_statuses: [Wax.Metadata.TOCEntry.StatusReport.status()]
+    acceptable_authenticator_statuses: [Wax.Metadata.TOCEntry.StatusReport.status()],
+    issued_at: integer(),
+    timeout: non_neg_integer()
   }
 
   @doc false
@@ -36,7 +48,9 @@ defmodule Wax.Challenge do
             user_verified_required: uvr,
             trusted_attestation_types: trusted_attestation_types,
             verify_trust_root: verify_trust_root,
-            acceptable_authenticator_statuses: acceptable_authenticator_statuses
+            acceptable_authenticator_statuses: acceptable_authenticator_statuses,
+            issued_at: issued_at,
+            timeout: timeout
           })
   do
     %__MODULE__{
@@ -47,7 +61,9 @@ defmodule Wax.Challenge do
       allow_credentials: allow_credentials,
       trusted_attestation_types: trusted_attestation_types,
       verify_trust_root: verify_trust_root,
-      acceptable_authenticator_statuses: acceptable_authenticator_statuses
+      acceptable_authenticator_statuses: acceptable_authenticator_statuses,
+      issued_at: issued_at,
+      timeout: timeout
     }
   end
 

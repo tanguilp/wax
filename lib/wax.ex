@@ -23,6 +23,7 @@ defmodule Wax do
   |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
   |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
   |`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
+  |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
 
   ## FIDO2 Metadata service (MDS) configuration
 
@@ -64,16 +65,26 @@ defmodule Wax do
   loaded for debugging purpose in the `:wax_metadata` ETS table.
   """
 
-  @type opts :: Keyword.t()
+  @type opts :: [opt()]
 
+  @type opt ::
+  {:origin, String.t()}
+  | {:rp_id, String.t() | :auto}
+  | {:user_verified_required, boolean()}
+  | {:trusted_attestation_types, [Wax.Attestation.type()]}
+  | {:verify_trust_root, boolean()}
+  | {:acceptable_authenticator_statuses, [Wax.Metadata.TOCEntry.StatusReport.status()]}
+  | {:timeout, non_neg_integer()}
+
+  #FIXME: remove in favor of opts()
   @type parsed_opts :: %{required(atom()) => any()}
 
   @spec set_opts(opts()) :: parsed_opts()
 
-  defp set_opts(kw) do
+  defp set_opts(opts) do
     origin =
-      if is_binary(kw[:origin]) do
-        kw[:origin]
+      if is_binary(opts[:origin]) do
+        opts[:origin]
       else
         case Application.get_env(:wax, :origin) do
           origin when is_binary(origin) ->
@@ -89,11 +100,11 @@ defmodule Wax do
     end
 
     rp_id =
-      if kw[:rp_id] == :auto or Application.get_env(:wax, :rp_id) == :auto do
+      if opts[:rp_id] == :auto or Application.get_env(:wax, :rp_id) == :auto do
         URI.parse(origin).host
       else
-        if is_binary(kw[:rp_id]) do
-          kw[:rp_id]
+        if is_binary(opts[:rp_id]) do
+          opts[:rp_id]
         else
           case Application.get_env(:wax, :rp_id) do
             rp_id when is_binary(rp_id) ->
@@ -109,17 +120,17 @@ defmodule Wax do
       origin: origin,
       rp_id: rp_id,
       user_verified_required:
-        kw[:user_verified_required] || Application.get_env(:wax, :user_verified_required, false),
+        opts[:user_verified_required] || Application.get_env(:wax, :user_verified_required, false),
       trusted_attestation_types:
-        kw[:trusted_attestation_types] || Application.get_env(
+        opts[:trusted_attestation_types] || Application.get_env(
           :wax,
           :trusted_attestation_types,
           [:none, :basic, :uncertain, :attca, :self]
         ),
       verify_trust_root:
-        kw[:verify_trust_root] || Application.get_env(:wax, :verify_trust_root, true),
+        opts[:verify_trust_root] || Application.get_env(:wax, :verify_trust_root, true),
       acceptable_authenticator_statuses:
-        kw[:acceptable_authenticator_statuses] || Application.get_env(
+        opts[:acceptable_authenticator_statuses] || Application.get_env(
           :wax,
           :acceptable_authenticator_statuses,
           [
@@ -131,7 +142,9 @@ defmodule Wax do
             :fido_certified_l3,
             :fido_certified_l3plus
           ]
-        )
+        ),
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: opts[:timeout] || Application.get_env(:wax, :timeout, 60 * 20)
     }
   end
 
@@ -244,7 +257,8 @@ defmodule Wax do
 
   def register(attestation_object_cbor, client_data_json_raw, challenge) do
 
-    with {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
+    with :ok <- not_expired?(challenge),
+         {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
          :ok <- type_create?(client_data),
          :ok <- valid_challenge?(client_data, challenge),
          :ok <- valid_origin?(client_data, challenge),
@@ -398,14 +412,16 @@ defmodule Wax do
                      binary(),
                      Wax.ClientData.raw_string(),
                      Wax.Challenge.t()
-  ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, any()}
+  ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, atom()}
 
   def authenticate(credential_id,
                    auth_data_bin,
                    sig,
                    client_data_json_raw,
-                   challenge) do
-    with {:ok, cose_key} <- cose_key_from_credential_id(credential_id, challenge),
+                   challenge)
+  do
+    with :ok <- not_expired?(challenge),
+         {:ok, cose_key} <- cose_key_from_credential_id(credential_id, challenge),
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
          {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
          :ok <- type_get?(client_data),
@@ -423,6 +439,18 @@ defmodule Wax do
     else
       error ->
         error
+    end
+  end
+
+  @spec not_expired?(Wax.Challenge.t()) :: :ok | {:error, :challenge_expired}
+
+  defp not_expired?(%Wax.Challenge{issued_at: issued_at, timeout: timeout}) do
+    current_time = :erlang.monotonic_time(:second)
+
+    if current_time - issued_at < timeout do
+      :ok
+    else
+      {:error, :challenge_expired}
     end
   end
 
