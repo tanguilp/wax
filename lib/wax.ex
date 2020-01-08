@@ -262,7 +262,6 @@ defmodule Wax do
          :ok <- type_create?(client_data),
          :ok <- valid_challenge?(client_data, challenge),
          :ok <- valid_origin?(client_data, challenge),
-         :ok <- valid_token_binding_status?(client_data, challenge),
          client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),
          {:ok, %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt}}
            <- cbor_decode(attestation_object_cbor),
@@ -427,7 +426,6 @@ defmodule Wax do
          :ok <- type_get?(client_data),
          :ok <- valid_challenge?(client_data, challenge),
          :ok <- valid_origin?(client_data, challenge),
-         :ok <- valid_token_binding_status?(client_data, challenge),
          :ok <- valid_rp_id?(auth_data, challenge),
          :ok <- user_present_flag_set?(auth_data),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
@@ -493,11 +491,6 @@ defmodule Wax do
       {:error, :attestation_invalid_origin}
     end
   end
-
-  @spec valid_token_binding_status?(Wax.ClientData.t(), Wax.Challenge.t())
-    :: :ok | {:error, atom()}
-
-  defp valid_token_binding_status?(_client_data, _challenge), do: :ok #FIXME: implement?
 
   defp cbor_decode(cbor) do
     try do
