@@ -54,27 +54,30 @@ defmodule Wax.AttestationStatementFormat.TPM do
   #@tpm_ecc_bn_p638  0x0011
   #@tpm_ecc_sm2_p256 0x0020
 
-  # from https://medium.com/@herrjemand/verifying-fido-tpm2-0-attestation-fc7243847498
-  # FIXME: find official source and think about better update process than hardcoded values
+  # from https://trustedcomputinggroup.org/resource/vendor-id-registry/
+  # version 1.01
   @tpm_manufacturer_ids [
-    "id:414D4400", # "AMD",
-    "id:41544D4C", # "Atmel"
-    "id:4252434D", # "Broadcom"
-    "id:49424d00", # "IBM"
-    "id:49465800", # "Infineon"
-    "id:494E5443", # "Intel"
-    "id:4C454E00", # "Lenovo"
-    "id:4E534D20", # "National Semiconductor"
-    "id:4E545A00", # "Nationz"
-    "id:4E544300", # "Nuvoton Technology"
-    "id:51434F4D", # "Qualcomm"
-    "id:534D5343", # "SMSC"
-    "id:53544D20", # "ST Microelectronics"
-    "id:534D534E", # "Samsung"
-    "id:534E5300", # "Sinosun"
-    "id:54584E00", # "Texas Instruments"
-    "id:57454300", # "Winbond"
-    "id:524F4343", # "Fuzhouk Rockchip"
+    "id:414D4400", # AMD
+    "id:41544D4C", # Atmel
+    "id:4252434D", # Broadcom
+    "id:48504500", # HPE
+    "id:49424d00", # IBM
+    "id:49465800", # Infineon
+    "id:494E5443", # Intel
+    "id:4C454E00", # Lenovo
+    "id:4D534654", # Microsoft
+    "id:4E534D20", # National Semiconductor
+    "id:4E545A00", # Nationz
+    "id:4E544300", # Nuvoton Technology
+    "id:51434F4D", # Qualcomm
+    "id:534D5343", # SMSC
+    "id:53544D20", # ST Microelectronics
+    "id:534D534E", # Samsung
+    "id:534E5300", # Sinosun
+    "id:54584E00", # Texas Instruments
+    "id:57454300", # Winbond
+    "id:524F4343", # Fuzhouk Rockchip
+    "id:474F4F47"  # Google
   ]
 
   @impl Wax.AttestationStatementFormat
