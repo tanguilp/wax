@@ -6,7 +6,7 @@ defmodule Wax.Challenge do
     :trusted_attestation_types,
     :verify_trust_root,
     :issued_at,
-    :timeout
+    :timeout,
   ]
 
   defstruct [
@@ -21,7 +21,8 @@ defmodule Wax.Challenge do
     :verify_trust_root,
     :acceptable_authenticator_statuses,
     :issued_at,
-    :timeout
+    :timeout,
+    android_key_allow_software_enforcement: false
   ]
 
   @type t :: %__MODULE__{
@@ -36,7 +37,8 @@ defmodule Wax.Challenge do
     verify_trust_root: boolean(),
     acceptable_authenticator_statuses: [Wax.Metadata.TOCEntry.StatusReport.status()],
     issued_at: integer(),
-    timeout: non_neg_integer()
+    timeout: non_neg_integer(),
+    android_key_allow_software_enforcement: boolean()
   }
 
   @doc false
@@ -50,7 +52,8 @@ defmodule Wax.Challenge do
             verify_trust_root: verify_trust_root,
             acceptable_authenticator_statuses: acceptable_authenticator_statuses,
             issued_at: issued_at,
-            timeout: timeout
+            timeout: timeout,
+            android_key_allow_software_enforcement: android_key_allow_software_enforcement
           })
   do
     %__MODULE__{
@@ -63,7 +66,8 @@ defmodule Wax.Challenge do
       verify_trust_root: verify_trust_root,
       acceptable_authenticator_statuses: acceptable_authenticator_statuses,
       issued_at: issued_at,
-      timeout: timeout
+      timeout: timeout,
+      android_key_allow_software_enforcement: android_key_allow_software_enforcement
     }
   end
 

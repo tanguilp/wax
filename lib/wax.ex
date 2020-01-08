@@ -24,6 +24,7 @@ defmodule Wax do
   |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
   |`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
   |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
+  |`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`)
 
   ## FIDO2 Metadata service (MDS) configuration
 
@@ -75,6 +76,7 @@ defmodule Wax do
   | {:verify_trust_root, boolean()}
   | {:acceptable_authenticator_statuses, [Wax.Metadata.TOCEntry.StatusReport.status()]}
   | {:timeout, non_neg_integer()}
+  | {:android_key_allow_software_enforcement, boolean()}
 
   #FIXME: remove in favor of opts()
   @type parsed_opts :: %{required(atom()) => any()}
@@ -144,7 +146,11 @@ defmodule Wax do
           ]
         ),
       issued_at: :erlang.monotonic_time(:second),
-      timeout: opts[:timeout] || Application.get_env(:wax, :timeout, 60 * 20)
+      timeout: opts[:timeout] || Application.get_env(:wax, :timeout, 60 * 20),
+      android_key_allow_software_enforcement:
+        opts[:android_key_allow_software_enforcement]
+        || Application.get_env(:wax, :android_key_allow_software_enforcement)
+        || false
     }
   end
 

@@ -425,10 +425,10 @@ defmodule Wax.AttestationStatementFormat.TPM do
   defp to_erlang_curve(@tpm_ecc_nist_p256), do: :pubkey_cert_records.namedCurves(:secp256r1)
   defp to_erlang_curve(@tpm_ecc_nist_p384), do: :pubkey_cert_records.namedCurves(:secp384r1)
   defp to_erlang_curve(@tpm_ecc_nist_p521), do: :pubkey_cert_records.namedCurves(:secp521r1)
-  #FIXME: these 3 curves seem unsupported by Erlang
-  #defp to_erlang_curve(@tpm_ecc_bn_p256), do:
-  #defp to_erlang_curve(@tpm_ecc_bn_p638), do:
-  #defp to_erlang_curve(@tpm_ecc_sm2_p256), do:
+  # these 3 curves seem unsupported by Erlang
+  # defp to_erlang_curve(@tpm_ecc_bn_p256), do:
+  # defp to_erlang_curve(@tpm_ecc_bn_p638), do:
+  # defp to_erlang_curve(@tpm_ecc_sm2_p256), do:
 
   @spec to_erlang_public_key(map()) :: :public_key.public_key()
 

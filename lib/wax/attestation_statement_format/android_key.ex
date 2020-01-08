@@ -1,5 +1,5 @@
 defmodule Wax.AttestationStatementFormat.AndroidKey do
-  #FIXME: test cert can be found at https://fidoalliance.org/wp-content/uploads/Hardware-backed_Keystore_White_Paper_June2018.pdf
+  # test cert can be found at https://fidoalliance.org/wp-content/uploads/Hardware-backed_Keystore_White_Paper_June2018.pdf
   require Logger
 
   @moduledoc false
@@ -11,13 +11,14 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash, _challenge) do
+  def verify(att_stmt, auth_data, client_data_hash, challenge) do
     #FIXME: shall we verify the cert chain?
+    #see: https://medium.com/@tangui.lepense/hi-the-webauthn-specification-https-www-w3-org-tr-webauthn-android-key-attestation-6e5e5daaa03f
     with :ok <- valid_cbor?(att_stmt),
          {:ok, leaf_cert} <- X509.Certificate.from_der(List.first(att_stmt["x5c"])),
          :ok <- valid_signature?(att_stmt["sig"], auth_data.raw_bytes <> client_data_hash, leaf_cert),
          :ok <- public_key_matches_first_cert?(auth_data, leaf_cert),
-         :ok <- valid_extension_data?(leaf_cert, client_data_hash)
+         :ok <- valid_extension_data?(leaf_cert, client_data_hash, challenge)
     do
       {:ok, {:basic, att_stmt["x5c"], nil}}
     else
@@ -62,14 +63,18 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec valid_extension_data?(X509.Certificate.t(), binary()) :: :ok | {:error, any()}
-  defp valid_extension_data?(cert, client_data_hash) do
+  @spec valid_extension_data?(X509.Certificate.t(), binary(), Wax.Challenge.t()) ::
+  :ok
+  | {:error, any()}
+  defp valid_extension_data?(cert, client_data_hash, challenge) do
     try do
       {:Extension, _oid, _critical, asn} =
         X509.Certificate.extension(cert, {1, 3, 6, 1, 4, 1, 11129, 2, 1, 17})
 
-        if asn_v3_valid?(asn, client_data_hash) or asn_v2_valid?(asn, client_data_hash)
-          or asn_v1_valid?(asn, client_data_hash) do
+        if asn_v3_valid?(asn, client_data_hash, challenge)
+          or asn_v2_valid?(asn, client_data_hash, challenge)
+          or asn_v1_valid?(asn, client_data_hash, challenge)
+        do
           :ok
         else
           {:error, :attestation_androidkey_invalid_asn_attestation}
@@ -80,8 +85,8 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec asn_v1_valid?(binary(), binary) :: boolean
-  defp asn_v1_valid?(asn, client_data_hash) do
+  @spec asn_v1_valid?(binary(), binary, Wax.Challenge.t()) :: boolean
+  defp asn_v1_valid?(asn, client_data_hash, challenge) do
     case :AndroidKeyAttestationV1.decode(:AndroidKeyAttestationV1, asn) do
       {:ok,
         {:AndroidKeyAttestationV1, 1, _, _, _,
@@ -134,8 +139,8 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
             _osVersion_te,
             _osPatchLevel_te
           }}} ->
-        #FIXME: see https://github.com/w3c/webauthn/issues/1022
         (
+          challenge.android_key_allow_software_enforcement == true and
           @km_origin_generated == origin_software_enforced and
           @km_purpose_sign in purpose_software_enforced
         )
@@ -150,8 +155,8 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec asn_v2_valid?(binary(), binary) :: boolean
-  defp asn_v2_valid?(asn, client_data_hash) do
+  @spec asn_v2_valid?(binary(), binary, Wax.Challenge.t()) :: boolean
+  defp asn_v2_valid?(asn, client_data_hash, challenge) do
     case :AndroidKeyAttestationV2.decode(:AndroidKeyAttestationV2, asn) do
       {:ok,
         {:AndroidKeyAttestationV2, 2, _, _, _,
@@ -222,8 +227,8 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
             _attestationIdManufacturer_te,
             _attestationIdModel_te
           }}} ->
-        #FIXME: see https://github.com/w3c/webauthn/issues/1022
         (
+          challenge.android_key_allow_software_enforcement == true and
           @km_origin_generated == origin_software_enforced and
           @km_purpose_sign in purpose_software_enforced
         )
@@ -238,8 +243,8 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec asn_v3_valid?(binary(), binary) :: boolean
-  defp asn_v3_valid?(asn, client_data_hash) do
+  @spec asn_v3_valid?(binary(), binary, Wax.Challenge.t()) :: boolean
+  defp asn_v3_valid?(asn, client_data_hash, challenge) do
     case :AndroidKeyAttestationV3.decode(:AndroidKeyAttestationV3, asn) do
       {:ok,
         {:AndroidKeyAttestationV3, 3, _, _, _,
@@ -320,8 +325,8 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
             _vendorPatchLevel_te,
             _bootPatchLevel_te
           }}} ->
-        #FIXME: see https://github.com/w3c/webauthn/issues/1022
         (
+          challenge.android_key_allow_software_enforcement == true and
           @km_origin_generated == origin_software_enforced and
           @km_purpose_sign in purpose_software_enforced
         )
