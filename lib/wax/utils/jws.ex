@@ -9,8 +9,8 @@ defmodule Wax.Utils.JWS do
     Record.extract(:"ECDSA-Sig-Value", from_lib: "public_key/include/OTP-PUB-KEY.hrl")
   )
 
-  @spec verify(String.t(), binary()) :: :ok | {:error, any()}
-  def verify(jws, root_cert_der) do
+  @spec verify_with_x5c(String.t(), binary()) :: :ok | {:error, any()}
+  def verify_with_x5c(jws, root_cert_der) do
     try do
       [header_b64, payload_b64, sig_b64] = String.split(jws, ".")
 

@@ -199,7 +199,7 @@ defmodule Wax.Metadata do
   @spec process_metadata_toc(String.t(), non_neg_integer()) :: non_neg_integer() | :not_updated
 
   defp process_metadata_toc(jws, serial_number) do
-    case Wax.Utils.JWS.verify(jws, @fido_alliance_root_cer_der) do
+    case Wax.Utils.JWS.verify_with_x5c(jws, @fido_alliance_root_cer_der) do
       :ok ->
         {%{"alg" => alg}, metadata} = parse_jwt(jws)
 

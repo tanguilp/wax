@@ -49,10 +49,10 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
         |> Jason.decode!()
 
       with :ok <- valid_cbor?(att_stmt),
+           :ok <- Wax.Utils.JWS.verify_with_x5c(att_stmt["response"], @root_cert),
            :ok <- valid_safetynet_response?(payload, att_stmt["ver"]),
            :ok <- nonce_valid?(auth_data, client_data_hash, payload),
-           :ok <- valid_cert_hostname?(header),
-           :ok <- Wax.Utils.JWS.verify(att_stmt["response"], @root_cert)
+           :ok <- valid_cert_hostname?(header)
     do
         leaf_cert =
           header["x5c"]
@@ -85,12 +85,9 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   @spec valid_safetynet_response?(map() | Keyword.t() | nil, String.t()) :: :ok | {:error, any()}
 
   defp valid_safetynet_response?(%{} = safetynet_response, _version) do
-    #FIXME: currently unimplementable? see:
-    # https://github.com/w3c/webauthn/issues/968
-    # besides the spec seems to have an error with the `ctsProfileMatch` (`true` then `true`):
-    # https://developer.android.com/training/safetynet/attestation#compat-check-response
-    #
+    # currently unimplementable ver verification, see: https://github.com/w3c/webauthn/issues/968
     # Therefore for now we just check `ctsProfileMatch`
+
     Logger.debug("#{__MODULE__}: verifying SafetyNet response validity: " <>
       "#{inspect(safetynet_response)}")
 
@@ -127,8 +124,8 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
     Logger.debug("#{__MODULE__}: verifying certificate: #{inspect(leaf_cert)}")
 
-    #FIXME: verify it's indeed the SAN that must be checked
-    # since spec says `hostname` (couldn't it be the CN?, both?)
+    # checking subjectAltName, CN being deprecated:
+    # https://lightbend.github.io/ssl-config/HostnameVerification.html
     case X509.Certificate.extension(leaf_cert, :subject_alt_name) do
       {:Extension, {2, 5, 29, 17}, false, [dNSName: 'attest.android.com']} ->
         :ok

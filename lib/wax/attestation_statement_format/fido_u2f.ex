@@ -133,7 +133,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
       nil ->
         {:uncertain, nil}
 
-      #FIXME: here we assume that :basic and :attca are exclusive for a given authenticator
+      # here we assume that :basic and :attca are exclusive for a given authenticator
       # but this seems however unspecified
       metadata_statement ->
         if :tag_attestation_basic_full in metadata_statement.attestation_types do

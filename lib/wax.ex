@@ -78,7 +78,6 @@ defmodule Wax do
   | {:timeout, non_neg_integer()}
   | {:android_key_allow_software_enforcement, boolean()}
 
-  #FIXME: remove in favor of opts()
   @type parsed_opts :: %{required(atom()) => any()}
 
   @spec set_opts(opts()) :: parsed_opts()
@@ -275,7 +274,6 @@ defmodule Wax do
          :ok <- valid_rp_id?(auth_data, challenge),
          :ok <- user_present_flag_set?(auth_data),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
-         #FIXME: verify extensions
          {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
          {:ok, attestation_result_data} <- valid_attestation_statement_format?.(
@@ -435,7 +433,6 @@ defmodule Wax do
          :ok <- valid_rp_id?(auth_data, challenge),
          :ok <- user_present_flag_set?(auth_data),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
-         #FIXME: verify extensions
          client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),
          :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig)
     do

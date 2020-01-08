@@ -30,8 +30,8 @@ defmodule Wax.AttestationStatementFormat.Packed do
   @impl Wax.AttestationStatementFormat
   def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, challenge) do
     with :ok <- valid_cbor?(att_stmt),
-         :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
+         :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
          :ok <- attestation_path_valid?(att_stmt["x5c"], auth_data, challenge)
     do
       {:ok,
@@ -92,8 +92,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
     :: :ok | {:error, any()}
 
   defp valid_x5c_signature?(att_stmt, auth_data, client_data_hash) do
-    #FIXME: check if the "alg" matches the certificate's public key?
-
     pub_key =
       att_stmt["x5c"]
       |> List.first()
@@ -149,8 +147,9 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_attestation_certificate?(binary(), Wax.AuthenticatorData.t())
-    :: :ok | {:error, any()}
+  @spec valid_attestation_certificate?(binary(), Wax.AuthenticatorData.t()) ::
+  :ok
+  | {:error, any()}
 
   defp valid_attestation_certificate?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
@@ -207,8 +206,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
       nil ->
         :uncertain
 
-      #FIXME: here we assume that :basic and :attca are exclusive for a given authenticator
-      # but this seems however unspecified
       metadata_statement ->
         if :tag_attestation_basic_full in metadata_statement.attestation_types do
           :basic

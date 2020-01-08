@@ -37,8 +37,6 @@ defmodule Wax.Attestation do
   @spec statement_verify_fun(binary()) ::
     {:ok, attestation_statement_format_verify_fun} | {:error, any()}
 
-  #FIXME: the spec says we should US-ASCII => is that ok to pattern-match like this?
-  # Pattern-matching should be performed on binaries, but should be checked
   def statement_verify_fun("none") do
     {:ok, &Wax.AttestationStatementFormat.None.verify/4}
   end
