@@ -280,13 +280,13 @@ See [CHANGELOG.md](CHANGELOG.md).
   - [x] **Mandatory**: RS256 (RSASSA-PKCS1-v1_5 w/ SHA-256) algorithm support
   - [x] *Optional*: RS384 (RSASSA-PKCS1-v1_5 w/ SHA-384) algorithm support
   - [x] *Optional*: RS512 (RSASSA-PKCS1-v1_5 w/ SHA-512) algorithm support
-  - [ ] *Optional*: PS256 (RSASSA-PSS w/ SHA-256) algorithm support
-  - [ ] *Optional*: PS384 (RSASSA-PSS w/ SHA-384) algorithm support
-  - [ ] *Optional*: PS512 (RSASSA-PSS w/ SHA-512) algorithm support
+  - [x] *Optional*: PS256 (RSASSA-PSS w/ SHA-256) algorithm support
+  - [x] *Optional*: PS384 (RSASSA-PSS w/ SHA-384) algorithm support
+  - [x] *Optional*: PS512 (RSASSA-PSS w/ SHA-512) algorithm support
   - [x] **Mandatory**: ES256 (ECDSA using P-256 and SHA-256) algorithm support
   - [x] *Optional*: ES384 (ECDSA using P-384 and SHA-384) algorithm support
   - [x] *Optional*: ES512 (ECDSA using P-521 and SHA-512) algorithm support
-  - [ ] *Optional*: EdDSA algorithm support
+  - [x] *Optional*: EdDSA algorithm support
   - [ ] *Optional*: ES256K (ECDSA using P-256K and SHA-256) algorithm support
   - [ ] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
 
