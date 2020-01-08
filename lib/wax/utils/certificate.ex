@@ -9,6 +9,15 @@ defmodule Wax.Utils.Certificate do
     version
   end
 
+  @spec serial_number(X509.Certificate.t()) :: integer()
+
+  def serial_number(
+    {:OTPCertificate, {:OTPTBSCertificate, _, serial_number, _, _, _, _, _, _, _, _}, _, _}
+  ) do
+    serial_number
+  end
+
+
   @spec basic_constraints_ext_ca_component(X509.Certificate.t()) :: boolean()
 
   def basic_constraints_ext_ca_component(cert) do

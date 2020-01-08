@@ -27,6 +27,11 @@ defmodule Wax.Metadata do
 
   @table :wax_metadata
 
+  @crl_uris [
+    "http://mds.fidoalliance.org/Root.crl",
+    "http://mds.fidoalliance.org/CA-1.crl"
+  ]
+
   # client API
 
   def start_link do
@@ -163,7 +168,8 @@ defmodule Wax.Metadata do
     {:noreply, [serial_number: serial_number]}
   end
 
-  def handle_info(_reason, state) do
+  def handle_info(reason, state) do
+    Logger.debug("#{__MODULE__}: received handle_info/2 message: #{inspect(reason)}")
     {:noreply, state}
   end
 
@@ -199,7 +205,7 @@ defmodule Wax.Metadata do
   @spec process_metadata_toc(String.t(), non_neg_integer()) :: non_neg_integer() | :not_updated
 
   defp process_metadata_toc(jws, serial_number) do
-    case Wax.Utils.JWS.verify_with_x5c(jws, @fido_alliance_root_cer_der) do
+    case Wax.Utils.JWS.verify_with_x5c(jws, @fido_alliance_root_cer_der, @crl_uris) do
       :ok ->
         {%{"alg" => alg}, metadata} = parse_jwt(jws)
 
@@ -269,6 +275,9 @@ defmodule Wax.Metadata do
         Logger.warn(
           "Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")
     end
+  rescue
+    _e ->
+      {:error, :crl_retrieval_failed}
   end
 
   @spec update_metadata_statement(map(), atom())
