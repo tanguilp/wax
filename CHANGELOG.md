@@ -13,6 +13,7 @@ values whitelisted by the `:acceptable_authenticator_statuses` option
 - [Wax.CoseKey] Added support for PS256, PS384, PS512 and EdDSA signature schemes
 - [Wax.Challenge] Added timeout field and verification
 - [Wax] Added `:android_key_allow_software_enforcement` option
+- [Wax.Metadata] FIDO2 metadata TOC checked against CRLs (#12)
 
 ### Changed
 
