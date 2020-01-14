@@ -8,20 +8,46 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @km_origin_generated 0
   @km_purpose_sign 2
 
+  @android_key_root_cert """
+  -----BEGIN CERTIFICATE-----
+  MIICizCCAjKgAwIBAgIJAKIFntEOQ1tXMAoGCCqGSM49BAMCMIGYMQswCQYDVQQG
+  EwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNTW91bnRhaW4gVmll
+  dzEVMBMGA1UECgwMR29vZ2xlLCBJbmMuMRAwDgYDVQQLDAdBbmRyb2lkMTMwMQYD
+  VQQDDCpBbmRyb2lkIEtleXN0b3JlIFNvZnR3YXJlIEF0dGVzdGF0aW9uIFJvb3Qw
+  HhcNMTYwMTExMDA0MzUwWhcNMzYwMTA2MDA0MzUwWjCBmDELMAkGA1UEBhMCVVMx
+  EzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcMDU1vdW50YWluIFZpZXcxFTAT
+  BgNVBAoMDEdvb2dsZSwgSW5jLjEQMA4GA1UECwwHQW5kcm9pZDEzMDEGA1UEAwwq
+  QW5kcm9pZCBLZXlzdG9yZSBTb2Z0d2FyZSBBdHRlc3RhdGlvbiBSb290MFkwEwYH
+  KoZIzj0CAQYIKoZIzj0DAQcDQgAE7l1ex+HA220Dpn7mthvsTWpdamguD/9/SQ59
+  dx9EIm29sa/6FsvHrcV30lacqrewLVQBXT5DKyqO107sSHVBpKNjMGEwHQYDVR0O
+  BBYEFMit6XdMRcOjzw0WEOR5QzohWjDPMB8GA1UdIwQYMBaAFMit6XdMRcOjzw0W
+  EOR5QzohWjDPMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgKEMAoGCCqG
+  SM49BAMCA0cAMEQCIDUho++LNEYenNVg8x1YiSBq3KNlQfYNns6KGYxmSGB7AiBN
+  C/NR2TB8fVvaNTQdqEcbY6WFZTytTySn502vQX3xvw==
+  -----END CERTIFICATE-----
+  """
+  |> X509.Certificate.from_pem!()
+
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
   def verify(att_stmt, auth_data, client_data_hash, challenge) do
-    #FIXME: shall we verify the cert chain?
     #see: https://medium.com/@tangui.lepense/hi-the-webauthn-specification-https-www-w3-org-tr-webauthn-android-key-attestation-6e5e5daaa03f
     with :ok <- valid_cbor?(att_stmt),
-         {:ok, leaf_cert} <- X509.Certificate.from_der(List.first(att_stmt["x5c"])),
+         cert_chain = att_stmt["x5c"],
+         {:ok, leaf_cert} <- X509.Certificate.from_der(List.first(cert_chain)),
+         {:ok, root_cert} <- X509.Certificate.from_der(List.last(cert_chain)),
+         :ok <- check_root_certificate(root_cert),
          :ok <- valid_signature?(att_stmt["sig"], auth_data.raw_bytes <> client_data_hash, leaf_cert),
          :ok <- public_key_matches_first_cert?(auth_data, leaf_cert),
-         :ok <- valid_extension_data?(leaf_cert, client_data_hash, challenge)
+         :ok <- valid_extension_data?(leaf_cert, client_data_hash, challenge),
+         {:ok, _} <- :public_key.pkix_path_validation(root_cert, Enum.reverse(cert_chain), [])
     do
       {:ok, {:basic, att_stmt["x5c"], nil}}
     else
+      {:error, {:bad_cert, {:revoked, _}}} ->
+        {:error, :attestation_androidkey_path_validation_bad_cert}
+
       error ->
         error
     end
@@ -36,6 +62,15 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
       :ok
     else
       {:error, :attestation_androidkey_invalid_cbor}
+    end
+  end
+
+  @spec check_root_certificate(X509.Certificate.t()) :: :ok | {:error, atom()}
+  defp check_root_certificate(root_cert) do
+    if root_cert == @android_key_root_cert do
+      :ok
+    else
+      {:error, :attestation_androidkey_invalid_root_cert}
     end
   end
 
