@@ -15,7 +15,7 @@ For semantics (FIDO2, WebAuthn, FIDO...), read
 You can try out and study WebAuthn authentication with Wax thanks to the
 [wax_demo](https://github.com/tanguilp/wax_demo) test application.
 
-See alos a video demonstration of an authentication flow which allows replacing the password
+See also a video demonstration of an authentication flow which allows replacing the password
 authentication scheme by a WebAuthn password-less authentication:
 
 [![Demo screenshot](https://raw.githubusercontent.com/tanguilp/wax_demo/master/assets/static/images/demo_screenshot.png)](https://vimeo.com/358361625)
