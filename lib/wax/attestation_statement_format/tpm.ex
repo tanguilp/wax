@@ -368,7 +368,15 @@ defmodule Wax.AttestationStatementFormat.TPM do
       %Wax.Metadata.Statement{attestation_root_certificates: arcs} = metadata_statement ->
         if Enum.any?(
           arcs,
-          fn arc -> :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) end
+          fn arc ->
+            case :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) do
+              {:ok, _} ->
+                true
+
+              {:error, _} ->
+                false
+            end
+          end
         ) do
           {:ok, metadata_statement}
         else

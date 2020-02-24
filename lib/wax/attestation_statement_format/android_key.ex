@@ -45,7 +45,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     do
       {:ok, {:basic, att_stmt["x5c"], nil}}
     else
-      {:error, {:bad_cert, {:revoked, _}}} ->
+      {:error, {:bad_cert, {_, _}}} ->
         {:error, :attestation_androidkey_path_validation_bad_cert}
 
       error ->

@@ -48,8 +48,8 @@ defmodule Wax.ClientData do
         token_binding: nil # unsupported
         }}
     else
-      {:error, error} ->
-        {:error, error}
+      {:error, _} ->
+        {:error, :client_data_json_parse_error}
     end
   end
 end

@@ -41,7 +41,7 @@ defmodule Wax.Utils.JWS do
     do
       :ok
     else
-      {:error, {:bad_cert, {:revoked, _}}} ->
+      {:error, {:bad_cert, {_, _}}} ->
         {:error, :jws_path_validation_bad_cert}
 
       false ->
