@@ -15,7 +15,7 @@ For semantics (FIDO2, WebAuthn, FIDO...), read
 You can try out and study WebAuthn authentication with Wax thanks to the
 [wax_demo](https://github.com/tanguilp/wax_demo) test application.
 
-See alos a video demonstration of an authentication flow which allows replacing the password
+See also a video demonstration of an authentication flow which allows replacing the password
 authentication scheme by a WebAuthn password-less authentication:
 
 [![Demo screenshot](https://raw.githubusercontent.com/tanguilp/wax_demo/master/assets/static/images/demo_screenshot.png)](https://vimeo.com/358361625)
@@ -186,7 +186,7 @@ These options are:
 |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
 |`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
 |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
-|`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`)
+|`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
 
 ## FIDO2 Metadata service (MDS) configuration
 
@@ -226,6 +226,28 @@ During the registration process, when trust root is verified against FIDO2 metad
 metadata entries whose last status is whitelisted by the `:acceptable_authenticator_statuses`
 will be used. Otherwise a warning is logged and the registration process fails. Metadata is still
 loaded for debugging purpose in the `:wax_metadata` ETS table.
+
+## Loading FIDO2 metadata from a directory
+
+In addition to the FIDO2 metadata service, it is possible to load metadata from a directory.
+To do so, the `:metadata_dir` application environment variable must be set to one of:
+- a `String.t()`: the path to the directory containing the metadata files
+- an `atom()`: in this case, the files are loaded from the `"fido2_metadata"` directory of the
+private (`"priv/"`) directory of the application (whose name is the atom)
+
+In both case, Wax tries to load all files (even directories and other special files).
+
+### Example configuration
+
+```elixir
+config :wax,
+  origin: "http://localhost:4000",
+  rp_id: :auto,
+  metadata_dir: :my_application
+```
+
+will try to load all files of the `"priv/fido2_metadata/"` if the `:my_application` as FIDO2
+metadata statements. On failure, a warning is emitted.
 
 ## Security considerations
 

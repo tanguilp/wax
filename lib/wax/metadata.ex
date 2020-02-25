@@ -57,6 +57,9 @@ defmodule Wax.Metadata do
     aaguid_str = a <> "-" <> b <> "-" <> c <> "-" <> d <> "-" <> e
 
     case GenServer.call(__MODULE__, {:get, {:aaguid, aaguid_str}}) do
+      {nil, metadata_statement} ->
+        metadata_statement
+
       {toc_entry, metadata_statement} ->
         if authenticator_status_allowed?(toc_entry, acceptable_authenticator_statuses) do
           metadata_statement
@@ -83,6 +86,9 @@ defmodule Wax.Metadata do
     acki_str = Base.encode16(acki_bin, case: :lower)
 
     case GenServer.call(__MODULE__, {:get, {:acki, acki_str}}) do
+      {nil, metadata_statement} ->
+        metadata_statement
+
       {toc_entry, metadata_statement} ->
         if authenticator_status_allowed?(toc_entry, acceptable_authenticator_statuses) do
           metadata_statement
@@ -133,13 +139,15 @@ defmodule Wax.Metadata do
 
     schedule_update()
 
+    Process.send(self(), :update_from_file, [])
+
     {:noreply, [serial_number: serial_number]}
   end
 
   @impl true
   def handle_call({:get, {type, value}}, _from, state) do
     case :ets.lookup(@table, {type, value}) do
-      [{_, toc_payload_entry, metadata_statement}] ->
+      [{_, toc_payload_entry, metadata_statement, _source}] ->
         {:reply, {toc_payload_entry, metadata_statement}, state}
 
       _ ->
@@ -166,6 +174,12 @@ defmodule Wax.Metadata do
     schedule_update()
 
     {:noreply, [serial_number: serial_number]}
+  end
+
+  def handle_info(:update_from_file, state) do
+    load_from_dir()
+
+    {:noreply, state}
   end
 
   def handle_info(reason, state) do
@@ -216,16 +230,13 @@ defmodule Wax.Metadata do
           tasks = Enum.map(
             metadata["entries"],
             fn entry ->
-              Task.async(fn -> update_metadata_statement(entry, digest_alg) end)
+              Task.async(fn -> get_metadata_statement(entry, digest_alg) end)
             end
           )
 
           toc_payload_entry = Enum.map(metadata["entries"], &build_toc_payload_entry/1)
 
-          # cleaning it first to avoid having to deal with diffing
-          # since this GenServer call is blocking, no concurrent access
-          # to the empty table can be made
-          :ets.delete_all_objects(:wax_metadata)
+          :ets.match_delete(:wax_metadata, {:_, :_, :_, :MDSv2})
 
           Enum.each(
             Enum.zip(toc_payload_entry, tasks),
@@ -233,28 +244,8 @@ defmodule Wax.Metadata do
               metadata_statement = Task.await(task)
 
               case metadata_statement do
-                %Wax.Metadata.Statement{aaguid: aaguid} when is_binary(aaguid) ->
-                  Logger.debug("Saving metadata for aaguid `#{aaguid}` " <>
-                    "(#{metadata_statement.description})")
-
-                  :ets.insert(:wax_metadata, {{:aaguid, aaguid}, toc_entry, metadata_statement})
-
-                %Wax.Metadata.Statement{aaid: aaid} when is_binary(aaid) ->
-                  Logger.debug("Saving metadata for aaid `#{aaid}` " <>
-                    "(#{metadata_statement.description})")
-
-                  :ets.insert(:wax_metadata, {{:aaid, aaid}, toc_entry, metadata_statement})
-
-                %Wax.Metadata.Statement{attestation_certificate_key_identifiers: acki_list} ->
-                  Enum.each(
-                    acki_list,
-                    fn acki ->
-                      Logger.debug("Saving metadata for attestation certificate key identifier " <>
-                        "`#{acki}` (#{metadata_statement.description})")
-
-                      :ets.insert(:wax_metadata, {{:acki, acki}, toc_entry, metadata_statement})
-                    end
-                  )
+                %Wax.Metadata.Statement{} ->
+                  save_metadata_statement(metadata_statement, :MDSv2, toc_entry)
 
                 _ ->
                   Logger.error("Failed to load data for TOC entry `#{inspect(toc_entry)}`")
@@ -280,9 +271,8 @@ defmodule Wax.Metadata do
       {:error, :crl_retrieval_failed}
   end
 
-  @spec update_metadata_statement(map(), atom())
-    :: any()
-  def update_metadata_statement(entry, digest_alg) do
+  @spec get_metadata_statement(map(), atom()) :: Wax.Metadata.Statement.t() | :error
+  def get_metadata_statement(entry, digest_alg) do
     HTTPoison.get(
       entry["url"] <> "?token=" <> Application.get_env(:wax, :metadata_access_token),
       [],
@@ -293,15 +283,17 @@ defmodule Wax.Metadata do
           body
           |> Base.url_decode64!()
           |> Jason.decode!()
-          |> Wax.Metadata.Statement.from_json()
+          |> Wax.Metadata.Statement.from_json!()
         else
           Logger.warn("Invalid hash for metadata entry at " <> entry["url"])
 
           :error
         end
 
-      _ ->
-        Logger.warn("Failed to download metadata statement at " <> entry["url"])
+      {:error, reason} ->
+        Logger.warn(
+          "Failed to download metadata statement at #{entry["url"]} (reason: #{inspect(reason)})"
+        )
 
         :error
     end
@@ -405,4 +397,82 @@ defmodule Wax.Metadata do
   defp digest_from_jws_alg("PS256"), do: :sha256
   defp digest_from_jws_alg("PS384"), do: :sha384
   defp digest_from_jws_alg("PS512"), do: :sha512
+
+  @spec load_from_dir() :: any()
+  defp load_from_dir() do
+    files =
+      case Application.get_env(:wax, :metadata_dir, nil) do
+        nil ->
+          []
+
+        app when is_atom(app) ->
+          app
+          |> :code.priv_dir()
+          |> List.to_string()
+          |> Kernel.<>("/fido2_metadata/*")
+          |> Path.wildcard()
+
+        path when is_binary(path) ->
+          Path.wildcard(path <> "/*")
+      end
+
+    Enum.each(
+      files,
+      fn file_path ->
+        with {:ok, file_content} <- File.read(file_path),
+             {:ok, parsed_json} <- Jason.decode(file_content),
+             {:ok, metadata_statement} <- Wax.Metadata.Statement.from_json(parsed_json)
+        do
+          save_metadata_statement(metadata_statement, :file, nil)
+        else
+          {:error, reason} ->
+            Logger.warn(
+              "Failed to load metadata statement from `#{file_path}` (reason: #{inspect(reason)})"
+            )
+        end
+      end
+    )
+  end
+
+  @spec save_metadata_statement(
+    Wax.Metadata.Statement.t(),
+    source :: atom(),
+    Wax.Metadata.TOCEntry.t() | nil
+  ) :: any()
+  defp save_metadata_statement(metadata_statement, source, maybe_toc_entry) do
+    desc = metadata_statement.description
+
+    case metadata_statement do
+      %Wax.Metadata.Statement{aaguid: aaguid} when is_binary(aaguid) ->
+        Logger.debug("Saving metadata for aaguid `#{aaguid}` (#{desc})")
+
+        :ets.insert(
+          :wax_metadata,
+          {{:aaguid, aaguid}, maybe_toc_entry, metadata_statement, source}
+        )
+
+      %Wax.Metadata.Statement{aaid: aaid} when is_binary(aaid) ->
+        Logger.debug("Saving metadata for aaid `#{aaid}` (#{desc})")
+
+        :ets.insert(
+          :wax_metadata,
+          {{:aaguid, aaid}, maybe_toc_entry, metadata_statement, source}
+        )
+
+      %Wax.Metadata.Statement{attestation_certificate_key_identifiers: acki_list} ->
+        Enum.each(
+          acki_list,
+          fn acki ->
+            Logger.debug(
+              "Saving metadata for attestation certificate key identifier `#{acki}` (#{desc})"
+            )
+
+            :ets.insert(
+              :wax_metadata,
+              {{:acki, acki}, maybe_toc_entry, metadata_statement, source}
+            )
+          end
+        )
+    end
+  end
 end

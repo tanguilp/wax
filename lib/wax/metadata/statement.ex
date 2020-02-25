@@ -101,6 +101,15 @@ defmodule Wax.Metadata.Statement do
   | :alg_sign_sm2_sm3_raw
   | :alg_sign_rsa_emsa_pkcs1_sha256_raw
   | :alg_sign_rsa_emsa_pkcs1_sha256_der
+  | :alg_sign_rsassa_pss_sha384_raw
+  | :alg_sign_rsassa_pss_sha512_raw
+  | :alg_sign_rsassa_pkcsv15_sha256_raw
+  | :alg_sign_rsassa_pkcsv15_sha384_raw
+  | :alg_sign_rsassa_pkcsv15_sha512_raw
+  | :alg_sign_rsassa_pkcsv15_sha1_raw
+  | :alg_sign_secp384r1_ecdsa_sha384_raw
+  | :alg_sign_secp521r1_ecdsa_sha512_raw
+  | :alg_sign_ed25519_eddsa_sha256_raw
 
   @type public_key_representation_format ::
   :alg_key_ecc_x962_raw
@@ -280,9 +289,18 @@ defmodule Wax.Metadata.Statement do
 
   @doc false
 
-  @spec from_json(map() | Keyword.t() | nil) :: t()
+  @spec from_json(map() | Keyword.t() | nil) :: {:ok, t()} | {:error, any()}
+  def from_json(json) do
+    try do
+      {:ok, from_json!(json)}
+    rescue
+      e ->
+        {:error, e}
+    end
+  end
 
-  def from_json(%{} = json) do
+  @spec from_json!(map() | Keyword.t() | nil) :: t()
+  def from_json!(%{} = json) do
     %__MODULE__{
       aaid: json["aaid"],
       aaguid: json["aaguid"],
@@ -379,18 +397,25 @@ defmodule Wax.Metadata.Statement do
     }
   end
 
-  def from_json(_), do: nil
-
   @spec authentication_algorithm(non_neg_integer()) :: authentication_algorithm()
-  defp authentication_algorithm(1), do: :alg_sign_secp256r1_ecdsa_sha256_raw
-  defp authentication_algorithm(2), do: :alg_sign_secp256r1_ecdsa_sha256_der
-  defp authentication_algorithm(3), do: :alg_sign_rsassa_pss_sha256_raw
-  defp authentication_algorithm(4), do: :alg_sign_rsassa_pss_sha256_der
-  defp authentication_algorithm(5), do: :alg_sign_secp256k1_ecdsa_sha256_raw
-  defp authentication_algorithm(6), do: :alg_sign_secp256k1_ecdsa_sha256_der
-  defp authentication_algorithm(7), do: :alg_sign_sm2_sm3_raw
-  defp authentication_algorithm(8), do: :alg_sign_rsa_emsa_pkcs1_sha256_raw
-  defp authentication_algorithm(9), do: :alg_sign_rsa_emsa_pkcs1_sha256_der
+  defp authentication_algorithm(0x0001), do: :alg_sign_secp256r1_ecdsa_sha256_raw
+  defp authentication_algorithm(0x0002), do: :alg_sign_secp256r1_ecdsa_sha256_der
+  defp authentication_algorithm(0x0003), do: :alg_sign_rsassa_pss_sha256_raw
+  defp authentication_algorithm(0x0004), do: :alg_sign_rsassa_pss_sha256_der
+  defp authentication_algorithm(0x0005), do: :alg_sign_secp256k1_ecdsa_sha256_raw
+  defp authentication_algorithm(0x0006), do: :alg_sign_secp256k1_ecdsa_sha256_der
+  defp authentication_algorithm(0x0007), do: :alg_sign_sm2_sm3_raw
+  defp authentication_algorithm(0x0008), do: :alg_sign_rsa_emsa_pkcs1_sha256_raw
+  defp authentication_algorithm(0x0009), do: :alg_sign_rsa_emsa_pkcs1_sha256_der
+  defp authentication_algorithm(0x000A), do: :alg_sign_rsassa_pss_sha384_raw
+  defp authentication_algorithm(0x000B), do: :alg_sign_rsassa_pss_sha512_raw
+  defp authentication_algorithm(0x000C), do: :alg_sign_rsassa_pkcsv15_sha256_raw
+  defp authentication_algorithm(0x000D), do: :alg_sign_rsassa_pkcsv15_sha384_raw
+  defp authentication_algorithm(0x000E), do: :alg_sign_rsassa_pkcsv15_sha512_raw
+  defp authentication_algorithm(0x000F), do: :alg_sign_rsassa_pkcsv15_sha1_raw
+  defp authentication_algorithm(0x0010), do: :alg_sign_secp384r1_ecdsa_sha384_raw
+  defp authentication_algorithm(0x0011), do: :alg_sign_secp521r1_ecdsa_sha512_raw
+  defp authentication_algorithm(0x0012), do: :alg_sign_ed25519_eddsa_sha256_raw
 
   @spec public_key_representation_format(non_neg_integer()) :: public_key_representation_format()
   defp public_key_representation_format(0x0100), do: :alg_key_ecc_x962_raw
