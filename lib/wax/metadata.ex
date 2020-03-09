@@ -400,6 +400,8 @@ defmodule Wax.Metadata do
 
   @spec load_from_dir() :: any()
   defp load_from_dir() do
+    :ets.match_delete(:wax_metadata, {:_, :_, :_, :file})
+
     files =
       case Application.get_env(:wax, :metadata_dir, nil) do
         nil ->
