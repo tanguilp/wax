@@ -33,7 +33,10 @@ defmodule Wax.Utils.JWS do
 
     message = header_b64 <> "." <> payload_b64
 
-    sig = der_encoded_sig(sig_b64)
+    sig =
+      sig_b64
+      |> Base.url_decode64!(padding: false)
+      |> maybe_encoded_sig(header["alg"])
 
     with {:ok, _} <- :public_key.pkix_path_validation(root_cert_der, Enum.reverse(cert_chain), []),
          true <- :public_key.verify(message, digest_alg, sig, public_key),
@@ -41,7 +44,7 @@ defmodule Wax.Utils.JWS do
     do
       :ok
     else
-      {:error, {:bad_cert, {_, _}}} ->
+      {:error, {:bad_cert, _}} ->
         {:error, :jws_path_validation_bad_cert}
 
       false ->
@@ -55,9 +58,18 @@ defmodule Wax.Utils.JWS do
       {:error, :jws_decode_error}
   end
 
-  @spec der_encoded_sig(String.t()) :: binary()
-  defp der_encoded_sig(sig_b64) do
-    Base.url_decode64!(sig_b64, padding: false)
+  @spec maybe_encoded_sig(binary(), String.t()) :: binary()
+  defp maybe_encoded_sig(sig, alg) when alg in ["ES256", "ES384", "ES512"] do
+    der_encoded_sig(sig)
+  end
+
+  defp maybe_encoded_sig(sig, _alg) do
+    sig
+  end
+
+  @spec der_encoded_sig(binary()) :: binary()
+  defp der_encoded_sig(sig) do
+    sig
     |> new_der_encoded_sig()
     |> to_der_sig()
   end
