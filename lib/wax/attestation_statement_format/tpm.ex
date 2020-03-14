@@ -303,7 +303,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
   end
 
   @spec aik_cert_valid?(binary(), Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
-  
+
   defp aik_cert_valid?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
 
@@ -316,8 +316,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
     if Wax.Utils.Certificate.version(cert) == :v3
       and X509.Certificate.subject(cert) == {:rdnSequence, []}
-      and parse_cert_datetime(valid_from) < Wax.Utils.Timestamp.get_timestamp()
-      and parse_cert_datetime(valid_to) > Wax.Utils.Timestamp.get_timestamp()
+      and parse_cert_utc_time(valid_from) < Wax.Utils.Timestamp.get_timestamp()
+      and parse_cert_utc_time(valid_to) > Wax.Utils.Timestamp.get_timestamp()
       and get_tcpaTpmManufacturer_field(cert) in @tpm_manufacturer_ids
       and {2, 23, 133, 8, 3} in key_ext_vals
       and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
@@ -341,19 +341,28 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec parse_cert_datetime(charlist()) :: non_neg_integer()
-
-  defp parse_cert_datetime(datetime) do
+  @spec parse_cert_utc_time(charlist()) :: non_neg_integer()
+  defp parse_cert_utc_time(datetime) do
     <<
-      day::binary-size(2),
+      year::binary-size(2),
       month::binary-size(2),
-      year::binary-size(4),
+      day::binary-size(2),
       hour::binary-size(2),
       minute::binary-size(2),
+      second::binary-size(2),
       "Z"::utf8
     >> = :erlang.list_to_binary(datetime)
 
-    year <> "-" <> month <> "-" <> day <> "T" <> hour <> ":" <> minute <> ":00Z"
+    year =
+      case Integer.parse(year) do
+        {year_int, _} when year_int > 50 ->
+          "19" <> year
+
+        {year_int, _} when year_int <= 50 ->
+          "20" <> year
+      end
+
+    year <> "-" <> month <> "-" <> day <> "T" <> hour <> ":" <> minute <> ":" <> second <> "Z"
     |> DateTime.from_iso8601()
     |> elem(1)
     |> DateTime.to_unix()
