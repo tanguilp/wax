@@ -8,7 +8,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @km_origin_generated 0
   @km_purpose_sign 2
 
-  @android_key_root_cert """
+  @android_key_root_cert_der """
   -----BEGIN CERTIFICATE-----
   MIICizCCAjKgAwIBAgIJAKIFntEOQ1tXMAoGCCqGSM49BAMCMIGYMQswCQYDVQQG
   EwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNTW91bnRhaW4gVmll
@@ -27,6 +27,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   -----END CERTIFICATE-----
   """
   |> X509.Certificate.from_pem!()
+  |> X509.Certificate.to_der()
 
   @behaviour Wax.AttestationStatementFormat
 
@@ -36,16 +37,14 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     with :ok <- valid_cbor?(att_stmt),
          cert_chain = att_stmt["x5c"],
          {:ok, leaf_cert} <- X509.Certificate.from_der(List.first(cert_chain)),
-         {:ok, root_cert} <- X509.Certificate.from_der(List.last(cert_chain)),
-         :ok <- check_root_certificate(root_cert),
          :ok <- valid_signature?(att_stmt["sig"], auth_data.raw_bytes <> client_data_hash, leaf_cert),
          :ok <- public_key_matches_first_cert?(auth_data, leaf_cert),
          :ok <- valid_extension_data?(leaf_cert, client_data_hash, challenge),
-         {:ok, _} <- :public_key.pkix_path_validation(root_cert, Enum.reverse(cert_chain), [])
+         :ok <- validate_x5c_path(auth_data, cert_chain, challenge)
     do
       {:ok, {:basic, att_stmt["x5c"], nil}}
     else
-      {:error, {:bad_cert, {_, _}}} ->
+      {:error, {:bad_cert, _}} ->
         {:error, :attestation_androidkey_path_validation_bad_cert}
 
       error ->
@@ -57,20 +56,12 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["sig"])
     and is_list(att_stmt["x5c"])
-    and length(Map.keys(att_stmt)) == 2 # only these two keys
+    and is_integer(att_stmt["alg"])
+    and length(Map.keys(att_stmt)) == 3
     do
       :ok
     else
       {:error, :attestation_androidkey_invalid_cbor}
-    end
-  end
-
-  @spec check_root_certificate(X509.Certificate.t()) :: :ok | {:error, atom()}
-  defp check_root_certificate(root_cert) do
-    if root_cert == @android_key_root_cert do
-      :ok
-    else
-      {:error, :attestation_androidkey_invalid_root_cert}
     end
   end
 
@@ -373,6 +364,42 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
 
       _ ->
         false
+    end
+  end
+
+  @spec validate_x5c_path(
+    Wax.AuthenticatorData.t(),
+    [binary()],
+    Wax.Challenge.t()
+  ) :: :ok | {:error, atom()}
+  defp validate_x5c_path(auth_data, cert_chain, challenge) do
+    root_certs =
+      case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+        %Wax.Metadata.Statement{} = attestation_statement ->
+          attestation_statement.attestation_root_certificates
+
+        _ ->
+          [@android_key_root_cert_der]
+      end
+
+    do_validate_x5c_path(root_certs, cert_chain)
+  end
+
+  @spec do_validate_x5c_path(
+    root_certs :: [binary()],
+    cert_chain :: [binary()]
+  ) :: :ok | {:error, atom()}
+  defp do_validate_x5c_path([], _) do
+    {:error, :attestation_androidkey_path_validation_failed}
+  end
+
+  defp do_validate_x5c_path([root_cert_der | remaining_root_certs], cert_chain) do
+    case :public_key.pkix_path_validation(root_cert_der, Enum.reverse(cert_chain), []) do
+      {:ok, _} ->
+        :ok
+
+      {:error, _} ->
+        do_validate_x5c_path(remaining_root_certs, cert_chain)
     end
   end
 end
