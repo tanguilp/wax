@@ -32,7 +32,12 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash, challenge) do
+  def verify(
+    att_stmt,
+    auth_data,
+    client_data_hash,
+    %Wax.Challenge{attestation: "direct"} = challenge
+  ) do
     #see: https://medium.com/@tangui.lepense/hi-the-webauthn-specification-https-www-w3-org-tr-webauthn-android-key-attestation-6e5e5daaa03f
     with :ok <- valid_cbor?(att_stmt),
          cert_chain = att_stmt["x5c"],
@@ -50,6 +55,10 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
       error ->
         error
     end
+  end
+
+  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
+    {:error, :invalid_attestation_conveyance_preference}
   end
 
   @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}

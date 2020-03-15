@@ -17,6 +17,7 @@ defmodule Wax do
 
   |  Option       |  Type         |  Applies to       |  Default value                | Notes |
   |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
+  |`attestation`|`"none"` or `"direct"`|<ul style="margin:0"><li>registration</li></ul>| `"none"` | |
   |`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | Mandatory. Example: `https://www.example.com` |
   |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
   |`user_verified_required`|`boolean()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `false`| |
@@ -91,20 +92,27 @@ defmodule Wax do
   @type opts :: [opt()]
 
   @type opt ::
-  {:origin, String.t()}
+  {:attestation, String.t()}
+  | {:origin, String.t()}
   | {:rp_id, String.t() | :auto}
   | {:user_verified_required, boolean()}
   | {:trusted_attestation_types, [Wax.Attestation.type()]}
   | {:verify_trust_root, boolean()}
   | {:acceptable_authenticator_statuses, [Wax.Metadata.TOCEntry.StatusReport.status()]}
+  | {:issued_at, integer()}
   | {:timeout, non_neg_integer()}
   | {:android_key_allow_software_enforcement, boolean()}
 
-  @type parsed_opts :: %{required(atom()) => any()}
-
-  @spec set_opts(opts()) :: parsed_opts()
-
+  @spec set_opts(opts()) :: opts()
   defp set_opts(opts) do
+    attestation =
+      case opts[:attestation] do
+        "none" -> "none"
+        nil -> "none"
+        "direct" -> "direct"
+        _ -> raise "Invalid attestation, must be one of: `\"none\"`, `\"direct\"`"
+      end
+
     origin =
       if is_binary(opts[:origin]) do
         opts[:origin]
@@ -139,7 +147,8 @@ defmodule Wax do
         end
       end
 
-    %{
+    [
+      attestation: attestation,
       origin: origin,
       rp_id: rp_id,
       user_verified_required:
@@ -172,7 +181,7 @@ defmodule Wax do
         opts[:android_key_allow_software_enforcement]
         || Application.get_env(:wax, :android_key_allow_software_enforcement)
         || false
-    }
+    ]
   end
 
   @doc """
@@ -194,7 +203,6 @@ defmodule Wax do
     bytes: <<192, 64, 240, 166, 163, 188, 76, 255, 108, 227, 18, 33, 123, 19, 61,
       3, 166, 195, 190, 157, 24, 207, 210, 179, 180, 136, 10, 135, 82, 172, 134,
       17>>,
-    exp: nil,
     origin: "http://localhost:4000",
     rp_id: "localhost",
     token_binding_status: nil,
@@ -210,7 +218,9 @@ defmodule Wax do
   def new_registration_challenge(opts) do
     opts = set_opts(opts)
 
-    Wax.Challenge.new(opts)
+    a = Wax.Challenge.new(opts)
+    IO.inspect("Ok boomer")
+    a
   end
 
   @doc """
@@ -466,7 +476,6 @@ defmodule Wax do
   end
 
   @spec not_expired?(Wax.Challenge.t()) :: :ok | {:error, :challenge_expired}
-
   defp not_expired?(%Wax.Challenge{issued_at: issued_at, timeout: timeout}) do
     current_time = :erlang.monotonic_time(:second)
 

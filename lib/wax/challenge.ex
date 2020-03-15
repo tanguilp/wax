@@ -6,15 +6,15 @@ defmodule Wax.Challenge do
     :trusted_attestation_types,
     :verify_trust_root,
     :issued_at,
-    :timeout,
+    :timeout
   ]
 
   defstruct [
+    :attestation,
     :bytes,
     :origin,
     :rp_id,
     :user_verified_required,
-    :exp,
     :token_binding_status,
     :allow_credentials,
     :trusted_attestation_types,
@@ -26,11 +26,11 @@ defmodule Wax.Challenge do
   ]
 
   @type t :: %__MODULE__{
+    attestation: String.t(),
     bytes: binary(),
     origin: String.t(),
     rp_id: String.t(),
     user_verified_required: boolean(),
-    exp: non_neg_integer() | nil,
     token_binding_status: any(),
     allow_credentials: [binary()],
     trusted_attestation_types: [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
@@ -43,32 +43,12 @@ defmodule Wax.Challenge do
 
   @doc false
 
-  @spec new([{Wax.CredentialId.t(), Wax.CoseKey.t()}], Wax.parsed_opts()) :: t()
-  def new(allow_credentials \\ [],
-          %{origin: origin,
-            rp_id: rp_id,
-            user_verified_required: uvr,
-            trusted_attestation_types: trusted_attestation_types,
-            verify_trust_root: verify_trust_root,
-            acceptable_authenticator_statuses: acceptable_authenticator_statuses,
-            issued_at: issued_at,
-            timeout: timeout,
-            android_key_allow_software_enforcement: android_key_allow_software_enforcement
-          })
-  do
-    %__MODULE__{
-      bytes: random_bytes(),
-      origin: origin,
-      rp_id: rp_id,
-      user_verified_required: uvr,
-      allow_credentials: allow_credentials,
-      trusted_attestation_types: trusted_attestation_types,
-      verify_trust_root: verify_trust_root,
-      acceptable_authenticator_statuses: acceptable_authenticator_statuses,
-      issued_at: issued_at,
-      timeout: timeout,
-      android_key_allow_software_enforcement: android_key_allow_software_enforcement
-    }
+  @spec new([{Wax.CredentialId.t(), Wax.CoseKey.t()}], Wax.opts()) :: t()
+  def new(allow_credentials \\ [], opts) do
+    struct(
+      __MODULE__,
+      [allow_credentials: allow_credentials] ++ [bytes: random_bytes()] ++ opts
+    )
   end
 
   @spec random_bytes() :: binary

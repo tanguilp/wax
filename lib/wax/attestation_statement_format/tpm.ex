@@ -77,12 +77,18 @@ defmodule Wax.AttestationStatementFormat.TPM do
     "id:54584E00", # Texas Instruments
     "id:57454300", # Winbond
     "id:524F4343", # Fuzhouk Rockchip
-    "id:474F4F47"  # Google
+    "id:474F4F47"  # Google,
   ]
+  #++ ["id:FFFFF1D0"] # fake ID for conformance tool testing, uncomment only for testing
 
   @impl Wax.AttestationStatementFormat
 
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, challenge) do
+  def verify(
+    %{"x5c" => _} = att_stmt,
+    auth_data,
+    client_data_hash,
+    %Wax.Challenge{attestation: "direct"} = challenge
+  ) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- version_valid?(att_stmt),
          {:ok, cert_info} <- parse_cert_info(att_stmt["certInfo"]),
@@ -100,8 +106,17 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  def verify(%{"ecdaaKeyId" => _}, _, _, _) do
+  def verify(
+    %{"ecdaaKeyId" => _},
+    _auth_data,
+    _client_data_hash,
+    %Wax.Challenge{attestation: "direct"}
+  ) do
     {:error, :attestation_tpm_unsupported_ecdaa_signature}
+  end
+
+  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
+    {:error, :invalid_attestation_conveyance_preference}
   end
 
   @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
@@ -355,10 +370,10 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
     year =
       case Integer.parse(year) do
-        {year_int, _} when year_int > 50 ->
+        {year_int, _} when year_int >= 50 ->
           "19" <> year
 
-        {year_int, _} when year_int <= 50 ->
+        {year_int, _} when year_int < 50 ->
           "20" <> year
       end
 

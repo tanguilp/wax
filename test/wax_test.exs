@@ -19,6 +19,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -52,6 +53,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -93,6 +95,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -134,6 +137,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -181,6 +185,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -214,6 +219,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -247,6 +253,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -280,7 +287,6 @@ defmodule WaxTest do
         {"DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ==", %{-3 => <<98, 100, 223, 32, 227, 200, 15, 188, 189, 232, 138, 105, 22, 180, 62, 243, 3, 141, 155, 218, 234, 56, 73, 119, 68, 40, 15, 226, 166, 223, 142, 70>>, -2 => <<208, 207, 104, 44, 202, 126, 18, 157, 148, 21, 163, 59, 225, 16, 109, 136, 12, 65, 158, 142, 164, 239, 142, 27, 193, 171, 144, 237, 209, 71, 65, 213>>, -1 => 1, 1 => 2, 3 => -7}}
       ],
       bytes: <<116, 133, 61, 70, 123, 121, 10, 178, 236, 90, 87, 60, 49, 217, 68, 174, 49, 237, 210, 27, 49, 158, 107, 163, 50, 109, 253, 21, 8, 125, 125, 154>>,
-      exp: nil,
       origin: "http://localhost:4000",
       rp_id: "localhost",
       token_binding_status: nil,
@@ -312,7 +318,6 @@ defmodule WaxTest do
         {"DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ==", %{-3 => <<98, 100, 223, 32, 227, 200, 15, 188, 189, 232, 138, 105, 22, 180, 62, 243, 3, 141, 155, 218, 234, 56, 73, 119, 68, 40, 15, 226, 166, 223, 142, 70>>, -2 => <<208, 207, 104, 44, 202, 126, 18, 157, 148, 21, 163, 59, 225, 16, 109, 136, 12, 65, 158, 142, 164, 239, 142, 27, 193, 171, 144, 237, 209, 71, 65, 213>>, -1 => 1, 1 => 2, 3 => -7}}
       ],
       bytes: <<116, 133, 61, 70, 123, 121, 10, 178, 236, 90, 87, 60, 49, 217, 68, 174, 49, 237, 210, 27, 49, 158, 107, 163, 50, 109, 253, 21, 8, 125, 125, 154>>,
-      exp: nil,
       origin: "http://localhost:4000",
       rp_id: "localhost",
       token_binding_status: nil,
