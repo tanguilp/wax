@@ -44,7 +44,7 @@ defmodule Wax.ClientData do
   @spec parse_raw_json(raw_string()) :: {:ok, t()} | {:error, any()}
 
   def parse_raw_json(client_data_json_raw) do
-    with {:ok, client_data_map} <- Jason.decode(client_data_json_raw) |> IO.inspect(),
+    with {:ok, client_data_map} <- Jason.decode(client_data_json_raw),
          {:ok, maybe_token_binding} <- parse_token_binding(client_data_map["tokenBinding"])
     do
       type =

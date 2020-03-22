@@ -126,13 +126,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
     do
       :ok
     else
-      #IO.inspect(att_stmt["alg"])
-      #IO.inspect(pub_key)
-      #IO.inspect(auth_data)
-      #att_stmt["x5c"]
-      #|> List.first()
-      #|> X509.Certificate.from_der!()
-      #|> IO.inspect()
       {:error, :attestation_packed_invalid_signature}
     end
   end

@@ -79,7 +79,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     "id:524F4343", # Fuzhouk Rockchip
     "id:474F4F47"  # Google,
   ]
-  #++ ["id:FFFFF1D0"] # fake ID for conformance tool testing, uncomment only for testing
+  ++ ["id:FFFFF1D0"] # fake ID for conformance tool testing, uncomment only for testing
 
   @impl Wax.AttestationStatementFormat
 
@@ -94,7 +94,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
          {:ok, cert_info} <- parse_cert_info(att_stmt["certInfo"]),
          {:ok, pub_area} <- parse_pub_area(att_stmt["pubArea"]),
          :ok <- verify_public_key(pub_area, auth_data),
-         :ok <- cert_info_valid?(cert_info, pub_area, auth_data, client_data_hash, att_stmt),
+         :ok <- cert_info_valid?(cert_info, auth_data, client_data_hash, att_stmt),
          :ok <- signature_valid?(att_stmt),
          :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data),
          {:ok, metadata_statement} <- attestation_path_valid?(att_stmt["x5c"], auth_data, challenge)
@@ -143,34 +143,31 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   defp parse_cert_info(
     <<
-      magic::unsigned-big-integer-size(32),
-      type::unsigned-big-integer-size(16),
+      0xff544347::unsigned-big-integer-size(32),
+      0x8017::unsigned-big-integer-size(16),
       qualified_signer_length::unsigned-big-integer-size(16),
-      qualified_signer::binary-size(qualified_signer_length),
+      _qualified_signer::binary-size(qualified_signer_length),
       extra_data_length::unsigned-big-integer-size(16),
       extra_data::binary-size(extra_data_length),
-      clock_info::binary-size(17),
-      firmaware_version::binary-size(8),
+      _clock_info::binary-size(17),
+      _firmware_version::binary-size(8),
       attested_name_length::unsigned-big-integer-size(16),
       attested_name::binary-size(attested_name_length),
       attested_qualified_name_length::unsigned-big-integer-size(16),
-      attested_qualified_name::binary-size(attested_qualified_name_length)
+      _attested_qualified_name::binary-size(attested_qualified_name_length)
     >>
   )
   do
+    hash_length = attested_name_length - 2
+    <<
+      attested_name_digest::unsigned-big-integer-size(16),
+      attested_name_hash::binary-size(hash_length)
+    >> = attested_name
+
     {:ok, %{
-      magic: magic,
-      type: type,
-      qualified_signer_length: qualified_signer_length,
-      qualified_signer: qualified_signer,
-      extra_data_length: extra_data_length,
       extra_data: extra_data,
-      clock_info: clock_info,
-      firmaware_version: firmaware_version,
-      attested_name_length: attested_name_length,
-      attested_name: attested_name,
-      attested_qualified_name_length: attested_qualified_name_length,
-      attested_qualified_name: attested_qualified_name,
+      attested_name_digest: attested_name_digest,
+      attested_name_hash: attested_name_hash,
     }}
   end
 
@@ -261,36 +258,33 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec cert_info_valid?(map(), map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), map())
+  @spec cert_info_valid?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), map())
     :: :ok | {:error, any()}
 
   defp cert_info_valid?(
     cert_info,
-    pub_area,
     auth_data,
     client_data_hash,
     att_stmt) do
-    # %{3 => val} is a psuedo cose key, 3 being the algorithm
+    # %{3 => val} is a pseudo cose key, 3 being the algorithm
     digest = Wax.CoseKey.to_erlang_digest(%{3 =>att_stmt["alg"]})
 
     att_to_be_signed = auth_data.raw_bytes <> client_data_hash
 
     pub_area_hash =
-      :crypto.hash(name_alg_to_erlang_digest(pub_area[:name_alg]), att_stmt["pubArea"])
-
-    attested_name = <<pub_area[:name_alg]::unsigned-big-integer-size(16)>> <> pub_area_hash
+      cert_info[:attested_name_digest]
+      |> name_alg_to_erlang_digest()
+      |> :crypto.hash(att_stmt["pubArea"])
 
     Logger.debug("#{__MODULE__}: verifying cert_info is valid: digest: #{inspect(digest)} ; " <>
       "att to be signed: #{inspect(att_to_be_signed)} ; " <>
-      "pub_area hash: #{inspect(pub_area_hash)} ; " <>
-      "attested name: #{inspect(attested_name)}"
+      "pub_area hash: #{inspect(pub_area_hash)}"
       )
 
-    if cert_info[:magic] == 0xff544347 # TPM_GENERATED_VALUE
-      and cert_info[:type] == 0x8017   # TPM_ST_ATTEST_CERTIFY
-      and cert_info[:extra_data] == :crypto.hash(digest, att_to_be_signed)
-      and cert_info[:attested_name] == attested_name do
-        :ok
+    if cert_info[:extra_data] == :crypto.hash(digest, att_to_be_signed)
+      and cert_info[:attested_name_hash] == pub_area_hash
+    do
+      :ok
     else
       {:error, :attestation_tpm_invalid_cert_info}
     end
@@ -393,7 +387,12 @@ defmodule Wax.AttestationStatementFormat.TPM do
         if Enum.any?(
           arcs,
           fn arc ->
-            case :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) do
+            :public_key.pkix_path_validation(
+              arc,
+              [arc | Enum.reverse(der_list)],
+              verify_fun: {&verify_fun/3, %{}}
+            )
+            |> case do
               {:ok, _} ->
                 true
 
@@ -410,6 +409,32 @@ defmodule Wax.AttestationStatementFormat.TPM do
       _ ->
         {:error, :attestation_tpm_no_attestation_metadata_statement_found}
     end
+  end
+
+  # specific verify function which accepts the Certificate Policies extension
+  # without further verification. OTP <= 23.0-rc1 does not recognizes this extension
+  # which can be marked as critical in TPM's outputs, which make the path validation
+  # fail.
+  # TODO: create issue on github to remove it once OTP supports it
+  @oid_cert_policies {2, 5, 29, 32}
+  def verify_fun(_, {:extension, {:Extension, @oid_cert_policies, true, _}}, user_state) do
+    {:valid, user_state}
+  end
+
+  def verify_fun(_, {:extension, _}, user_state) do
+    {:unknown, user_state}
+  end
+
+  def verify_fun(_, :valid, user_state) do
+    {:valid, user_state}
+  end
+
+  def verify_fun(_, :valid_peer, user_state) do
+    {:valid, user_state}
+  end
+
+  def verify_fun(_, reason, _) do
+    {:fail, reason}
   end
 
   @spec get_tcpaTpmManufacturer_field(any()) :: String.t()

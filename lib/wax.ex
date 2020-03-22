@@ -218,9 +218,7 @@ defmodule Wax do
   def new_registration_challenge(opts) do
     opts = set_opts(opts)
 
-    a = Wax.Challenge.new(opts)
-    IO.inspect("Ok boomer")
-    a
+    Wax.Challenge.new(opts)
   end
 
   @doc """
