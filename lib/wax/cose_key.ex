@@ -64,7 +64,7 @@ defmodule Wax.CoseKey do
   Use `supported_algs/0` to determine supported algorithms.
   """
 
-  @spec verify(binary(), t(), binary()) :: :ok | {:error, atom()}
+  @spec verify(message :: binary(), t(), signature :: binary()) :: :ok | {:error, atom()}
 
   def verify(msg, %{@alg => alg} = cose_key, sig) when alg in @pss_algs do
     # Use PSS padding; requires workaround for https://bugs.erlang.org/browse/ERL-878

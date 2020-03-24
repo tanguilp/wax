@@ -134,22 +134,17 @@ defmodule Wax.AttestationStatementFormat.Packed do
     :: :ok | {:error, any()}
 
   defp valid_self_signature?(att_stmt, auth_data, client_data_hash) do
-    pub_key =
-      Wax.CoseKey.to_erlang_public_key(auth_data.attested_credential_data.credential_public_key)
+    Wax.CoseKey.verify(
+      auth_data.raw_bytes <> client_data_hash,
+      auth_data.attested_credential_data.credential_public_key,
+      att_stmt["sig"]
+    )
+    |> case do
+      :ok ->
+        :ok
 
-    digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
-
-    Logger.debug("#{__MODULE__}: verifying self-signature with public key #{inspect(pub_key)}" <>
-      " (hash: #{inspect(digest)})")
-
-    if :public_key.verify(auth_data.raw_bytes <> client_data_hash,
-                          digest,
-                          att_stmt["sig"],
-                          pub_key)
-    do
-      :ok
-    else
-      {:error, :attestation_packed_invalid_signature}
+      {:error, :invalid_signature} ->
+        {:error, :attestation_packed_invalid_signature}
     end
   end
 
