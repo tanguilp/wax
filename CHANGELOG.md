@@ -15,11 +15,13 @@ values whitelisted by the `:acceptable_authenticator_statuses` option
 - [Wax] Added `:android_key_allow_software_enforcement` option
 - [Wax.Metadata] FIDO2 metadata TOC checked against CRLs (#12)
 - [Wax] Added a mean to load metadata from a directory
+- [Wax] Added `:silent_authentication_enabled` option
 
 ### Changed
 
-- [Wax] `Wax.register/3` and `Wax.authenticate/5` signatures change and now return the whole
-authenticator data.
+- [Wax] `Wax.register/3` and `Wax.authenticate/5` signatures change and now return the
+whole authenticator data.
+- [Wax] the `:user_verified_required` option is replace by the `:user_verification` option
 
 ### Fixed
 

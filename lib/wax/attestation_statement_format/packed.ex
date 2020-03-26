@@ -46,9 +46,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
           Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge)
         }
       }
-    else
-      error ->
-        error
     end
   end
 

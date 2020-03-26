@@ -1,20 +1,23 @@
 defmodule Wax.Challenge do
   @enforce_keys [
+    :type,
     :bytes,
     :origin,
     :rp_id,
     :trusted_attestation_types,
     :verify_trust_root,
     :issued_at,
-    :timeout
+    :timeout,
+    :silent_authentication_enabled
   ]
 
   defstruct [
+    :type,
     :attestation,
     :bytes,
     :origin,
     :rp_id,
-    :user_verified_required,
+    :user_verification,
     :token_binding_status,
     :allow_credentials,
     :trusted_attestation_types,
@@ -22,15 +25,17 @@ defmodule Wax.Challenge do
     :acceptable_authenticator_statuses,
     :issued_at,
     :timeout,
-    android_key_allow_software_enforcement: false
+    android_key_allow_software_enforcement: false,
+    silent_authentication_enabled: false
   ]
 
   @type t :: %__MODULE__{
+    type: :attestation | :authentication,
     attestation: String.t(),
     bytes: binary(),
     origin: String.t(),
     rp_id: String.t(),
-    user_verified_required: boolean(),
+    user_verification: String.t(),
     token_binding_status: any(),
     allow_credentials: [binary()],
     trusted_attestation_types: [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
@@ -38,7 +43,8 @@ defmodule Wax.Challenge do
     acceptable_authenticator_statuses: [Wax.Metadata.TOCEntry.StatusReport.status()],
     issued_at: integer(),
     timeout: non_neg_integer(),
-    android_key_allow_software_enforcement: boolean()
+    android_key_allow_software_enforcement: boolean(),
+    silent_authentication_enabled: boolean()
   }
 
   @doc false

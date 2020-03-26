@@ -20,12 +20,13 @@ defmodule Wax do
   |`attestation`|`"none"` or `"direct"`|<ul style="margin:0"><li>registration</li></ul>| `"none"` | |
   |`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | Mandatory. Example: `https://www.example.com` |
   |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
-  |`user_verified_required`|`boolean()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `false`| |
+  |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `"preferred"`| |
   |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
   |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
   |`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
   |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
   |`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
+  |`silent_authentication_enabled`|`boolean()`|<ul style="margin:0"><li>authentication</li></ul>|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
 
   ## FIDO2 Metadata service (MDS) configuration
 
@@ -95,13 +96,14 @@ defmodule Wax do
   {:attestation, String.t()}
   | {:origin, String.t()}
   | {:rp_id, String.t() | :auto}
-  | {:user_verified_required, boolean()}
+  | {:user_verification, String.t()}
   | {:trusted_attestation_types, [Wax.Attestation.type()]}
   | {:verify_trust_root, boolean()}
   | {:acceptable_authenticator_statuses, [Wax.Metadata.TOCEntry.StatusReport.status()]}
   | {:issued_at, integer()}
   | {:timeout, non_neg_integer()}
   | {:android_key_allow_software_enforcement, boolean()}
+  | {:silent_authentication_enabled, boolean()}
 
   @spec set_opts(opts()) :: opts()
   defp set_opts(opts) do
@@ -147,12 +149,20 @@ defmodule Wax do
         end
       end
 
+    if opts[:user_verification] &&
+      opts[:user_verification] not in ["discouraged", "preferred", "required"] do
+      raise "Invalid `:user_verification` parameter, must be one of: " <>
+        "\"discouraged\", \"preferred\", \"required\""
+    end
+
     [
+      type: opts[:type],
       attestation: attestation,
       origin: origin,
       rp_id: rp_id,
-      user_verified_required:
-        opts[:user_verified_required] || Application.get_env(:wax, :user_verified_required, false),
+      user_verification:
+        opts[:user_verification]
+        || Application.get_env(:wax, :user_verification, "preferred"),
       trusted_attestation_types:
         opts[:trusted_attestation_types] || Application.get_env(
           :wax,
@@ -180,7 +190,10 @@ defmodule Wax do
       android_key_allow_software_enforcement:
         opts[:android_key_allow_software_enforcement]
         || Application.get_env(:wax, :android_key_allow_software_enforcement)
-        || false
+        || false,
+      silent_authentication_enabled:
+        opts[:silent_authentication_enabled]
+        || Application.get_env(:wax, :silent_authentication_enabled, false)
     ]
   end
 
@@ -207,7 +220,7 @@ defmodule Wax do
     rp_id: "localhost",
     token_binding_status: nil,
     trusted_attestation_types: [:basic, :attca],
-    user_verified_required: false,
+    user_verification: "preferred",
     verify_trust_root: true
   }
   ```
@@ -216,7 +229,7 @@ defmodule Wax do
   @spec new_registration_challenge(opts()) :: Wax.Challenge.t()
 
   def new_registration_challenge(opts) do
-    opts = set_opts(opts)
+    opts = set_opts(Keyword.put(opts, :type, :attestation))
 
     Wax.Challenge.new(opts)
   end
@@ -297,12 +310,12 @@ defmodule Wax do
          :ok <- type_create?(client_data),
          :ok <- valid_challenge?(client_data, challenge),
          :ok <- valid_origin?(client_data, challenge),
-         client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),
-         {:ok, %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt}}
-           <- cbor_decode(attestation_object_cbor),
+         client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
+         {:ok, att_data} <- cbor_decode(attestation_object_cbor),
+         %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt} = att_data,
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
          :ok <- valid_rp_id?(auth_data, challenge),
-         :ok <- user_present_flag_set?(auth_data),
+         :ok <- user_present_flag_set?(auth_data, challenge),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
          {:ok, valid_attestation_statement_format?}
            <- Wax.Attestation.statement_verify_fun(fmt),
@@ -315,9 +328,6 @@ defmodule Wax do
          :ok <- attestation_trustworthy?(attestation_result_data, challenge)
     do
       {:ok, {auth_data, attestation_result_data}}
-    else
-      error ->
-        error
     end
   end
 
@@ -401,7 +411,7 @@ defmodule Wax do
     rp_id: "localhost",
     token_binding_status: nil,
     trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-    user_verified_required: false,
+    user_verification: "preferred",
     verify_trust_root: true
   }
   ```
@@ -411,7 +421,7 @@ defmodule Wax do
     :: Wax.Challenge.t()
 
   def new_authentication_challenge(allow_credentials, opts) do
-    opts = set_opts(opts)
+    opts = set_opts(Keyword.put(opts, :type, :authentication))
 
     Wax.Challenge.new(allow_credentials, opts)
   end
@@ -461,15 +471,12 @@ defmodule Wax do
          :ok <- valid_challenge?(client_data, challenge),
          :ok <- valid_origin?(client_data, challenge),
          :ok <- valid_rp_id?(auth_data, challenge),
-         :ok <- user_present_flag_set?(auth_data),
+         :ok <- user_present_flag_set?(auth_data, challenge),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
-         client_data_hash <- :crypto.hash(:sha256, client_data_json_raw),
+         client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
          :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig)
     do
       {:ok, auth_data}
-    else
-      error ->
-        error
     end
   end
 
@@ -543,8 +550,18 @@ defmodule Wax do
     end
   end
 
-  @spec user_present_flag_set?(Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
-  defp user_present_flag_set?(auth_data) do
+  @spec user_present_flag_set?(
+    Wax.AuthenticatorData.t(),
+    Wax.Challenge.t()
+  ) :: :ok | {:error, any()}
+  defp user_present_flag_set?(
+    _auth_data,
+    %Wax.Challenge{type: :authentication, silent_authentication_enabled: true})
+  do
+    :ok
+  end
+
+  defp user_present_flag_set?(auth_data, _challenge) do
     if auth_data.flag_user_present == true do
       :ok
     else
@@ -555,10 +572,16 @@ defmodule Wax do
   @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(), Wax.Challenge.t())
     :: :ok | {:error, atom()}
   defp maybe_user_verified_flag_set?(auth_data, challenge) do
-    if !challenge.user_verified_required or auth_data.flag_user_verified do
-      :ok
-    else
-      {:error, :user_not_verified}
+    case challenge.user_verification do
+      "required" ->
+        if auth_data.flag_user_verified do
+          :ok
+        else
+          {:error, :user_not_verified}
+        end
+
+      _ ->
+        :ok
     end
   end
 
