@@ -415,7 +415,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
   # without further verification. OTP <= 23.0-rc1 does not recognizes this extension
   # which can be marked as critical in TPM's outputs, which make the path validation
   # fail.
-  # TODO: create issue on github to remove it once OTP supports it
   @oid_cert_policies {2, 5, 29, 32}
   def verify_fun(_, {:extension, {:Extension, @oid_cert_policies, true, _}}, user_state) do
     {:valid, user_state}
