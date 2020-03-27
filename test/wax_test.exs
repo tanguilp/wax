@@ -19,6 +19,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      type: :attestation,
       attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
@@ -26,7 +27,8 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: false, # this example doesn't have a valid attestation root in FIDO2 MDS
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -53,6 +55,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      type: :attestation,
       attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
@@ -60,7 +63,8 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -95,6 +99,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      type: :attestation,
       attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
@@ -102,7 +107,8 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -115,7 +121,7 @@ defmodule WaxTest do
 
     # test data doesn't have a valid root attestation in FIDO2 MDS and disabling it through
     # the `verify_trust` option works only for `packed` and `u2f` attestation formats
-    assert {:error, :attestation_tpm_no_attestation_metadata_statement_found} ==
+    assert {:error, :attestation_tpm_invalid_certificate} ==
       Wax.register(attestation_object, client_data_json, challenge)
   end
 
@@ -137,6 +143,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      type: :attestation,
       attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
@@ -144,7 +151,8 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -185,6 +193,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      type: :attestation,
       attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
@@ -192,7 +201,8 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -219,6 +229,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      type: :attestation,
       attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
@@ -226,7 +237,8 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: false,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -253,6 +265,7 @@ defmodule WaxTest do
       |> elem(1)
 
     challenge = %Wax.Challenge{
+      type: :attestation,
       attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
@@ -260,7 +273,8 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
     }
 
     client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
@@ -279,6 +293,7 @@ defmodule WaxTest do
 
   test "Valid authentication" do
     challenge = %Wax.Challenge{
+      type: :authentication,
       allow_credentials:
       [
         {"vwoRFklWfHJe1Fqjv7wY6exTyh23PjIBC4tTc4meXCeZQFEMwYorp3uYToGo8rVwxoU7c+C8eFuFOuF+unJQ8g==", %{-3 => <<121, 21, 84, 106, 84, 48, 91, 21, 161, 78, 176, 199, 224, 86, 196, 226, 116, 207, 221, 200, 26, 202, 214, 78, 95, 112, 140, 236, 190, 183, 177, 223>>, -2 => <<195, 105, 55, 252, 13, 134, 94, 208, 83, 115, 8, 235, 190, 173, 107, 78, 247, 125, 65, 216, 252, 232, 41, 13, 39, 104, 231, 65, 200, 149, 172, 118>>, -1 => 1, 1 => 2, 3 => -7}},
@@ -291,10 +306,10 @@ defmodule WaxTest do
       rp_id: "localhost",
       token_binding_status: nil,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      user_verified_required: false,
       verify_trust_root: true,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
       }
 
     raw_id = "DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ=="
@@ -310,6 +325,7 @@ defmodule WaxTest do
 
   test "Invalid authentication (invalid signature)" do
     challenge = %Wax.Challenge{
+      type: :authentication,
       allow_credentials:
       [
         {"vwoRFklWfHJe1Fqjv7wY6exTyh23PjIBC4tTc4meXCeZQFEMwYorp3uYToGo8rVwxoU7c+C8eFuFOuF+unJQ8g==", %{-3 => <<121, 21, 84, 106, 84, 48, 91, 21, 161, 78, 176, 199, 224, 86, 196, 226, 116, 207, 221, 200, 26, 202, 214, 78, 95, 112, 140, 236, 190, 183, 177, 223>>, -2 => <<195, 105, 55, 252, 13, 134, 94, 208, 83, 115, 8, 235, 190, 173, 107, 78, 247, 125, 65, 216, 252, 232, 41, 13, 39, 104, 231, 65, 200, 149, 172, 118>>, -1 => 1, 1 => 2, 3 => -7}},
@@ -322,10 +338,10 @@ defmodule WaxTest do
       rp_id: "localhost",
       token_binding_status: nil,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
-      user_verified_required: false,
       verify_trust_root: true,
       issued_at: :erlang.monotonic_time(:second),
-      timeout: 100
+      timeout: 100,
+      silent_authentication_enabled: false
       }
 
     raw_id = "DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ=="
