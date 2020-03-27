@@ -8,9 +8,10 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ### Added
 
-- [Wax] When verifying trust root, `Wax.register/3` checks the authenticator status against the
-values whitelisted by the `:acceptable_authenticator_statuses` option
-- [Wax.CoseKey] Added support for PS256, PS384, PS512 and EdDSA signature schemes
+- [Wax] When verifying trust root, `Wax.register/3` checks the authenticator status against
+the values whitelisted by the `:acceptable_authenticator_statuses` option
+- [Wax.CoseKey] Added support for PS256, PS384, PS512, EdDSA signature schemes and
+ES256K (secp256k1 curve) signature algorithms
 - [Wax.Challenge] Added timeout field and verification
 - [Wax] Added `:android_key_allow_software_enforcement` option
 - [Wax.Metadata] FIDO2 metadata TOC checked against CRLs (#12)

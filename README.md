@@ -312,7 +312,7 @@ See [CHANGELOG.md](CHANGELOG.md).
   - [x] *Optional*: ES384 (ECDSA using P-384 and SHA-384) algorithm support
   - [x] *Optional*: ES512 (ECDSA using P-521 and SHA-512) algorithm support
   - [x] *Optional*: EdDSA algorithm support
-  - [ ] *Optional*: ES256K (ECDSA using P-256K and SHA-256) algorithm support
+  - [x] *Optional*: ES256K (ECDSA using P-256K and SHA-256) algorithm support
   - [ ] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
 
 [7. Transport Binding Profile](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#transport-binding-profile)
