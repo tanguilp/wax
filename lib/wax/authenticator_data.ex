@@ -56,15 +56,9 @@ defmodule Wax.AuthenticatorData do
     flag_attested_credential_data = to_bool(flag_attested_credential_data)
     flag_extension_data_included = to_bool(flag_extension_data_included)
 
-    {attested_credential_data, bytes_read} =
+    {maybe_attested_credential_data, bytes_read} =
       if flag_attested_credential_data do
-        case Wax.AttestedCredentialData.decode(rest, flag_extension_data_included) do
-          {:ok, {acd, bytes_read}} ->
-            {acd, bytes_read}
-
-          {:ok, acd} ->
-            {acd, byte_size(rest)}
-        end
+         Wax.AttestedCredentialData.decode(rest, flag_extension_data_included)
       else
         {nil, 0}
       end
@@ -85,7 +79,7 @@ defmodule Wax.AuthenticatorData do
       flag_attested_credential_data: flag_attested_credential_data,
       flag_extension_data_included: flag_extension_data_included,
       sign_count: sign_count,
-      attested_credential_data: attested_credential_data,
+      attested_credential_data: maybe_attested_credential_data,
       extensions: extensions,
       raw_bytes: authenticator_data
       }}

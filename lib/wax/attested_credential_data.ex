@@ -18,10 +18,7 @@ defmodule Wax.AttestedCredentialData do
   }
 
   @doc false
-
-  @spec decode(binary(), boolean())
-    :: {:ok, t() | {t(), non_neg_integer()}} | {:error, any()}
-
+  @spec decode(binary(), boolean()) :: {t(), non_neg_integer()}
   def decode(
     <<
       aaguid::binary-size(16),
@@ -35,22 +32,22 @@ defmodule Wax.AttestedCredentialData do
     if with_appended_extensions do
       {cbor, bytes_read} = cbor_decode_binary_unknown_length(rest, 1, byte_size(rest))
 
-      {:ok,
-        {
-          %__MODULE__{
-          aaguid: aaguid,
-          credential_id: credential_id,
-            credential_public_key: cbor
-          }, bytes_read
-        }
+      {
+        %__MODULE__{
+        aaguid: aaguid,
+        credential_id: credential_id,
+          credential_public_key: cbor
+        },
+        16 + 2 + credential_id_length + bytes_read
       }
     else
-      {:ok,
+      {
         %__MODULE__{
           aaguid: aaguid,
           credential_id: credential_id,
           credential_public_key: :cbor.decode(rest)
-        }
+        },
+        16 + 2 + credential_id_length + byte_size(rest)
       }
     end
   end
