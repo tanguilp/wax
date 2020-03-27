@@ -316,7 +316,7 @@ See [CHANGELOG.md](CHANGELOG.md).
   - [ ] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
 
 [7. Transport Binding Profile](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#transport-binding-profile)
-  - [ ] *optional*: API implementation
+  - [x] *optional*: API implementation ([`WaxAPIRest`](https://github.com/tanguilp/wax_api_rest))
 
 ### FIDO Metadata Service
 
