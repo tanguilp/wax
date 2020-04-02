@@ -31,7 +31,7 @@ defmodule Wax.MixProject do
       {:jason, "~> 1.1"},
       {:httpoison, "~> 1.6"},
       {:cbor, github: "yjh0502/cbor-erlang", ref: "b5c9dbc2de15753b2db15e13d88c11738c2ac292"},
-      {:x509, github: "voltone/x509", tag: "v0.7.0"},
+      {:x509, "~> 0.8"},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false}
     ]
