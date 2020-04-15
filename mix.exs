@@ -9,6 +9,7 @@ defmodule Wax.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       compilers: Mix.compilers ++ [:asn],
+      dialyzer: [plt_add_apps: [:mix]],
       docs: [
         main: "readme",
         extras: ["README.md", "CHANGELOG.md"]

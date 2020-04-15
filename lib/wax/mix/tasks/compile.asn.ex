@@ -12,6 +12,6 @@ defmodule Mix.Tasks.Compile.Asn do
       |> :asn1ct.compile(outdir: 'src/')
     end)
 
-    :ok
+    {:ok, []}
   end
 end
