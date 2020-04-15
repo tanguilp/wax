@@ -71,10 +71,11 @@ defmodule WaxTest do
     attestation_object =
       test_data[:response][:attestationObject]
       |> Base.url_decode64!(padding: false)
-      |> :cbor.decode()
+      |> CBOR.decode()
+      |> elem(1)
       |> get_and_update_in(["attStmt", "sig"], &{&1, "invalid signature"})
       |> elem(1)
-      |> :cbor.encode()
+      |> CBOR.encode()
       |> :erlang.iolist_to_binary
 
     assert {:error, :attestation_packed_invalid_signature} ==
@@ -159,10 +160,11 @@ defmodule WaxTest do
     attestation_object =
       test_data[:response][:attestationObject]
       |> Base.url_decode64!(padding: false)
-      |> :cbor.decode()
+      |> CBOR.decode()
+      |> elem(1)
       |> get_and_update_in(["attStmt", "sig"], &{&1, "invalid signature"})
       |> elem(1)
-      |> :cbor.encode()
+      |> CBOR.encode()
       |> :erlang.iolist_to_binary
 
     ~N[2016-05-26 00:00:00]
@@ -281,10 +283,11 @@ defmodule WaxTest do
     attestation_object =
       test_data[:response][:attestationObject]
       |> Base.url_decode64!(padding: false)
-      |> :cbor.decode()
+      |> CBOR.decode()
+      |> elem(1)
       |> get_and_update_in(["attStmt", "sig"], &{&1, "invalid signature"})
       |> elem(1)
-      |> :cbor.encode()
+      |> CBOR.encode()
       |> :erlang.iolist_to_binary
 
     assert {:error, :attestation_fidou2f_invalid_signature} ==

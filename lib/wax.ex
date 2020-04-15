@@ -1,6 +1,4 @@
 defmodule Wax do
-  require Logger
-
   @moduledoc """
   Functions for FIDO2 registration and authentication
 
@@ -89,6 +87,10 @@ defmodule Wax do
   will try to load all files of the `"priv/fido2_metadata/"` if the `:my_application` as FIDO2
   metadata statements. On failure, a warning is emitted.
   """
+
+  require Logger
+
+  alias Wax.Utils
 
   @type opts :: [opt()]
 
@@ -311,7 +313,7 @@ defmodule Wax do
          :ok <- valid_challenge?(client_data, challenge),
          :ok <- valid_origin?(client_data, challenge),
          client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
-         {:ok, att_data} <- cbor_decode(attestation_object_cbor),
+         {:ok, att_data, _} <- Utils.CBOR.decode(attestation_object_cbor),
          %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt} = att_data,
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
          :ok <- valid_rp_id?(auth_data, challenge),
@@ -528,16 +530,6 @@ defmodule Wax do
       :ok
     else
       {:error, :attestation_invalid_origin}
-    end
-  end
-
-  defp cbor_decode(cbor) do
-    try do
-      Logger.debug("#{__MODULE__}: decoded attestation object: " <>
-        "#{inspect(:cbor.decode(cbor), pretty: true)}")
-      {:ok, :cbor.decode(cbor)}
-    catch
-      _ -> {:error, :invalid_cbor}
     end
   end
 
