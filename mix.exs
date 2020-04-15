@@ -8,7 +8,7 @@ defmodule Wax.MixProject do
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      compilers: [:asn1] ++ Mix.compilers,
+      compilers: Mix.compilers ++ [:asn],
       docs: [
         main: "readme",
         extras: ["README.md", "CHANGELOG.md"]
@@ -16,7 +16,6 @@ defmodule Wax.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger],
@@ -24,10 +23,8 @@ defmodule Wax.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:asn1ex, git: "git://github.com/vicentfg/asn1ex.git", runtime: false},
       {:jason, "~> 1.1"},
       {:httpoison, "~> 1.6"},
       {:cbor, github: "yjh0502/cbor-erlang", ref: "b5c9dbc2de15753b2db15e13d88c11738c2ac292"},
