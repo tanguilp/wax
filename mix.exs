@@ -4,7 +4,8 @@ defmodule Wax.MixProject do
   def project do
     [
       app: :wax,
-      version: "0.1.3",
+      description: "FIDO2 / WebAuthn server library",
+      version: "0.2.0",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -13,7 +14,9 @@ defmodule Wax.MixProject do
       docs: [
         main: "readme",
         extras: ["README.md", "CHANGELOG.md"]
-      ]
+      ],
+      package: package(),
+      source_url: "https://github.com/tanguilp/wax"
     ]
   end
 
@@ -32,6 +35,14 @@ defmodule Wax.MixProject do
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.1"},
       {:x509, "~> 0.8"}
+    ]
+  end
+
+  def package() do
+    [
+      files: ~w(asn1 lib .formatter.exs mix.exs README* LICENSE* CHANGELOG*),
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/tanguilp/wax"}
     ]
   end
 end

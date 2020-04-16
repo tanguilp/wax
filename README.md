@@ -24,13 +24,13 @@ authentication scheme by a WebAuthn password-less authentication:
 
 - Support the FIDO2 standard (especially all types of attestation statement formats and
 all mandatory algorithms). See the "Support of FIDO2" section for further information
+- **Passes all the 165 tests** of the official test suite (tested using
+[WaxFidoTestSuiteServer](https://github.com/tanguilp/wax_fido_test_suite_server))
 - This library has **not** be reviewed by independent security / FIDO2 specialists - use
 it at your own risks or blindly trust its author!
 - This library does not come with a javascript library to handle WebAuthn calls
-- At the time of publishing version 0.1.0, there is no comprehensive test suite available
-(tests do exist, however, but this may not be sufficient). If you spot a bug, fill an
-issue with the output of the javascript WebAuthn call and that'll be fixed as fast as
-possible
+- This library is not published on [hex.pm](hex.pm), because of name collision (see
+[#16](https://github.com/tanguilp/wax/issues/16))
 
 ## Compatibility
 
@@ -43,7 +43,7 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax, github: "tanguilp/wax", tag: "0.1.3"}
+    {:wax, github: "tanguilp/wax", tag: "v0.2.0"}
   ]
 end
 ```
@@ -248,7 +248,7 @@ config :wax,
   metadata_dir: :my_application
 ```
 
-will try to load all files of the `"priv/fido2_metadata/"` if the `:my_application` as FIDO2
+will try to load all files of the `"priv/fido2_metadata/"` of the `:my_application` as FIDO2
 metadata statements. On failure, a warning is emitted.
 
 ## Security considerations
@@ -314,7 +314,7 @@ See [CHANGELOG.md](CHANGELOG.md).
   - [x] *Optional*: ES512 (ECDSA using P-521 and SHA-512) algorithm support
   - [x] *Optional*: EdDSA algorithm support
   - [x] *Optional*: ES256K (ECDSA using P-256K and SHA-256) algorithm support
-  - [ ] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
+  - [-] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
 
 [7. Transport Binding Profile](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#transport-binding-profile)
   - [x] *optional*: API implementation ([`WaxAPIRest`](https://github.com/tanguilp/wax_api_rest))
