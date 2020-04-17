@@ -2,7 +2,7 @@
 
 WebAuthn library for elixir
 
-<img src="https://github.com/tanguilp/wax/blob/master/asset/wax.png" width="128"/>
+<img src="https://github.com/tanguilp/wax/blob/master/wax.png" width="128"/>
 
 Goal: implement a *comprehensive* FIDO2 library on the server side
 (*Relying party* or RP in the WebAuthn terminology) to authenticate users with WebAuthn.
