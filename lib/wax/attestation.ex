@@ -20,11 +20,15 @@ defmodule Wax.Attestation do
   """
   @type trust_path :: [binary()] | binary() | nil
 
-  @type result :: {__MODULE__.type(), __MODULE__.trust_path() | nil, Wax.MetadataStatement.t() | nil}
+  @type result ::
+  {__MODULE__.type(), __MODULE__.trust_path() | nil, Wax.Metadata.Statement.t() | nil}
 
   @type attestation_statement_format_verify_fun ::
   (
-    Wax.Attestation.statement(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), boolean() ->
+    Wax.Attestation.statement(),
+    Wax.AuthenticatorData.t(),
+    Wax.ClientData.hash(),
+    Wax.Challenge.t() ->
       {:ok, __MODULE__.result()} | {:error, any()}
   )
 
@@ -33,8 +37,6 @@ defmodule Wax.Attestation do
   @spec statement_verify_fun(binary()) ::
     {:ok, attestation_statement_format_verify_fun} | {:error, any()}
 
-  #FIXME: the spec says we should US-ASCII => is that ok to pattern-match like this?
-  # Pattern-matching should be performed on binaries, but should be checked
   def statement_verify_fun("none") do
     {:ok, &Wax.AttestationStatementFormat.None.verify/4}
   end

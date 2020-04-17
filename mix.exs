@@ -4,18 +4,22 @@ defmodule Wax.MixProject do
   def project do
     [
       app: :wax,
-      version: "0.1.3",
+      description: "FIDO2 / WebAuthn server library",
+      version: "0.2.0",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      compilers: Mix.compilers ++ [:asn],
+      dialyzer: [plt_add_apps: [:mix]],
       docs: [
         main: "readme",
-        extras: ["README.md"]
-      ]
+        extras: ["README.md", "CHANGELOG.md"]
+      ],
+      package: package(),
+      source_url: "https://github.com/tanguilp/wax"
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger],
@@ -23,15 +27,22 @@ defmodule Wax.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:jason, "~> 1.1"},
-      {:httpoison, github: "edgurgel/httpoison", tag: "v1.5.0"},
-      {:cbor, github: "yjh0502/cbor-erlang", ref: "b5c9dbc2de15753b2db15e13d88c11738c2ac292"},
-      {:x509, github: "voltone/x509", tag: "v0.5.1"},
+      {:cbor, "~> 1.0.0"},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:httpoison, "~> 1.6"},
+      {:jason, "~> 1.1"},
+      {:x509, "~> 0.8"}
+    ]
+  end
+
+  def package() do
+    [
+      files: ~w(asn1 lib .formatter.exs mix.exs README* LICENSE* CHANGELOG*),
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/tanguilp/wax"}
     ]
   end
 end

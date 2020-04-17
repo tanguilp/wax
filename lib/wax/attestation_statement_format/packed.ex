@@ -28,36 +28,43 @@ defmodule Wax.AttestationStatementFormat.Packed do
   ]
 
   @impl Wax.AttestationStatementFormat
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, verify_trust_root) do
+  def verify(
+    %{"x5c" => _} = att_stmt,
+    auth_data,
+    client_data_hash,
+    %Wax.Challenge{attestation: "direct"} = challenge
+  ) do
     with :ok <- valid_cbor?(att_stmt),
-         :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
-         :ok <- (
-           if verify_trust_root do
-             attestation_path_valid?(att_stmt["x5c"], auth_data)
-           else
-             :ok
-           end
-         )
+         :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
+         :ok <- attestation_path_valid?(att_stmt["x5c"], auth_data, challenge)
     do
       {:ok,
         {
-          determine_attestation_type(auth_data),
+          determine_attestation_type(auth_data, challenge),
           att_stmt["x5c"],
-          Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid)
+          Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge)
         }
       }
-    else
-      error ->
-        error
     end
   end
 
-  def verify(%{"ecdaaKeyId" => _}, _, _, _), do: {:error, :attestation_packed_unimplemented}
+  def verify(%{"x5c" => _}, _auth_data, _client_data_hash, _challenge) do
+    {:error, :invalid_attestation_conveyance_preference}
+  end
+
+  def verify(
+    %{"ecdaaKeyId" => _},
+    _auth_data,
+    _client_hash_data,
+    %Wax.Challenge{attestation: "direct"}
+  ) do
+    {:error, :attestation_packed_unimplemented}
+  end
 
   # self-attestation case
 
-  def verify(att_stmt, auth_data, client_data_hash, _verify_trust_root) do
+  def verify(att_stmt, auth_data, client_data_hash, _challenge) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- algs_match?(att_stmt, auth_data),
          :ok <- valid_self_signature?(att_stmt, auth_data, client_data_hash)
@@ -98,8 +105,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
     :: :ok | {:error, any()}
 
   defp valid_x5c_signature?(att_stmt, auth_data, client_data_hash) do
-    #FIXME: check if the "alg" matches the certificate's public key?
-
     pub_key =
       att_stmt["x5c"]
       |> List.first()
@@ -126,22 +131,17 @@ defmodule Wax.AttestationStatementFormat.Packed do
     :: :ok | {:error, any()}
 
   defp valid_self_signature?(att_stmt, auth_data, client_data_hash) do
-    pub_key =
-      Wax.CoseKey.to_erlang_public_key(auth_data.attested_credential_data.credential_public_key)
+    Wax.CoseKey.verify(
+      auth_data.raw_bytes <> client_data_hash,
+      auth_data.attested_credential_data.credential_public_key,
+      att_stmt["sig"]
+    )
+    |> case do
+      :ok ->
+        :ok
 
-    digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
-
-    Logger.debug("#{__MODULE__}: verifying self-signature with public key #{inspect(pub_key)}" <>
-      " (hash: #{inspect(digest)})")
-
-    if :public_key.verify(auth_data.raw_bytes <> client_data_hash,
-                          digest,
-                          att_stmt["sig"],
-                          pub_key)
-    do
-      :ok
-    else
-      {:error, :attestation_packed_invalid_signature}
+      {:error, :invalid_signature} ->
+        {:error, :attestation_packed_invalid_signature}
     end
   end
 
@@ -155,20 +155,30 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_attestation_certificate?(binary(), Wax.AuthenticatorData.t())
-    :: :ok | {:error, any()}
+  @spec valid_attestation_certificate?(binary(), Wax.AuthenticatorData.t()) ::
+  :ok
+  | {:error, any()}
 
   defp valid_attestation_certificate?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
 
     Logger.debug("#{__MODULE__}: verifying certificate info of #{inspect(cert)}")
 
+    subject = X509.Certificate.subject(cert)
+
+    # here we interpret the specification "Subject field MUST be set to:"
+    # (https://www.w3.org/TR/webauthn/#packed-attestation-cert-requirements)
+    # as if only one value is authorized, per attribute
+    [subject_c] = X509.RDNSequence.get_attr(subject, "C")
+    [subject_o] = X509.RDNSequence.get_attr(subject, "O")
+    [subject_ou] = X509.RDNSequence.get_attr(subject, "OU")
+    [subject_cn] = X509.RDNSequence.get_attr(subject, "CN")
+
     if Wax.Utils.Certificate.version(cert) == :v3
-      and Wax.Utils.Certificate.subject_component_value(cert, "C") in @iso_3166_codes
-      and Wax.Utils.Certificate.subject_component_value(cert, "O") not in [nil, ""]
-      and Wax.Utils.Certificate.subject_component_value(cert, "OU") ==
-        "Authenticator Attestation"
-      and Wax.Utils.Certificate.subject_component_value(cert, "CN") not in [nil, ""]
+      and subject_c in @iso_3166_codes
+      and is_binary(subject_o) and subject_o != ""
+      and subject_ou == "Authenticator Attestation"
+      and is_binary(subject_cn) and subject_cn != ""
       and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
     do
       # checking if oid of id-fido-gen-ce-aaguid is present and, if so, aaguid
@@ -188,21 +198,22 @@ defmodule Wax.AttestationStatementFormat.Packed do
     else
       {:error, :attestation_packed_invalid_attestation_cert}
     end
+  rescue
+    MatchError ->
+      {:error, :attestation_packed_invalid_attestation_subject_field}
   end
 
-  @spec determine_attestation_type(Wax.AuthenticatorData.t()) :: Wax.Attestation.type()
+  @spec determine_attestation_type(Wax.AuthenticatorData.t(), Wax.Challenge.t()) :: Wax.Attestation.type()
 
-  defp determine_attestation_type(auth_data) do
+  defp determine_attestation_type(auth_data, challenge) do
     aaguid = auth_data.attested_credential_data.aaguid
 
     Logger.debug("#{__MODULE__}: determining attestation type for aaguid=#{inspect(aaguid)}")
 
-    case Wax.Metadata.get_by_aaguid(aaguid) do
+    case Wax.Metadata.get_by_aaguid(aaguid, challenge) do
       nil ->
         :uncertain
 
-      #FIXME: here we assume that :basic and :attca are exclusive for a given authenticator
-      # but this seems however unspecified
       metadata_statement ->
         if :tag_attestation_basic_full in metadata_statement.attestation_types do
           :basic
@@ -216,12 +227,17 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t())
-    :: :ok | {:error, any()}
+  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t(), Wax.Challenge.t()) ::
+  :ok
+  | {:error, any()}
 
-  defp attestation_path_valid?(der_list, auth_data) do
-    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
-      %Wax.MetadataStatement{attestation_root_certificates: arcs} ->
+  defp attestation_path_valid?(
+    der_list,
+    auth_data,
+    %Wax.Challenge{verify_trust_root: true} = challenge
+  ) do
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+      %Wax.Metadata.Statement{attestation_root_certificates: arcs} ->
         if Enum.any?(
           arcs,
           fn arc ->
@@ -245,5 +261,9 @@ defmodule Wax.AttestationStatementFormat.Packed do
       _ ->
         {:error, :attestation_packed_no_attestation_metadata_statement_found}
     end
+  end
+
+  defp attestation_path_valid?(_, _, %Wax.Challenge{verify_trust_root: false}) do
+    :ok
   end
 end

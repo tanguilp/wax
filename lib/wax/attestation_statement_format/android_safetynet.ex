@@ -6,7 +6,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   @behaviour Wax.AttestationStatementFormat
 
   # GSR2 root certificate
-  @root_cert """
+  @root_cert_der """
   -----BEGIN CERTIFICATE-----
   MIIDujCCAqKgAwIBAgILBAAAAAABD4Ym5g0wDQYJKoZIhvcNAQEFBQAwTDEgMB4G
   A1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjIxEzARBgNVBAoTCkdsb2JhbFNp
@@ -34,40 +34,44 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   |> X509.Certificate.to_der()
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash, _verify_trust_root) do
-    try do
-      [header_b64, payload_b64, _sig] = String.split(att_stmt["response"], ".")
+  def verify(
+    att_stmt,
+    auth_data,
+    client_data_hash,
+    %Wax.Challenge{attestation: "direct"} = challenge
+  ) do
+    [header_b64, payload_b64, _sig] = String.split(att_stmt["response"], ".")
 
-      payload =
-        payload_b64
-        |> Base.url_decode64!(padding: false)
-        |> Jason.decode!()
+    payload =
+      payload_b64
+      |> Base.url_decode64!(padding: false)
+      |> Jason.decode!()
 
-      header =
-        header_b64
-        |> Base.url_decode64!(padding: false)
-        |> Jason.decode!()
+    header =
+      header_b64
+      |> Base.url_decode64!(padding: false)
+      |> Jason.decode!()
 
-      with :ok <- valid_cbor?(att_stmt),
-           :ok <- valid_safetynet_response?(payload, att_stmt["ver"]),
-           :ok <- nonce_valid?(auth_data, client_data_hash, payload),
-           :ok <- valid_cert_hostname?(header),
-           :ok <- Wax.Utils.JWS.verify(att_stmt["response"], @root_cert)
+    with :ok <- valid_cbor?(att_stmt),
+         :ok <- verify_signature(att_stmt["response"], auth_data, challenge),
+         :ok <- valid_safetynet_response?(payload, att_stmt["ver"]),
+         :ok <- nonce_valid?(auth_data, client_data_hash, payload),
+         :ok <- valid_cert_hostname?(header)
     do
-        leaf_cert =
-          header["x5c"]
-          |> List.first()
-          |> Base.decode64!()
+      leaf_cert =
+        header["x5c"]
+        |> List.first()
+        |> Base.decode64!()
 
-        {:ok, {:basic, leaf_cert, nil}}
-      else
-        error ->
-          error
-      end
-    rescue
-      _ ->
-        {:error, :attestation_safetynet_invalid_att_stmt}
+      {:ok, {:basic, leaf_cert, nil}}
     end
+  rescue
+    _ ->
+      {:error, :attestation_safetynet_invalid_att_stmt}
+  end
+
+  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
+    {:error, :invalid_attestation_conveyance_preference}
   end
 
   @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
@@ -82,26 +86,93 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     end
   end
 
+  @spec verify_signature(
+    String.t(),
+    Wax.AuthenticatorData.t(),
+    Wax.Challenge.t()
+  ) :: :ok | {:error, atom()}
+  defp verify_signature(jws, auth_data, challenge) do
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+      %Wax.Metadata.Statement{} = attestation_statement ->
+        [header_b64, _payload_b64, _sig_b64] = String.split(jws, ".")
+
+        jws_alg =
+          header_b64
+          |> Base.url_decode64!(padding: false)
+          |> Jason.decode!()
+          |> Map.get("alg")
+
+        if algs_match?(attestation_statement.authentication_algorithm, jws_alg) do
+          do_verify_signature(jws, attestation_statement.attestation_root_certificates)
+        else
+          {:error, :attestation_safetynet_algs_dont_match}
+        end
+
+      _ ->
+        do_verify_signature(jws, [@root_cert_der])
+    end
+  end
+
+  @spec algs_match?(Wax.Metadata.Statement.authentication_algorithm(), String.t()) :: boolean()
+  defp algs_match?(:alg_sign_secp256r1_ecdsa_sha256_raw, "ES256"), do: true
+  defp algs_match?(:alg_sign_secp256r1_ecdsa_sha256_der, "ES256"), do: true
+  defp algs_match?(:alg_sign_rsassa_pss_sha256_raw, "PS256"), do: true
+  defp algs_match?(:alg_sign_rsassa_pss_sha256_der, "PS256"), do: true
+  defp algs_match?(:alg_sign_secp256k1_ecdsa_sha256_raw, "ES256K"), do: true
+  defp algs_match?(:alg_sign_secp256k1_ecdsa_sha256_der, "ES256K"), do: true
+  defp algs_match?(:alg_sign_rsassa_pss_sha384_raw, "PS384"), do: true
+  defp algs_match?(:alg_sign_rsassa_pss_sha512_raw, "PS512"), do: true
+  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha256_raw, "RS256"), do: true
+  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha384_raw, "RS384"), do: true
+  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha512_raw, "RS512"), do: true
+  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha1_raw, "RS1"), do: true
+  defp algs_match?(:alg_sign_secp384r1_ecdsa_sha384_raw, "ES384"), do: true
+  defp algs_match?(:alg_sign_secp521r1_ecdsa_sha512_raw, "ES512"), do: true
+  defp algs_match?(:alg_sign_ed25519_eddsa_sha256_raw, "EdDSA"), do: true
+  defp algs_match?(_, _), do: false
+
+  @spec do_verify_signature(String.t(), [binary()]) :: :ok | {:error, atom()}
+  defp do_verify_signature(_jws, []) do
+    {:error, :attestation_safetynet_invalid_jws_signature}
+  end
+
+  defp do_verify_signature(jws, [root_cert_der | remaining_root_certs_der]) do
+    case Wax.Utils.JWS.verify_with_x5c(jws, root_cert_der) do
+      :ok ->
+        :ok
+
+      {:error, _} ->
+        do_verify_signature(jws, remaining_root_certs_der)
+    end
+  end
+
   @spec valid_safetynet_response?(map() | Keyword.t() | nil, String.t()) :: :ok | {:error, any()}
 
-  defp valid_safetynet_response?(%{} = safetynet_response, _version) do
-    #FIXME: currently unimplementable? see:
-    # https://github.com/w3c/webauthn/issues/968
-    # besides the spec seems to have an error with the `ctsProfileMatch` (`true` then `true`):
-    # https://developer.android.com/training/safetynet/attestation#compat-check-response
-    #
-    # Therefore for now we just check `ctsProfileMatch`
+  defp valid_safetynet_response?(%{} = safetynet_response, version) do
     Logger.debug("#{__MODULE__}: verifying SafetyNet response validity: " <>
       "#{inspect(safetynet_response)}")
 
-    if safetynet_response["ctsProfileMatch"] == true do
-      :ok
+    (
+      safetynet_response["ctsProfileMatch"] == true
+      and version != nil
+      and is_integer(safetynet_response["timestampMs"])
+      and safetynet_response["timestampMs"] < :os.system_time(:millisecond)
+      and safetynet_response["timestampMs"] > :os.system_time(:millisecond) - 60 * 1000
+    )
+    |> if do
+      case Integer.parse(version) do
+        {version_int, _} when version_int > 0 ->
+          :ok
+
+        _ ->
+          {:error, :attestation_safetynet_invalid_version}
+      end
     else
       {:error, :attestation_safetynet_invalid_ctsProfileMatch}
     end
   end
 
-  defp valid_safetynet_response?(_, _), do: {:error, :attestation_safetyney_invalid_payload}
+  defp valid_safetynet_response?(_, _), do: {:error, :attestation_safetynet_invalid_payload}
 
   @spec nonce_valid?(Wax.AuthenticatorData.t(), binary(), map())
     :: :ok | {:error, any()}
@@ -127,10 +198,9 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
     Logger.debug("#{__MODULE__}: verifying certificate: #{inspect(leaf_cert)}")
 
-    #FIXME: verify it's indeed the SAN that must be checked
-    # since spec says `hostname` (couldn't it be the CN?, both?)
-    case X509.Certificate.extension(leaf_cert, :subject_alt_name) do
-      {:Extension, {2, 5, 29, 17}, false, [dNSName: 'attest.android.com']} ->
+    # {2, 5, 4, 3} is the OID for CN
+    case X509.Certificate.subject(leaf_cert, {2, 5, 4, 3}) do
+      ["attest.android.com"] ->
         :ok
 
       _ ->

@@ -1,4 +1,18 @@
 defmodule Wax.ClientData do
+  defmodule TokenBinding do
+    @enforce_keys [:status]
+
+    defstruct [
+      :status,
+      :id
+    ]
+
+    @type t :: %__MODULE__{
+      status: String.t(),
+      id: String.t()
+    }
+  end
+
   @enforce_keys [:type, :challenge, :origin]
 
   defstruct [
@@ -12,7 +26,7 @@ defmodule Wax.ClientData do
     type: :create | :get,
     challenge: binary(),
     origin: String.t(),
-    token_binding: any()
+    token_binding: TokenBinding.t()
   }
 
   @type hash :: binary()
@@ -30,9 +44,8 @@ defmodule Wax.ClientData do
   @spec parse_raw_json(raw_string()) :: {:ok, t()} | {:error, any()}
 
   def parse_raw_json(client_data_json_raw) do
-    #FIXME: implement https://encoding.spec.whatwg.org/#utf-8-decode ?
-    
-    with {:ok, client_data_map} <- Jason.decode(client_data_json_raw)
+    with {:ok, client_data_map} <- Jason.decode(client_data_json_raw),
+         {:ok, maybe_token_binding} <- parse_token_binding(client_data_map["tokenBinding"])
     do
       type =
         case client_data_map["type"] do
@@ -47,11 +60,33 @@ defmodule Wax.ClientData do
         type: type,
         challenge: Base.url_decode64!(client_data_map["challenge"], padding: false),
         origin: client_data_map["origin"],
-        token_binding: nil # unsupported
+        token_binding: maybe_token_binding
         }}
     else
-      {:error, error} ->
-        {:error, error}
+      {:error, %Jason.DecodeError{}} ->
+        {:error, :client_data_json_parse_error}
+
+      error ->
+        error
     end
+  end
+
+  @spec parse_token_binding(any()) :: {:ok, TokenBinding.t() | nil} | {:error, atom()}
+  defp parse_token_binding(nil) do
+    {:ok, nil}
+  end
+
+  defp parse_token_binding(
+    %{"status" => status} = token_binding)when status in ["supported", "not-supported"]
+  do
+    {:ok, %TokenBinding{status: status, id: token_binding["id"]}}
+  end
+
+  defp parse_token_binding(%{"status" => "present", "id" => id}) do
+    {:ok, %TokenBinding{status: "present", id: id}}
+  end
+
+  defp parse_token_binding(_) do
+    {:error, :client_data_invalid_token_binding_data}
   end
 end

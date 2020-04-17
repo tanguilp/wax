@@ -2,7 +2,7 @@
 
 WebAuthn library for elixir
 
-<img src="doc/wax.png" width="128"/>
+<img src="https://github.com/tanguilp/wax/blob/master/wax.png" width="128"/>
 
 Goal: implement a *comprehensive* FIDO2 library on the server side
 (*Relying party* or RP in the WebAuthn terminology) to authenticate users with WebAuthn.
@@ -15,7 +15,7 @@ For semantics (FIDO2, WebAuthn, FIDO...), read
 You can try out and study WebAuthn authentication with Wax thanks to the
 [wax_demo](https://github.com/tanguilp/wax_demo) test application.
 
-See alos a video demonstration of an authentication flow which allows replacing the password
+See also a video demonstration of an authentication flow which allows replacing the password
 authentication scheme by a WebAuthn password-less authentication:
 
 [![Demo screenshot](https://raw.githubusercontent.com/tanguilp/wax_demo/master/assets/static/images/demo_screenshot.png)](https://vimeo.com/358361625)
@@ -24,17 +24,17 @@ authentication scheme by a WebAuthn password-less authentication:
 
 - Support the FIDO2 standard (especially all types of attestation statement formats and
 all mandatory algorithms). See the "Support of FIDO2" section for further information
+- **Passes all the 165 tests** of the official test suite (tested using
+[WaxFidoTestSuiteServer](https://github.com/tanguilp/wax_fido_test_suite_server))
 - This library has **not** be reviewed by independent security / FIDO2 specialists - use
 it at your own risks or blindly trust its author!
 - This library does not come with a javascript library to handle WebAuthn calls
-- At the time of publishing version 0.1.0, there is no comprehensive test suite available
-(tests do exist, however, but this may not be sufficient). If you spot a bug, fill an
-issue with the output of the javascript WebAuthn call and that'll be fixed as fast as
-possible
+- This library is not published on [hex.pm](hex.pm), because of name collision (see
+[#16](https://github.com/tanguilp/wax/issues/16))
 
 ## Compatibility
 
-OTP21+
+OTP22+
 
 ## Installation
 
@@ -43,12 +43,13 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax, github: "tanguilp/wax", tag: "0.1.3"}
+    {:wax, github: "tanguilp/wax", tag: "v0.2.0"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc) by
+typing `mix docs` in the project's root.
 
 ## Usage
 
@@ -178,11 +179,16 @@ These options are:
 
 |  Option       |  Type         |  Applies to       |  Default value                | Notes |
 |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
-|`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | Mandatory. Example: `https://www.example.com` |
+|`attestation`|`"none"` or `"direct"`|<ul style="margin:0"><li>registration</li></ul>| `"none"` | |
+|`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | **Mandatory**. Example: `https://www.example.com` |
 |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
-|`user_verified_required`|`boolean()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `false`| |
+|`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `"preferred"`| |
 |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
 |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
+|`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
+|`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
+|`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
+|`silent_authentication_enabled`|`boolean()`|<ul style="margin:0"><li>authentication</li></ul>|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
 
 ## FIDO2 Metadata service (MDS) configuration
 
@@ -218,18 +224,49 @@ list and Wax doesn't load data from the former ("FIDO1") metadata Web Service. T
 Alliance plans to provides with a web service having both FIDO1 and FIDO2, but there is no
 roadmap as of September 2019.
 
+During the registration process, when trust root is verified against FIDO2 metadata, only
+metadata entries whose last status is whitelisted by the `:acceptable_authenticator_statuses`
+will be used. Otherwise a warning is logged and the registration process fails. Metadata is still
+loaded for debugging purpose in the `:wax_metadata` ETS table.
+
+## Loading FIDO2 metadata from a directory
+
+In addition to the FIDO2 metadata service, it is possible to load metadata from a directory.
+To do so, the `:metadata_dir` application environment variable must be set to one of:
+- a `String.t()`: the path to the directory containing the metadata files
+- an `atom()`: in this case, the files are loaded from the `"fido2_metadata"` directory of the
+private (`"priv/"`) directory of the application (whose name is the atom)
+
+In both case, Wax tries to load all files (even directories and other special files).
+
+### Example configuration
+
+```elixir
+config :wax,
+  origin: "http://localhost:4000",
+  rp_id: :auto,
+  metadata_dir: :my_application
+```
+
+will try to load all files of the `"priv/fido2_metadata/"` of the `:my_application` as FIDO2
+metadata statements. On failure, a warning is emitted.
+
 ## Security considerations
 
 - Make sure to understand the implications of not using attested credentials before
 accepting `none` or `self` attestation types, or disabling it for `packed` and `u2f`
 formats by disabling it with the `verify_trust_root` option
-- The FIDO MDS TOC signature is not verified (therefore its integrity relies on
-HTTPS and the CDNs serving it)
 - This library has **not** be reviewed by independent security / FIDO2 specialists - use
 it at your own risks or blindly trust its author! If you're knowledgeable about
 FIDO2 and willing to help reviewing it, please contact the author
 
+## Changes
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ## Support of FIDO2
+
+### Server Requirements and Transport Binding Profile
 
 [2. Registration and Attestations](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#registration-and-attestation)
 - [x] **Mandatory**: registration support
@@ -269,15 +306,25 @@ FIDO2 and willing to help reviewing it, please contact the author
   - [x] **Mandatory**: RS256 (RSASSA-PKCS1-v1_5 w/ SHA-256) algorithm support
   - [x] *Optional*: RS384 (RSASSA-PKCS1-v1_5 w/ SHA-384) algorithm support
   - [x] *Optional*: RS512 (RSASSA-PKCS1-v1_5 w/ SHA-512) algorithm support
-  - [ ] *Optional*: PS256 (RSASSA-PSS w/ SHA-256) algorithm support
-  - [ ] *Optional*: PS384 (RSASSA-PSS w/ SHA-384) algorithm support
-  - [ ] *Optional*: PS512 (RSASSA-PSS w/ SHA-512) algorithm support
+  - [x] *Optional*: PS256 (RSASSA-PSS w/ SHA-256) algorithm support
+  - [x] *Optional*: PS384 (RSASSA-PSS w/ SHA-384) algorithm support
+  - [x] *Optional*: PS512 (RSASSA-PSS w/ SHA-512) algorithm support
   - [x] **Mandatory**: ES256 (ECDSA using P-256 and SHA-256) algorithm support
   - [x] *Optional*: ES384 (ECDSA using P-384 and SHA-384) algorithm support
   - [x] *Optional*: ES512 (ECDSA using P-521 and SHA-512) algorithm support
-  - [ ] *Optional*: EdDSA algorithm support
-  - [ ] *Optional*: ES256K (ECDSA using P-256K and SHA-256) algorithm support
-  - [ ] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
+  - [x] *Optional*: EdDSA algorithm support
+  - [x] *Optional*: ES256K (ECDSA using P-256K and SHA-256) algorithm support
+  - [-] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
 
 [7. Transport Binding Profile](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#transport-binding-profile)
-  - [ ] *optional*: API implementation
+  - [x] *optional*: API implementation ([`WaxAPIRest`](https://github.com/tanguilp/wax_api_rest))
+
+### FIDO Metadata Service
+
+[3.1.8 Metadata TOC object processing rules](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-metadata-service-v2.0-rd-20180702.html#metadata-toc-object-processing-rules)
+  - [ ] TOC verification against the `x5u` attribute (note: doesn't seem to be used)
+  - [x] TOC verification against the `x5c` attribute
+  - [x] TOC CRLs verification
+  - [x] Loading and verification of metadata statements against the hased value of the TOC
+  - [x] Handling of the status of the authenticator (through whitelisting, see the
+  `:acceptable_authenticator_statuses` option)

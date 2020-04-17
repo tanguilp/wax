@@ -1,5 +1,5 @@
 defmodule Wax.Utils.Certificate do
-  @moduledoc false 
+  @moduledoc false
 
   @spec version(X509.Certificate.t()) :: atom()
 
@@ -9,31 +9,14 @@ defmodule Wax.Utils.Certificate do
     version
   end
 
-  @spec subject_component_value(X509.Certificate.t(), String.t()) :: String.t() | nil
+  @spec serial_number(X509.Certificate.t()) :: integer()
 
-  #FIXME: that's a hack. Rewrite this function without using to_string. Requires
-  # knowledge of X509 RDNs though
-
-  def subject_component_value(cert, searched) do
-    subject_str =
-      cert
-      |> X509.Certificate.subject()
-      |> X509.RDNSequence.to_string()
-      # e.g.  "/C=CN/O=Feitian Technologies/OU=Authenticator Attestation/CN=FT BioPass FIDO2 USB"
-
-    Enum.find_value(
-      String.split(subject_str, "/"),
-      fn comp ->
-        case String.split(comp, "=") do
-          [^searched, value] ->
-            value
-
-          _ ->
-            nil
-        end
-      end
-    )
+  def serial_number(
+    {:OTPCertificate, {:OTPTBSCertificate, _, serial_number, _, _, _, _, _, _, _, _}, _, _}
+  ) do
+    serial_number
   end
+
 
   @spec basic_constraints_ext_ca_component(X509.Certificate.t()) :: boolean()
 
@@ -57,23 +40,18 @@ defmodule Wax.Utils.Certificate do
     :crypto.hash(:sha, subject_public_key)
   end
 
-  @spec signature_algorithm(X509.Certificate.t()) :: tuple()
-
-  def signature_algorithm(cert) do
+  @spec public_key_algorithm(X509.Certificate.t()) :: tuple()
+  def public_key_algorithm(cert) do
     {:OTPCertificate,
-      {:OTPTBSCertificate, :v3, _,
-        {:SignatureAlgorithm, sig_alg_1, _},
+      {:OTPTBSCertificate, _, _, _, _, _, _,
+        {:OTPSubjectPublicKeyInfo, {:PublicKeyAlgorithm, public_key_algorithm, _}, _},
         _,
         _,
-        _,
-        _, _, _,
-        _}, {:SignatureAlgorithm, sig_alg_2, _},
-      _} = cert
+        _},
+      _,
+      _
+    } = cert
 
-    if sig_alg_1 == sig_alg_2 do
-      sig_alg_1
-    else
-      raise "Different sig algs in the same certificate"
-    end
+    public_key_algorithm
   end
 end

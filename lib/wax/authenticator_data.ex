@@ -1,5 +1,5 @@
 defmodule Wax.AuthenticatorData do
-  @moduledoc false
+  alias Wax.Utils
 
   @enforce_keys [
     :rp_id_hash,
@@ -58,39 +58,37 @@ defmodule Wax.AuthenticatorData do
     flag_attested_credential_data = to_bool(flag_attested_credential_data)
     flag_extension_data_included = to_bool(flag_extension_data_included)
 
-    {attested_credential_data, bytes_read} =
+    {maybe_attested_credential_data, remaining_bytes} =
       if flag_attested_credential_data do
-        case Wax.AttestedCredentialData.decode(rest, flag_extension_data_included) do
-          {:ok, {acd, bytes_read}} ->
-            {acd, bytes_read}
-
-          {:ok, acd} ->
-            {acd, byte_size(rest)}
-        end
+         Wax.AttestedCredentialData.decode(rest)
       else
-        {nil, 0}
+        {nil, rest}
       end
 
-    extensions =
+    {extensions, remaining_bytes} =
       if flag_extension_data_included do
-        rest
-        |> binary_part(bytes_read, byte_size(rest) - bytes_read)
-        |> :cbor.decode()
+        {:ok, extensions, remaining_bytes} = Utils.CBOR.decode(remaining_bytes)
+
+        {extensions, remaining_bytes}
       else
-        nil
+        {nil, remaining_bytes}
       end
 
-    {:ok, %__MODULE__{
-      rp_id_hash: rp_id_hash,
-      flag_user_present: flag_user_present,
-      flag_user_verified: flag_user_verified,
-      flag_attested_credential_data: flag_attested_credential_data,
-      flag_extension_data_included: flag_extension_data_included,
-      sign_count: sign_count,
-      attested_credential_data: attested_credential_data,
-      extensions: extensions,
-      raw_bytes: authenticator_data
-      }}
+    if remaining_bytes == "" do
+      {:ok, %__MODULE__{
+        rp_id_hash: rp_id_hash,
+        flag_user_present: flag_user_present,
+        flag_user_verified: flag_user_verified,
+        flag_attested_credential_data: flag_attested_credential_data,
+        flag_extension_data_included: flag_extension_data_included,
+        sign_count: sign_count,
+        attested_credential_data: maybe_attested_credential_data,
+        extensions: extensions,
+        raw_bytes: authenticator_data
+       }}
+    else
+      {:error, :authenticator_illegal_remaining_bytes}
+    end
   end
 
   def decode(_), do: {:error, :invalid_auth_data}

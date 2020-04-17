@@ -1,4 +1,6 @@
 defmodule Wax.AttestedCredentialData do
+  alias Wax.Utils
+
   @enforce_keys [
     :aaguid,
     :credential_id,
@@ -18,64 +20,27 @@ defmodule Wax.AttestedCredentialData do
   }
 
   @doc false
-
-  @spec decode(binary(), boolean())
-    :: {:ok, t() | {t(), non_neg_integer()}} | {:error, any()}
-
+  @spec decode(binary()) :: {t(), binary()} | {:error, atom()}
   def decode(
     <<
       aaguid::binary-size(16),
       credential_id_length::unsigned-big-integer-size(16),
       credential_id::binary-size(credential_id_length),
       rest::binary
-    >>,
-    with_appended_extensions
+    >>
   )
   do
-    if with_appended_extensions do
-      {cbor, bytes_read} = cbor_decode_binary_unknown_length(rest, 1, byte_size(rest))
-
-      {:ok,
-        {
-          %__MODULE__{
-          aaguid: aaguid,
-          credential_id: credential_id,
-            credential_public_key: cbor
-          }, bytes_read
-        }
-      }
-    else
-      {:ok,
+    with {:ok, credential_public_key, extensions} <- Utils.CBOR.decode(rest) do
+      {
         %__MODULE__{
           aaguid: aaguid,
           credential_id: credential_id,
-          credential_public_key: :cbor.decode(rest)
-        }
+          credential_public_key: credential_public_key
+        },
+        extensions
       }
     end
   end
 
-  def decode(_, _), do: {:error, :invalid_attested_credential_data}
-
-  @spec cbor_decode_binary_unknown_length(binary, non_neg_integer(), non_neg_integer())
-    :: {any(), non_neg_integer()}
-
-  defp cbor_decode_binary_unknown_length(_bin, nb, max) when nb > max do
-    raise "#{__MODULE__}: invalid CBOR decode error"
-  end
-
-  defp cbor_decode_binary_unknown_length(bin, nb, max) do
-    try do
-      %{} = cpk = :cbor.decode(<<bin::binary-size(nb)>>)
-
-      {cpk, nb}
-    # yeah :cbor both throws and raises
-    rescue
-      _ ->
-        cbor_decode_binary_unknown_length(bin, nb + 1, max)
-    catch
-      _ ->
-        cbor_decode_binary_unknown_length(bin, nb + 1, max)
-    end
-  end
+  def decode(_), do: {:error, :invalid_attested_credential_data}
 end

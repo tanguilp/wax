@@ -54,41 +54,50 @@ defmodule Wax.AttestationStatementFormat.TPM do
   #@tpm_ecc_bn_p638  0x0011
   #@tpm_ecc_sm2_p256 0x0020
 
-  # from https://medium.com/@herrjemand/verifying-fido-tpm2-0-attestation-fc7243847498
-  # FIXME: find official source and think about better update process than hardcoded values
+  # from https://trustedcomputinggroup.org/resource/vendor-id-registry/
+  # version 1.01
   @tpm_manufacturer_ids [
-    "id:414D4400", # "AMD",
-    "id:41544D4C", # "Atmel"
-    "id:4252434D", # "Broadcom"
-    "id:49424d00", # "IBM"
-    "id:49465800", # "Infineon"
-    "id:494E5443", # "Intel"
-    "id:4C454E00", # "Lenovo"
-    "id:4E534D20", # "National Semiconductor"
-    "id:4E545A00", # "Nationz"
-    "id:4E544300", # "Nuvoton Technology"
-    "id:51434F4D", # "Qualcomm"
-    "id:534D5343", # "SMSC"
-    "id:53544D20", # "ST Microelectronics"
-    "id:534D534E", # "Samsung"
-    "id:534E5300", # "Sinosun"
-    "id:54584E00", # "Texas Instruments"
-    "id:57454300", # "Winbond"
-    "id:524F4343", # "Fuzhouk Rockchip"
+    "id:414D4400", # AMD
+    "id:41544D4C", # Atmel
+    "id:4252434D", # Broadcom
+    "id:48504500", # HPE
+    "id:49424d00", # IBM
+    "id:49465800", # Infineon
+    "id:494E5443", # Intel
+    "id:4C454E00", # Lenovo
+    "id:4D534654", # Microsoft
+    "id:4E534D20", # National Semiconductor
+    "id:4E545A00", # Nationz
+    "id:4E544300", # Nuvoton Technology
+    "id:51434F4D", # Qualcomm
+    "id:534D5343", # SMSC
+    "id:53544D20", # ST Microelectronics
+    "id:534D534E", # Samsung
+    "id:534E5300", # Sinosun
+    "id:54584E00", # Texas Instruments
+    "id:57454300", # Winbond
+    "id:524F4343", # Fuzhouk Rockchip
+    "id:474F4F47"  # Google,
   ]
+  ++ ["id:FFFFF1D0"] # fake ID for conformance tool testing, uncomment only for testing
 
   @impl Wax.AttestationStatementFormat
 
-  def verify(%{"x5c" => _} = att_stmt, auth_data, client_data_hash, _verify_trust_root) do
+  def verify(
+    %{"x5c" => _} = att_stmt,
+    auth_data,
+    client_data_hash,
+    %Wax.Challenge{attestation: "direct"} = challenge
+  ) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- version_valid?(att_stmt),
          {:ok, cert_info} <- parse_cert_info(att_stmt["certInfo"]),
          {:ok, pub_area} <- parse_pub_area(att_stmt["pubArea"]),
          :ok <- verify_public_key(pub_area, auth_data),
-         :ok <- cert_info_valid?(cert_info, pub_area, auth_data, client_data_hash, att_stmt),
+         :ok <- cert_info_valid?(cert_info, auth_data, client_data_hash, att_stmt),
          :ok <- signature_valid?(att_stmt),
          :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data),
-         {:ok, metadata_statement} <- attestation_path_valid?(att_stmt["x5c"], auth_data)
+         {:ok, metadata_statement} <- attestation_path_valid?(att_stmt["x5c"], auth_data, challenge)
     do
       {:ok, {:basic, att_stmt["x5c"], metadata_statement}}
     else
@@ -97,8 +106,17 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  def verify(%{"ecdaaKeyId" => _}, _, _, _) do
+  def verify(
+    %{"ecdaaKeyId" => _},
+    _auth_data,
+    _client_data_hash,
+    %Wax.Challenge{attestation: "direct"}
+  ) do
     {:error, :attestation_tpm_unsupported_ecdaa_signature}
+  end
+
+  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
+    {:error, :invalid_attestation_conveyance_preference}
   end
 
   @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
@@ -125,34 +143,31 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   defp parse_cert_info(
     <<
-      magic::unsigned-big-integer-size(32),
-      type::unsigned-big-integer-size(16),
+      0xff544347::unsigned-big-integer-size(32),
+      0x8017::unsigned-big-integer-size(16),
       qualified_signer_length::unsigned-big-integer-size(16),
-      qualified_signer::binary-size(qualified_signer_length),
+      _qualified_signer::binary-size(qualified_signer_length),
       extra_data_length::unsigned-big-integer-size(16),
       extra_data::binary-size(extra_data_length),
-      clock_info::binary-size(17),
-      firmaware_version::binary-size(8),
+      _clock_info::binary-size(17),
+      _firmware_version::binary-size(8),
       attested_name_length::unsigned-big-integer-size(16),
       attested_name::binary-size(attested_name_length),
       attested_qualified_name_length::unsigned-big-integer-size(16),
-      attested_qualified_name::binary-size(attested_qualified_name_length)
+      _attested_qualified_name::binary-size(attested_qualified_name_length)
     >>
   )
   do
+    hash_length = attested_name_length - 2
+    <<
+      attested_name_digest::unsigned-big-integer-size(16),
+      attested_name_hash::binary-size(hash_length)
+    >> = attested_name
+
     {:ok, %{
-      magic: magic,
-      type: type,
-      qualified_signer_length: qualified_signer_length,
-      qualified_signer: qualified_signer,
-      extra_data_length: extra_data_length,
       extra_data: extra_data,
-      clock_info: clock_info,
-      firmaware_version: firmaware_version,
-      attested_name_length: attested_name_length,
-      attested_name: attested_name,
-      attested_qualified_name_length: attested_qualified_name_length,
-      attested_qualified_name: attested_qualified_name,
+      attested_name_digest: attested_name_digest,
+      attested_name_hash: attested_name_hash,
     }}
   end
 
@@ -243,36 +258,33 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec cert_info_valid?(map(), map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), map())
+  @spec cert_info_valid?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), map())
     :: :ok | {:error, any()}
 
   defp cert_info_valid?(
     cert_info,
-    pub_area,
     auth_data,
     client_data_hash,
     att_stmt) do
-    # %{3 => val} is a psuedo cose key, 3 being the algorithm
+    # %{3 => val} is a pseudo cose key, 3 being the algorithm
     digest = Wax.CoseKey.to_erlang_digest(%{3 =>att_stmt["alg"]})
 
     att_to_be_signed = auth_data.raw_bytes <> client_data_hash
 
     pub_area_hash =
-      :crypto.hash(name_alg_to_erlang_digest(pub_area[:name_alg]), att_stmt["pubArea"])
-
-    attested_name = <<pub_area[:name_alg]::unsigned-big-integer-size(16)>> <> pub_area_hash
+      cert_info[:attested_name_digest]
+      |> name_alg_to_erlang_digest()
+      |> :crypto.hash(att_stmt["pubArea"])
 
     Logger.debug("#{__MODULE__}: verifying cert_info is valid: digest: #{inspect(digest)} ; " <>
       "att to be signed: #{inspect(att_to_be_signed)} ; " <>
-      "pub_area hash: #{inspect(pub_area_hash)} ; " <>
-      "attested name: #{inspect(attested_name)}"
+      "pub_area hash: #{inspect(pub_area_hash)}"
       )
 
-    if cert_info[:magic] == 0xff544347 # TPM_GENERATED_VALUE
-      and cert_info[:type] == 0x8017   # TPM_ST_ATTEST_CERTIFY
-      and cert_info[:extra_data] == :crypto.hash(digest, att_to_be_signed)
-      and cert_info[:attested_name] == attested_name do
-        :ok
+    if cert_info[:extra_data] == :crypto.hash(digest, att_to_be_signed)
+      and cert_info[:attested_name_hash] == pub_area_hash
+    do
+      :ok
     else
       {:error, :attestation_tpm_invalid_cert_info}
     end
@@ -300,7 +312,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
   end
 
   @spec aik_cert_valid?(binary(), Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
-  
+
   defp aik_cert_valid?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
 
@@ -313,8 +325,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
     if Wax.Utils.Certificate.version(cert) == :v3
       and X509.Certificate.subject(cert) == {:rdnSequence, []}
-      and parse_cert_datetime(valid_from) < Wax.Utils.Timestamp.get_timestamp()
-      and parse_cert_datetime(valid_to) > Wax.Utils.Timestamp.get_timestamp()
+      and parse_cert_utc_time(valid_from) < Wax.Utils.Timestamp.get_timestamp()
+      and parse_cert_utc_time(valid_to) > Wax.Utils.Timestamp.get_timestamp()
       and get_tcpaTpmManufacturer_field(cert) in @tpm_manufacturer_ids
       and {2, 23, 133, 8, 3} in key_ext_vals
       and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
@@ -338,33 +350,56 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec parse_cert_datetime(charlist()) :: non_neg_integer()
-
-  defp parse_cert_datetime(datetime) do
+  @spec parse_cert_utc_time(charlist()) :: non_neg_integer()
+  defp parse_cert_utc_time(datetime) do
     <<
-      day::binary-size(2),
+      year::binary-size(2),
       month::binary-size(2),
-      year::binary-size(4),
+      day::binary-size(2),
       hour::binary-size(2),
       minute::binary-size(2),
+      second::binary-size(2),
       "Z"::utf8
     >> = :erlang.list_to_binary(datetime)
 
-    year <> "-" <> month <> "-" <> day <> "T" <> hour <> ":" <> minute <> ":00Z"
+    year =
+      case Integer.parse(year) do
+        {year_int, _} when year_int >= 50 ->
+          "19" <> year
+
+        {year_int, _} when year_int < 50 ->
+          "20" <> year
+      end
+
+    year <> "-" <> month <> "-" <> day <> "T" <> hour <> ":" <> minute <> ":" <> second <> "Z"
     |> DateTime.from_iso8601()
     |> elem(1)
     |> DateTime.to_unix()
   end
 
-  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t())
-    :: {:ok, Wax.MetadataStatement.t()} | {:error, any()}
+  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t(), Wax.Challenge.t()) ::
+  {:ok, Wax.Metadata.Statement.t()}
+  | {:error, any()}
 
-  defp attestation_path_valid?(der_list, auth_data) do
-    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid) do
-      %Wax.MetadataStatement{attestation_root_certificates: arcs} = metadata_statement ->
+  defp attestation_path_valid?(der_list, auth_data, challenge) do
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+      %Wax.Metadata.Statement{attestation_root_certificates: arcs} = metadata_statement ->
         if Enum.any?(
           arcs,
-          fn arc -> :public_key.pkix_path_validation(arc, [arc | Enum.reverse(der_list)], []) end
+          fn arc ->
+            :public_key.pkix_path_validation(
+              arc,
+              [arc | Enum.reverse(der_list)],
+              verify_fun: {&verify_fun/3, %{}}
+            )
+            |> case do
+              {:ok, _} ->
+                true
+
+              {:error, _} ->
+                false
+            end
+          end
         ) do
           {:ok, metadata_statement}
         else
@@ -374,6 +409,31 @@ defmodule Wax.AttestationStatementFormat.TPM do
       _ ->
         {:error, :attestation_tpm_no_attestation_metadata_statement_found}
     end
+  end
+
+  # specific verify function which accepts the Certificate Policies extension
+  # without further verification. OTP <= 23.0-rc1 does not recognizes this extension
+  # which can be marked as critical in TPM's outputs, which make the path validation
+  # fail.
+  @oid_cert_policies {2, 5, 29, 32}
+  def verify_fun(_, {:extension, {:Extension, @oid_cert_policies, true, _}}, user_state) do
+    {:valid, user_state}
+  end
+
+  def verify_fun(_, {:extension, _}, user_state) do
+    {:unknown, user_state}
+  end
+
+  def verify_fun(_, :valid, user_state) do
+    {:valid, user_state}
+  end
+
+  def verify_fun(_, :valid_peer, user_state) do
+    {:valid, user_state}
+  end
+
+  def verify_fun(_, reason, _) do
+    {:fail, reason}
   end
 
   @spec get_tcpaTpmManufacturer_field(any()) :: String.t()
@@ -421,10 +481,10 @@ defmodule Wax.AttestationStatementFormat.TPM do
   defp to_erlang_curve(@tpm_ecc_nist_p256), do: :pubkey_cert_records.namedCurves(:secp256r1)
   defp to_erlang_curve(@tpm_ecc_nist_p384), do: :pubkey_cert_records.namedCurves(:secp384r1)
   defp to_erlang_curve(@tpm_ecc_nist_p521), do: :pubkey_cert_records.namedCurves(:secp521r1)
-  #FIXME: these 3 curves seem unsupported by Erlang
-  #defp to_erlang_curve(@tpm_ecc_bn_p256), do:
-  #defp to_erlang_curve(@tpm_ecc_bn_p638), do:
-  #defp to_erlang_curve(@tpm_ecc_sm2_p256), do:
+  # these 3 curves seem unsupported by Erlang
+  # defp to_erlang_curve(@tpm_ecc_bn_p256), do:
+  # defp to_erlang_curve(@tpm_ecc_bn_p638), do:
+  # defp to_erlang_curve(@tpm_ecc_sm2_p256), do:
 
   @spec to_erlang_public_key(map()) :: :public_key.public_key()
 

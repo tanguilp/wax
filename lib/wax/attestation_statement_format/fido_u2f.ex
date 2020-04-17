@@ -6,16 +6,22 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   @behaviour Wax.AttestationStatementFormat
 
   @impl Wax.AttestationStatementFormat
-  def verify(att_stmt, auth_data, client_data_hash, verify_trust_root) do
+  def verify(
+    att_stmt,
+    auth_data,
+    client_data_hash,
+    %Wax.Challenge{attestation: "direct"} = challenge
+  ) do
     with :ok <- valid_cbor?(att_stmt),
          {:ok, pub_key} <- extract_and_verify_public_key(att_stmt),
+         :ok <- verify_aaguid_null(auth_data),
          public_key_u2f <- get_raw_cose_key(auth_data),
          verification_data <- get_verification_data(auth_data, client_data_hash, public_key_u2f),
          :ok <- valid_signature?(att_stmt["sig"], verification_data, pub_key),
-         :ok <-
-           (if verify_trust_root, do: attestation_certificate_valid?(att_stmt["x5c"]), else: :ok)
+         :ok <- attestation_certificate_valid?(att_stmt["x5c"], challenge)
     do
-      {attestation_type, metadata_statement} = determine_attestation_type(att_stmt["x5c"])
+      {attestation_type, metadata_statement} =
+        determine_attestation_type(att_stmt["x5c"], challenge)
 
       {:ok,
         {attestation_type,
@@ -27,6 +33,10 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
       error ->
         error
     end
+  end
+
+  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
+    {:error, :invalid_attestation_conveyance_preference}
   end
 
   @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
@@ -54,7 +64,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
         Logger.debug("#{__MODULE__}: verifying validity of public key for certificate " <>
           "#{inspect(cert)}")
 
-        if Wax.Utils.Certificate.signature_algorithm(cert) == {1, 2, 840, 113549, 1, 1, 11}
+        if Wax.Utils.Certificate.public_key_algorithm(cert) == {1, 2, 840, 10045, 2, 1}
           and elem(pub_key, 1) == {:namedCurve, {1, 2, 840, 10045, 3, 1, 7}} do
           {:ok, pub_key}
         else
@@ -63,6 +73,15 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
         _ ->
           {:error, :attestation_fidou2f_multiple_x5c}
+    end
+  end
+
+  @spec verify_aaguid_null(Wax.AuthenticatorData.t()) :: :ok | {:error, atom()}
+  defp verify_aaguid_null(auth_data) do
+    if :binary.decode_unsigned(auth_data.attested_credential_data.aaguid) == 0 do
+      :ok
+    else
+      {:error, :attestation_fidou2f_non_nil_aaguid}
     end
   end
 
@@ -97,13 +116,18 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec attestation_certificate_valid?([binary()]) :: :ok | {:error, any()}
+  @spec attestation_certificate_valid?([binary()], Wax.Challenge.t()) ::
+  :ok
+  | {:error, any()}
 
-  def attestation_certificate_valid?([leaf_cert | _]) do
+  def attestation_certificate_valid?(
+    [leaf_cert | _],
+    %Wax.Challenge{verify_trust_root: true} = challenge
+  ) do
     acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(leaf_cert)
 
-    case Wax.Metadata.get_by_acki(acki) do
-      %Wax.MetadataStatement{} ->
+    case Wax.Metadata.get_by_acki(acki, challenge) do
+      %Wax.Metadata.Statement{} ->
         :ok
 
       nil ->
@@ -111,19 +135,24 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     end
   end
 
-  @spec determine_attestation_type([binary()])
-    :: {Wax.Attestation.type(), Wax.MetadataStatement.t() | nil}
+  def attestation_certificate_valid?(_, %Wax.Challenge{verify_trust_root: false}) do
+    :ok
+  end
 
-  defp determine_attestation_type([leaf_cert | _]) do
+  @spec determine_attestation_type([binary()], Wax.Challenge.t()) ::
+  {Wax.Attestation.type(), Wax.Metadata.Statement.t()}
+  | {Wax.Attestation.type(), nil}
+
+  defp determine_attestation_type([leaf_cert | _], challenge) do
     acki = Wax.Utils.Certificate.attestation_certificate_key_identifier(leaf_cert)
 
     Logger.debug("#{__MODULE__}: determining attestation type for acki=#{inspect(acki)}")
 
-    case Wax.Metadata.get_by_acki(acki) do
+    case Wax.Metadata.get_by_acki(acki, challenge) do
       nil ->
         {:uncertain, nil}
 
-      #FIXME: here we assume that :basic and :attca are exclusive for a given authenticator
+      # here we assume that :basic and :attca are exclusive for a given authenticator
       # but this seems however unspecified
       metadata_statement ->
         if :tag_attestation_basic_full in metadata_statement.attestation_types do
