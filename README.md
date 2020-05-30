@@ -294,7 +294,8 @@ See [CHANGELOG.md](CHANGELOG.md).
   - [x] **Mandatory**: TUP verification (note: and also user verified, through an option)
 
 [4. Communication Channel Requirements](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#communication-channel-requirements)
-  - [ ] *Optional*: TokenBinding support
+  - [ ] *Optional*: TokenBinding support (won't be supported following Chrome drop of the now
+  dead token binding standard)
 
 [5. Extensions](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#extensions)
   - [x] **Mandatory**: registration and authentication support without extension
@@ -314,7 +315,7 @@ See [CHANGELOG.md](CHANGELOG.md).
   - [x] *Optional*: ES512 (ECDSA using P-521 and SHA-512) algorithm support
   - [x] *Optional*: EdDSA algorithm support
   - [x] *Optional*: ES256K (ECDSA using P-256K and SHA-256) algorithm support
-  - [-] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
+  - [ ] **Mandatory**: compliance with the FIDO privacy principles (note: out-of-scope, to be implemented by the server using the Wax library)
 
 [7. Transport Binding Profile](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#transport-binding-profile)
   - [x] *optional*: API implementation ([`WaxAPIRest`](https://github.com/tanguilp/wax_api_rest))
