@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.2.1] - 2020-05-30
+
+### Fixed
+
+- [Wax.AttestationStatementFormat.TPM] Commented TPM manufacturer ID used only for testing with
+the FIDO2 test suite
+
 ## [0.2.0] - 2020-04-17
 
 ### Added

@@ -79,7 +79,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     "id:524F4343", # Fuzhouk Rockchip
     "id:474F4F47"  # Google,
   ]
-  ++ ["id:FFFFF1D0"] # fake ID for conformance tool testing, uncomment only for testing
+  #++ ["id:FFFFF1D0"] # fake ID for conformance tool testing, uncomment only for testing
 
   @impl Wax.AttestationStatementFormat
 
