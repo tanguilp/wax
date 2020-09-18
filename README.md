@@ -43,13 +43,16 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax, github: "tanguilp/wax", tag: "v0.2.1"}
+    {:wax_, "~> 0.3.0"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc) by
-typing `mix docs` in the project's root.
+Note that due to a [name collision](https://github.com/resuelve/wax/issues/16), the application
+name is `:wax_`, and not `:wax`. It doesn't cause issues using both library because the other's
+package doesn't use the atom `Wax` as the base module name.
+
+[Documentation](https://hexdocs.pm/wax_)
 
 ## Usage
 
@@ -207,7 +210,7 @@ to 12 hours). Example:
 ```elixir
 use Mix.Config
 
-config :wax,
+config :wax_,
   metadata_update_interval: 3600,
 ```
 
@@ -215,7 +218,7 @@ config :wax,
 ```elixir
 use Mix.Config
 
-config :wax,
+config :wax_,
   metadata_access_token: "d4904acd10a36f62d7a7d33e4c9a86628a2b0eea0c3b1a6c"
 ```
 
@@ -242,7 +245,7 @@ In both case, Wax tries to load all files (even directories and other special fi
 ### Example configuration
 
 ```elixir
-config :wax,
+config :wax_,
   origin: "http://localhost:4000",
   rp_id: :auto,
   metadata_dir: :my_application

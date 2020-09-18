@@ -190,13 +190,13 @@ defmodule Wax.Metadata do
   defp schedule_update() do
     Process.send_after(self(),
       :update_metadata,
-      Application.get_env(:wax, :metadata_update_interval, 12 * 3600) * 1000)
+      Application.get_env(:wax_, :metadata_update_interval, 12 * 3600) * 1000)
   end
 
   def update_metadata(serial_number) do
     Logger.info("Starting FIDO metadata update process")
 
-    access_token = Application.get_env(:wax, :metadata_access_token)
+    access_token = Application.get_env(:wax_, :metadata_access_token)
 
     if access_token do
       case HTTPoison.get("https://mds2.fidoalliance.org/?token=" <> access_token) do
@@ -274,7 +274,7 @@ defmodule Wax.Metadata do
   @spec get_metadata_statement(map(), atom()) :: Wax.Metadata.Statement.t() | :error
   def get_metadata_statement(entry, digest_alg) do
     HTTPoison.get(
-      entry["url"] <> "?token=" <> Application.get_env(:wax, :metadata_access_token),
+      entry["url"] <> "?token=" <> Application.get_env(:wax_, :metadata_access_token),
       [],
       follow_redirect: true)
     |> case do
@@ -403,7 +403,7 @@ defmodule Wax.Metadata do
     :ets.match_delete(:wax_metadata, {:_, :_, :_, :file})
 
     files =
-      case Application.get_env(:wax, :metadata_dir, nil) do
+      case Application.get_env(:wax_, :metadata_dir, nil) do
         nil ->
           []
 

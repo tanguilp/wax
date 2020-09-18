@@ -43,7 +43,7 @@ defmodule Wax do
   ```elixir
   use Mix.Config
 
-  config :wax,
+  config :wax_,
     metadata_update_interval: 3600,
   ```
 
@@ -51,7 +51,7 @@ defmodule Wax do
   ```elixir
   use Mix.Config
 
-  config :wax,
+  config :wax_,
     metadata_access_token: "d4904acd10a36f62d7a7d33e4c9a86628a2b0eea0c3b1a6c"
   ```
 
@@ -78,7 +78,7 @@ defmodule Wax do
   ### Example configuration
 
   ```elixir
-  config :wax,
+  config :wax_,
     origin: "http://localhost:4000",
     rp_id: :auto,
     metadata_dir: :my_application
@@ -121,7 +121,7 @@ defmodule Wax do
       if is_binary(opts[:origin]) do
         opts[:origin]
       else
-        case Application.get_env(:wax, :origin) do
+        case Application.get_env(:wax_, :origin) do
           origin when is_binary(origin) ->
             origin
 
@@ -135,13 +135,13 @@ defmodule Wax do
     end
 
     rp_id =
-      if opts[:rp_id] == :auto or Application.get_env(:wax, :rp_id) == :auto do
+      if opts[:rp_id] == :auto or Application.get_env(:wax_, :rp_id) == :auto do
         URI.parse(origin).host
       else
         if is_binary(opts[:rp_id]) do
           opts[:rp_id]
         else
-          case Application.get_env(:wax, :rp_id) do
+          case Application.get_env(:wax_, :rp_id) do
             rp_id when is_binary(rp_id) ->
               rp_id
 
@@ -164,18 +164,18 @@ defmodule Wax do
       rp_id: rp_id,
       user_verification:
         opts[:user_verification]
-        || Application.get_env(:wax, :user_verification, "preferred"),
+        || Application.get_env(:wax_, :user_verification, "preferred"),
       trusted_attestation_types:
         opts[:trusted_attestation_types] || Application.get_env(
-          :wax,
+          :wax_,
           :trusted_attestation_types,
           [:none, :basic, :uncertain, :attca, :self]
         ),
       verify_trust_root:
-        opts[:verify_trust_root] || Application.get_env(:wax, :verify_trust_root, true),
+        opts[:verify_trust_root] || Application.get_env(:wax_, :verify_trust_root, true),
       acceptable_authenticator_statuses:
         opts[:acceptable_authenticator_statuses] || Application.get_env(
-          :wax,
+          :wax_,
           :acceptable_authenticator_statuses,
           [
             :fido_certified,
@@ -188,14 +188,14 @@ defmodule Wax do
           ]
         ),
       issued_at: :erlang.monotonic_time(:second),
-      timeout: opts[:timeout] || Application.get_env(:wax, :timeout, 60 * 20),
+      timeout: opts[:timeout] || Application.get_env(:wax_, :timeout, 60 * 20),
       android_key_allow_software_enforcement:
         opts[:android_key_allow_software_enforcement]
-        || Application.get_env(:wax, :android_key_allow_software_enforcement)
+        || Application.get_env(:wax_, :android_key_allow_software_enforcement)
         || false,
       silent_authentication_enabled:
         opts[:silent_authentication_enabled]
-        || Application.get_env(:wax, :silent_authentication_enabled, false)
+        || Application.get_env(:wax_, :silent_authentication_enabled, false)
     ]
   end
 

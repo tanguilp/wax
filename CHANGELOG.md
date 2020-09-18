@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.3.0] - 2020-09-18
+
+### Changed
+
+- [Wax] Renamed application to `:wax_` due to a name collision. **Do not forget** to rename
+any `:wax` entry in your configuration files
+- [Wax] secp256k1's COSE alg value set to new standardized value
+
 ## [0.2.1] - 2020-05-30
 
 ### Fixed

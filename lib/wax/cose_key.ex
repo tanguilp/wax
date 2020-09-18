@@ -12,7 +12,7 @@ defmodule Wax.CoseKey do
     -259 => "RS512 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
     -258 => "RS384 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
     -257 => "RS256 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
-    -46 => "ES256K",
+    -47 => "ES256K",
     -39 => "PS512",
     -38 => "PS384",
     -37 => "PS256",
@@ -134,7 +134,7 @@ defmodule Wax.CoseKey do
   def to_erlang_digest(%{@alg => -259}), do: :sha512
   def to_erlang_digest(%{@alg => -258}), do: :sha384
   def to_erlang_digest(%{@alg => -257}), do: :sha256
-  def to_erlang_digest(%{@alg => -46, @curve => 8}), do: :sha256
+  def to_erlang_digest(%{@alg => -47, @curve => 8}), do: :sha256
   def to_erlang_digest(%{@alg => -42}), do: :sha512
   def to_erlang_digest(%{@alg => -41}), do: :sha256
   def to_erlang_digest(%{@alg => -39}), do: :sha512
