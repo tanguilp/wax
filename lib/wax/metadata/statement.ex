@@ -199,15 +199,17 @@ defmodule Wax.Metadata.Statement do
   end
 
   @type user_verification_method ::
-  :user_verify_presence
-  | :user_verify_fingerprint
-  | :user_verify_passcode
-  | :user_verify_voiceprint
-  | :user_verify_faceprint
-  | :user_verify_location
-  | :user_verify_eyeprint
-  | :user_verify_pattern
-  | :user_verify_handprint
+  :user_verify_presence_internal
+  | :user_verify_fingerprint_internal
+  | :user_verify_passcode_internal
+  | :user_verify_voiceprint_internal
+  | :user_verify_faceprint_internal
+  | :user_verify_location_internal
+  | :user_verify_eyeprint_internal
+  | :user_verify_pattern_internal
+  | :user_verify_handprint_internal
+  | :user_verify_passcode_external
+  | :user_verify_pattern_external
   | :user_verify_none
   | :user_verify_all
 
@@ -232,6 +234,7 @@ defmodule Wax.Metadata.Statement do
   | :attachment_hint_bluetooth
   | :attachment_hint_network
   | :attachment_hint_ready
+  | :attachment_hint_wifi_direct
 
   @type tc_display ::
   :transaction_confirmation_display_any
@@ -431,17 +434,19 @@ defmodule Wax.Metadata.Statement do
   defp attestation_type(0x3E0A), do: :tag_attestation_attca
 
   @spec user_verification_method(non_neg_integer()) :: user_verification_method()
-  defp user_verification_method(0x00000001), do: :user_verify_presence
-  defp user_verification_method(0x00000002), do: :user_verify_fingerprint
-  defp user_verification_method(0x00000004), do: :user_verify_passcode
-  defp user_verification_method(0x00000008), do: :user_verify_voiceprint
-  defp user_verification_method(0x00000010), do: :user_verify_faceprint
-  defp user_verification_method(0x00000020), do: :user_verify_location
-  defp user_verification_method(0x00000040), do: :user_verify_eyeprint
-  defp user_verification_method(0x00000080), do: :user_verify_pattern
-  defp user_verification_method(0x00000100), do: :user_verify_handprint
+  defp user_verification_method(0x00000001), do: :user_verify_presence_internal
+  defp user_verification_method(0x00000002), do: :user_verify_fingerprint_internal
+  defp user_verification_method(0x00000004), do: :user_verify_passcode_internal
+  defp user_verification_method(0x00000008), do: :user_verify_voiceprint_internal
+  defp user_verification_method(0x00000010), do: :user_verify_faceprint_internal
+  defp user_verification_method(0x00000020), do: :user_verify_location_internal
+  defp user_verification_method(0x00000040), do: :user_verify_eyeprint_internal
+  defp user_verification_method(0x00000080), do: :user_verify_pattern_internal
+  defp user_verification_method(0x00000100), do: :user_verify_handprint_internal
   defp user_verification_method(0x00000200), do: :user_verify_none
   defp user_verification_method(0x00000400), do: :user_verify_all
+  defp user_verification_method(0x00000800), do: :user_verify_passcode_external
+  defp user_verification_method(0x00001000), do: :user_verify_pattern_external
 
   @spec code_accuracy_descriptor(map()) ::
     Wax.Metadata.Statement.VerificationMethodDescriptor.CodeAccuracyDescriptor.t()
@@ -631,6 +636,11 @@ defmodule Wax.Metadata.Statement do
   defp attachment_hint_ready(ah_list, ah) when (ah &&& 0x0080) > 0
   do
     [:attachment_hint_ready | ah_list]
+  end
+
+  defp attachment_hint_ready(ah_list, ah) when (ah &&& 0x0100) > 0
+  do
+    [:attachment_hint_wifi_direct | ah_list]
   end
 
   defp attachment_hint_ready(ah_list, _), do: ah_list

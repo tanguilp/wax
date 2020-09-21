@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.3.1] - 2020-09-21
+
+### Fixed
+
+[Wax.Metadata.Statement] Added newly added user verification methods and attachment hints.
+User verification method names **have been updated** to reflect the latest specification. See
+`t:Wax.Metadata.Statement.user_verification_method/0` type for new values.
+
 ## [0.3.0] - 2020-09-18
 
 ### Changed
