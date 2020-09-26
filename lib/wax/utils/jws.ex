@@ -123,10 +123,11 @@ defmodule Wax.Utils.JWS do
   end
 
   defp get_crls(crl_uris) do
+    http_client = Tesla.client(Application.get_env(:wax_, :tesla_middlewares, []))
+
     crls =
       for crl_uri <- crl_uris do
-        crl_uri
-        |> HTTPoison.get!()
+        Tesla.get!(http_client, crl_uri)
         |> Map.get(:body)
         |> X509.CRL.from_pem!()
       end

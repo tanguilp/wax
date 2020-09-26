@@ -196,15 +196,13 @@ defmodule Wax.Metadata do
   def update_metadata(serial_number) do
     Logger.info("Starting FIDO metadata update process")
 
-    access_token = Application.get_env(:wax_, :metadata_access_token)
-
-    if access_token do
-      case HTTPoison.get("https://mds2.fidoalliance.org/?token=" <> access_token) do
-        {:ok, %HTTPoison.Response{status_code: 200, body: jws_toc}} ->
+    if Application.get_env(:wax_, :metadata_access_token) do
+      case http_get("https://mds2.fidoalliance.org/") do
+        {:ok, jws_toc} ->
           process_metadata_toc(jws_toc, serial_number)
 
-        e ->
-          Logger.warn("Unable to download metadata (#{inspect(e)})")
+        {:error, reason} ->
+          Logger.warn("Unable to download metadata (#{inspect(reason)})")
 
           :not_updated
       end
@@ -273,12 +271,8 @@ defmodule Wax.Metadata do
 
   @spec get_metadata_statement(map(), atom()) :: Wax.Metadata.Statement.t() | :error
   def get_metadata_statement(entry, digest_alg) do
-    HTTPoison.get(
-      entry["url"] <> "?token=" <> Application.get_env(:wax_, :metadata_access_token),
-      [],
-      follow_redirect: true)
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+    case http_get(entry["url"]) do
+      {:ok, body} ->
         if :crypto.hash(digest_alg, body) == Base.url_decode64!(entry["hash"], padding: false) do
           body
           |> Base.url_decode64!()
@@ -475,6 +469,25 @@ defmodule Wax.Metadata do
             )
           end
         )
+    end
+  end
+
+  defp http_get(url) do
+    access_token = Application.fetch_env!(:wax_, :metadata_access_token)
+    client =
+      Application.get_env(:wax_, :tesla_middlewares, [])
+      |> Kernel.++([Tesla.Middleware.FollowRedirects])
+      |> Tesla.client()
+
+    case Tesla.get(client, url <> "?token=" <> access_token) do
+      {:ok, %Tesla.Env{status: status, body: body}} when status in 200..299 ->
+        {:ok, body}
+
+      {:ok, %Tesla.Env{status: status}} ->
+        {:error, "MDSv2 responded with HTTP error #{status}"}
+
+      {:error, _} = error ->
+        error
     end
   end
 end

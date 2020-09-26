@@ -4,11 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.4.0] - 2020-09-26
+
+### Changed
+
+- [Wax.Metadata] Metadata retrieval now makes use of the Tesla library. **Beware**, Tesla's
+default adapter is insecure (`:https`), so you **need to configure a secure adapter**, such as
+Hackney, if you use MDSv2 metadata.
+
 ## [0.3.1] - 2020-09-21
 
 ### Fixed
 
-[Wax.Metadata.Statement] Added newly added user verification methods and attachment hints.
+- [Wax.Metadata.Statement] Added newly added user verification methods and attachment hints.
 User verification method names **have been updated** to reflect the latest specification. See
 `t:Wax.Metadata.Statement.user_verification_method/0` type for new values.
 

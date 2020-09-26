@@ -43,7 +43,7 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax_, "~> 0.3.0"}
+    {:wax_, "~> 0.4.0"}
   ]
 end
 ```
@@ -195,6 +195,8 @@ These options are:
 
 ## FIDO2 Metadata service (MDS) configuration
 
+### Configuring the access token
+
 The FIDO Alliance provides with a list of metadata statements of certified **FIDO2**
 authenticators. A metadata statement contains trust anchors (root certificates) to verify
 attestations. Wax can automatically keep this metadata up to date but needs a access token which
@@ -231,6 +233,24 @@ During the registration process, when trust root is verified against FIDO2 metad
 metadata entries whose last status is whitelisted by the `:acceptable_authenticator_statuses`
 will be used. Otherwise a warning is logged and the registration process fails. Metadata is still
 loaded for debugging purpose in the `:wax_metadata` ETS table.
+
+
+### Configuring the HTTP adapter
+
+Wax uses [`Tesla`](https://github.com/teamon/tesla) to retrieve metadata and certificate
+revocation lists.
+
+Since Tesla's default adapter is `:httpc`, which performs insecure HTTPS request, it is highly
+recommended to configure another secure adapter. For instance, if you're are already using
+Hackney in your project (type `mix deps.tree` to determine which HTTP libraries are already
+used), then configure Tesla the following way:
+
+`config/config.exs`
+```elixir
+config :tesla, adapter: Tesla.Adapter.Hackney
+```
+
+See Tesla's [documentation](https://github.com/teamon/tesla#adapters) for more information.
 
 ## Loading FIDO2 metadata from a directory
 
