@@ -29,8 +29,6 @@ all mandatory algorithms). See the "Support of FIDO2" section for further inform
 - This library has **not** be reviewed by independent security / FIDO2 specialists - use
 it at your own risks or blindly trust its author!
 - This library does not come with a javascript library to handle WebAuthn calls
-- This library is not published on [hex.pm](hex.pm), because of name collision (see
-[#16](https://github.com/tanguilp/wax/issues/16))
 
 ## Compatibility
 
