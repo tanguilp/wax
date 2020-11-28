@@ -71,10 +71,10 @@ be stored is described in the `Wax` module's documentation.
 Wax provides with 2 functions for registration:
 1. `Wax.new_registration_challenge/1`: generates a challenge that must subsequently be sent
 to the client for use by the javascript WebAuthn API
-2. `Wax.register/3`: takes into parameter the response of the WebAuthen javascript API and
+2. `Wax.register/3`: takes into parameter the response of the WebAuthn javascript API and
 the challenge generated in step 1, and verifies it
 
-Since the challenge generated in step 1 must be passed as a paramteter in step 2, it is
+Since the challenge generated in step 1 must be passed as a parameter in step 2, it is
 required to persist it on the server side, for instance in the session:
 
 ```elixir
@@ -125,7 +125,7 @@ The key is a map that looks like:
 It probably doesn't need to be searchable or indexed, which is why one can store as a binary.
 To convert back and forth Elixir data structures to binary and store the keys in a database
 (SQL, for instance), take a look at the Erlang functions `term_to_binary/1` and
-`binary_to_term`.
+`binary_to_term/1`.
 
 For further information, refer to the `Wax` module documentation.
 
