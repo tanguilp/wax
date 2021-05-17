@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.4.1] - 2021-05-18
+
+### Fixed
+
+- [Wax.Metadata] Update root certificate for TOC integrity checking following FIDO MDSv2 switch
+to public PKI infrastructure
+
 ## [0.4.0] - 2020-09-26
 
 ### Changed

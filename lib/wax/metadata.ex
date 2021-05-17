@@ -7,19 +7,25 @@ defmodule Wax.Metadata do
   @fido_alliance_root_cer_der \
     """
     -----BEGIN CERTIFICATE-----
-    MIICQzCCAcigAwIBAgIORqmxkzowRM99NQZJurcwCgYIKoZIzj0EAwMwUzELMAkG
-    A1UEBhMCVVMxFjAUBgNVBAoTDUZJRE8gQWxsaWFuY2UxHTAbBgNVBAsTFE1ldGFk
-    YXRhIFRPQyBTaWduaW5nMQ0wCwYDVQQDEwRSb290MB4XDTE1MDYxNzAwMDAwMFoX
-    DTQ1MDYxNzAwMDAwMFowUzELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUZJRE8gQWxs
-    aWFuY2UxHTAbBgNVBAsTFE1ldGFkYXRhIFRPQyBTaWduaW5nMQ0wCwYDVQQDEwRS
-    b290MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEFEoo+6jdxg6oUuOloqPjK/nVGyY+
-    AXCFz1i5JR4OPeFJs+my143ai0p34EX4R1Xxm9xGi9n8F+RxLjLNPHtlkB3X4ims
-    rfIx7QcEImx1cMTgu5zUiwxLX1ookVhIRSoso2MwYTAOBgNVHQ8BAf8EBAMCAQYw
-    DwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU0qUfC6f2YshA1Ni9udeO0VS7vEYw
-    HwYDVR0jBBgwFoAU0qUfC6f2YshA1Ni9udeO0VS7vEYwCgYIKoZIzj0EAwMDaQAw
-    ZgIxAKulGbSFkDSZusGjbNkAhAkqTkLWo3GrN5nRBNNk2Q4BlG+AvM5q9wa5WciW
-    DcMdeQIxAMOEzOFsxX9Bo0h4LOFE5y5H8bdPFYW+l5gy1tQiJv+5NUyM2IBB55XU
-    YjdBz56jSA==
+    MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4
+    GA1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjMxEzARBgNVBAoTCkdsb2JhbF
+    NpZ24xEzARBgNVBAMTCkdsb2JhbFNpZ24wHhcNMDkwMzE4MTAwMDAwWhcNMjkwM
+    zE4MTAwMDAwWjBMMSAwHgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzET
+    MBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbjCCASIwDQY
+    JKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMwldpB5BngiFvXAg7aEyiie/QV2Ec
+    WtiHL8RgJDx7KKnQRfJMsuS+FggkbhUqsMgUdwbN1k0ev1LKMPgj0MK66X17YUh
+    hB5uzsTgHeMCOFJ0mpiLx9e+pZo34knlTifBtc+ycsmWQ1z3rDI6SYOgxXG71uL
+    0gRgykmmKPZpO/bLyCiR5Z2KYVc3rHQU3HTgOu5yLy6c+9C7v/U9AOEGM+iCK65
+    TpjoWc4zdQQ4gOsC0p6Hpsk+QLjJg6VfLuQSSaGjlOCZgdbKfd/+RFO+uIEn8rU
+    AVSNECMWEZXriX7613t2Saer9fwRPvm2L7DWzgVGkWqQPabumDk3F2xmmFghcCA
+    wEAAaNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0O
+    BBYEFI/wS3+oLkUkrk1Q+mOai97i3Ru8MA0GCSqGSIb3DQEBCwUAA4IBAQBLQNv
+    AUKr+yAzv95ZURUm7lgAJQayzE4aGKAczymvmdLm6AC2upArT9fHxD4q/c2dKg8
+    dEe3jgr25sbwMpjjM5RcOO5LlXbKr8EpbsU8Yt5CRsuZRj+9xTaGdWPoO4zzUhw
+    8lo/s7awlOqzJCK6fBdRoyV3XpYKBovHd7NADdBj+1EbddTKJd+82cEHhXXipa0
+    095MJ6RMG3NzdvQXmcIfeg7jLQitChws/zyrVQ4PkX4268NXSb7hLi18YIvDQVE
+    TI53O9zJrlAGomecsMx86OyXShkDOOyyGeMlhLxS67ttVb9+E7gUJTb0o2HLO02
+    JQZR7rkpeDMdmztcpHWD9f
     -----END CERTIFICATE-----
     """
     |> X509.Certificate.from_pem!()
@@ -27,10 +33,7 @@ defmodule Wax.Metadata do
 
   @table :wax_metadata
 
-  @crl_uris [
-    "http://mds.fidoalliance.org/Root.crl",
-    "http://mds.fidoalliance.org/CA-1.crl"
-  ]
+  @crl_uris ["http://crl.globalsign.com/root-r3.crl"]
 
   # client API
 
@@ -225,22 +228,19 @@ defmodule Wax.Metadata do
           # one of sha256, sha512, etc
           digest_alg = digest_from_jws_alg(alg)
 
-          tasks = Enum.map(
-            metadata["entries"],
-            fn entry ->
-              Task.async(fn -> get_metadata_statement(entry, digest_alg) end)
-            end
-          )
-
           toc_payload_entry = Enum.map(metadata["entries"], &build_toc_payload_entry/1)
+
+          metadata_statements = Task.async_stream(
+            metadata["entries"],
+            fn entry -> get_metadata_statement(entry, digest_alg) end,
+            max_concurrency: 10, timeout: 10_000, on_timeout: :kill_task
+          )
 
           :ets.match_delete(:wax_metadata, {:_, :_, :_, :MDSv2})
 
           Enum.each(
-            Enum.zip(toc_payload_entry, tasks),
-            fn {toc_entry, task} ->
-              metadata_statement = Task.await(task)
-
+            Enum.zip(toc_payload_entry, metadata_statements),
+            fn {toc_entry, {:ok, metadata_statement}} ->
               case metadata_statement do
                 %Wax.Metadata.Statement{} ->
                   save_metadata_statement(metadata_statement, :MDSv2, toc_entry)

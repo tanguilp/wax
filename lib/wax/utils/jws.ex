@@ -129,7 +129,7 @@ defmodule Wax.Utils.JWS do
       for crl_uri <- crl_uris do
         Tesla.get!(http_client, crl_uri)
         |> Map.get(:body)
-        |> X509.CRL.from_pem!()
+        |> X509.CRL.from_der!()
       end
 
     {:ok, crls}
