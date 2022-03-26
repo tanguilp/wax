@@ -306,7 +306,6 @@ defmodule Wax do
   :: {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, atom()}
 
   def register(attestation_object_cbor, client_data_json_raw, challenge) do
-
     with :ok <- not_expired?(challenge),
          {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
          :ok <- type_create?(client_data),

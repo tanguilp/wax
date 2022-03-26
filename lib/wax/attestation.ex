@@ -11,7 +11,7 @@ defmodule Wax.Attestation do
     :basic
     | :self
     | :attca
-    | :ecdaa
+    | :anonymous
     | :uncertain
     | :none
 
@@ -59,6 +59,10 @@ defmodule Wax.Attestation do
 
   def statement_verify_fun("packed") do
     {:ok, &Wax.AttestationStatementFormat.Packed.verify/4}
+  end
+
+  def statement_verify_fun("apple") do
+    {:ok, &Wax.AttestationStatementFormat.AppleAnonymous.verify/4}
   end
 
   def statement_verify_fun(_) do
