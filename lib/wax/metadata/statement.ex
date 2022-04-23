@@ -110,6 +110,7 @@ defmodule Wax.Metadata.Statement do
   | :alg_sign_secp384r1_ecdsa_sha384_raw
   | :alg_sign_secp521r1_ecdsa_sha512_raw
   | :alg_sign_ed25519_eddsa_sha256_raw
+  | :alg_sign_ed25519_eddsa_sha512_raw
 
   @type public_key_representation_format ::
   :alg_key_ecc_x962_raw
@@ -321,15 +322,24 @@ defmodule Wax.Metadata.Statement do
         end
       ),
       assertion_scheme: json["assertionScheme"],
-      authentication_algorithm: authentication_algorithm(json["authenticationAlgorithm"]),
+      authentication_algorithm: Enum.map(
+        json["authenticationAlgorithms"] || [],
+        fn alg ->
+          authentication_algorithm(alg)
+        end
+      ) |> Enum.at(0),
       authentication_algorithms: Enum.map(
         json["authenticationAlgorithms"] || [],
         fn alg ->
           authentication_algorithm(alg)
         end
       ),
-      public_key_alg_and_encoding:
-        public_key_representation_format(json["publicKeyAlgAndEncoding"]),
+      public_key_alg_and_encoding:  Enum.map(
+        json["publicKeyAlgAndEncodings"] || [],
+        fn keyalg ->
+          public_key_representation_format(keyalg)
+        end
+      ) |> Enum.at(0),
       public_key_alg_and_encodings: Enum.map(
         json["publicKeyAlgAndEncodings"] || [],
         fn keyalg ->
@@ -349,7 +359,7 @@ defmodule Wax.Metadata.Statement do
             list,
             fn uvd ->
               %Wax.Metadata.Statement.VerificationMethodDescriptor{
-                user_verification: user_verification_method(uvd["userVerification"]),
+                user_verification: user_verification_method(uvd["userVerificationMethod"]),
                 code_accuracy_descriptor: code_accuracy_descriptor(uvd["caDesc"]),
                 biometric_accuracy_descriptor: biometric_accuracy_descriptor(uvd["baDesc"]),
                 pattern_accuracy_descriptor: pattern_accuracy_descriptor(uvd["paDesc"])
@@ -361,7 +371,12 @@ defmodule Wax.Metadata.Statement do
       key_protection: key_protection(json["keyProtection"]),
       is_key_restricted: json["isKeyRestricted"],
       is_fresh_user_verification_required: json["isFreshUserVerificationRequired"],
-      matcher_protection: matcher_protection(json["matcherProtection"]),
+      matcher_protection: Enum.map(
+        json["matcherProtection"],
+        fn prot ->
+          matcher_protection(prot)
+        end
+      ) |> Enum.at(0),
       crypto_strength: json["cryptoStrength"],
       operating_env: json["operatingEnv"],
       attachment_hint: attachment_hint(json["attachmentHint"]),
@@ -370,7 +385,8 @@ defmodule Wax.Metadata.Statement do
       attestation_root_certificates: Enum.map(
         json["attestationRootCertificates"],
         fn
-          b64_cert -> Base.decode64!(b64_cert)
+          b64_cert ->
+            Base.decode64!(b64_cert, ignore: :whitespace)
         end
       ),
       ecdaa_trust_anchors: Enum.map(
@@ -400,53 +416,54 @@ defmodule Wax.Metadata.Statement do
     }
   end
 
-  @spec authentication_algorithm(non_neg_integer()) :: authentication_algorithm()
-  defp authentication_algorithm(0x0001), do: :alg_sign_secp256r1_ecdsa_sha256_raw
-  defp authentication_algorithm(0x0002), do: :alg_sign_secp256r1_ecdsa_sha256_der
-  defp authentication_algorithm(0x0003), do: :alg_sign_rsassa_pss_sha256_raw
-  defp authentication_algorithm(0x0004), do: :alg_sign_rsassa_pss_sha256_der
-  defp authentication_algorithm(0x0005), do: :alg_sign_secp256k1_ecdsa_sha256_raw
-  defp authentication_algorithm(0x0006), do: :alg_sign_secp256k1_ecdsa_sha256_der
-  defp authentication_algorithm(0x0007), do: :alg_sign_sm2_sm3_raw
-  defp authentication_algorithm(0x0008), do: :alg_sign_rsa_emsa_pkcs1_sha256_raw
-  defp authentication_algorithm(0x0009), do: :alg_sign_rsa_emsa_pkcs1_sha256_der
-  defp authentication_algorithm(0x000A), do: :alg_sign_rsassa_pss_sha384_raw
-  defp authentication_algorithm(0x000B), do: :alg_sign_rsassa_pss_sha512_raw
-  defp authentication_algorithm(0x000C), do: :alg_sign_rsassa_pkcsv15_sha256_raw
-  defp authentication_algorithm(0x000D), do: :alg_sign_rsassa_pkcsv15_sha384_raw
-  defp authentication_algorithm(0x000E), do: :alg_sign_rsassa_pkcsv15_sha512_raw
-  defp authentication_algorithm(0x000F), do: :alg_sign_rsassa_pkcsv15_sha1_raw
-  defp authentication_algorithm(0x0010), do: :alg_sign_secp384r1_ecdsa_sha384_raw
-  defp authentication_algorithm(0x0011), do: :alg_sign_secp521r1_ecdsa_sha512_raw
-  defp authentication_algorithm(0x0012), do: :alg_sign_ed25519_eddsa_sha256_raw
+  @spec authentication_algorithm(String.t()) :: authentication_algorithm()
+  defp authentication_algorithm("secp256r1_ecdsa_sha256_raw"), do: :alg_sign_secp256r1_ecdsa_sha256_raw
+  defp authentication_algorithm("secp256r1_ecdsa_sha256_der"), do: :alg_sign_secp256r1_ecdsa_sha256_der
+  defp authentication_algorithm("rsassa_pss_sha258_raw"),      do: :alg_sign_rsassa_pss_sha258_raw
+  defp authentication_algorithm("rsassa_pss_sha256_der"),      do: :alg_sign_rsassa_pss_sha256_der
+  defp authentication_algorithm("secp256k1_ecdsa_sha256_raw"), do: :alg_sign_secp256k1_ecdsa_sha256_raw
+  defp authentication_algorithm("secp256k1_ecdsa_sha256_der"), do: :alg_sign_secp256k1_ecdsa_sha256_der
+  defp authentication_algorithm("sm2_sm3_raw"),                do: :alg_sign_sm2_sm3_raw
+  defp authentication_algorithm("rsa_emsa_pkcs1_sha256_raw"),  do: :alg_sign_rsa_emsa_pkcs1_sha256_raw
+  defp authentication_algorithm("rsa_emsa_pkcs1_sha256_der"),  do: :alg_sign_rsa_emsa_pkcs1_sha256_der
+  defp authentication_algorithm("rsassa_pss_sha384_raw"),      do: :alg_sign_rsassa_pss_sha384_raw
+  defp authentication_algorithm("rsassa_pss_sha512_raw"),      do: :alg_sign_rsassa_pss_sha512_raw
+  defp authentication_algorithm("rsassa_pkcsv15_sha256_raw"),  do: :alg_sign_rsassa_pkcsv15_sha256_raw
+  defp authentication_algorithm("rsassa_pkcsv15_sha384_raw"),  do: :alg_sign_rsassa_pkcsv15_sha384_raw
+  defp authentication_algorithm("rsassa_pkcsv15_sha512_raw"),  do: :alg_sign_rsassa_pkcsv15_sha512_raw
+  defp authentication_algorithm("rsassa_pkcsv15_sha1_raw"),    do: :alg_sign_rsassa_pkcsv15_sha1_raw
+  defp authentication_algorithm("secp384r1_ecdsa_sha384_raw"), do: :alg_sign_secp384r1_ecdsa_sha384_raw
+  defp authentication_algorithm("secp521r1_ecdsa_sha512_raw"), do: :alg_sign_secp521r1_ecdsa_sha512_raw
+  defp authentication_algorithm("ed25519_eddsa_sha256_raw"),   do: :alg_sign_ed25519_eddsa_sha256_raw
+  defp authentication_algorithm("ed25519_eddsa_sha512_raw"),   do: :alg_sign_ed25519_eddsa_sha512_raw
 
   @spec public_key_representation_format(non_neg_integer()) :: public_key_representation_format()
-  defp public_key_representation_format(0x0100), do: :alg_key_ecc_x962_raw
-  defp public_key_representation_format(0x0101), do: :alg_key_ecc_x962_der
-  defp public_key_representation_format(0x0102), do: :alg_key_rsa_2048_raw
-  defp public_key_representation_format(0x0103), do: :alg_key_rsa_2048_der
-  defp public_key_representation_format(0x0104), do: :alg_key_cose
+  defp public_key_representation_format("ecc_x962_raw"), do: :alg_key_ecc_x962_raw
+  defp public_key_representation_format("ecc_x962_der"), do: :alg_key_ecc_x962_der
+  defp public_key_representation_format("rsa_2048_raw"), do: :alg_key_rsa_2048_raw
+  defp public_key_representation_format("rsa_2048_der"), do: :alg_key_rsa_2048_der
+  defp public_key_representation_format("cose"),         do: :alg_key_cose
 
   @spec attestation_type(non_neg_integer()) :: attestation_type()
-  defp attestation_type(0x3E07), do: :tag_attestation_basic_full
-  defp attestation_type(0x3E08), do: :tag_attestation_basic_surrogate
-  defp attestation_type(0x3E09), do: :tag_attestation_ecdaa
-  defp attestation_type(0x3E0A), do: :tag_attestation_attca
+  defp attestation_type("basic_full"), do: :tag_attestation_basic_full
+  defp attestation_type("basic_surrogate"), do: :tag_attestation_basic_surrogate
+  defp attestation_type("ecdaa"), do: :tag_attestation_ecdaa
+  defp attestation_type("attca"), do: :tag_attestation_attca
 
   @spec user_verification_method(non_neg_integer()) :: user_verification_method()
-  defp user_verification_method(0x00000001), do: :user_verify_presence_internal
-  defp user_verification_method(0x00000002), do: :user_verify_fingerprint_internal
-  defp user_verification_method(0x00000004), do: :user_verify_passcode_internal
-  defp user_verification_method(0x00000008), do: :user_verify_voiceprint_internal
-  defp user_verification_method(0x00000010), do: :user_verify_faceprint_internal
-  defp user_verification_method(0x00000020), do: :user_verify_location_internal
-  defp user_verification_method(0x00000040), do: :user_verify_eyeprint_internal
-  defp user_verification_method(0x00000080), do: :user_verify_pattern_internal
-  defp user_verification_method(0x00000100), do: :user_verify_handprint_internal
-  defp user_verification_method(0x00000200), do: :user_verify_none
-  defp user_verification_method(0x00000400), do: :user_verify_all
-  defp user_verification_method(0x00000800), do: :user_verify_passcode_external
-  defp user_verification_method(0x00001000), do: :user_verify_pattern_external
+  defp user_verification_method("presence_internal"),    do: :user_verify_presence_internal
+  defp user_verification_method("fingerprint_internal"), do: :user_verify_fingerprint_internal
+  defp user_verification_method("passcode_internal"),    do: :user_verify_passcode_internal
+  defp user_verification_method("voiceprint_internal"),  do: :user_verify_voiceprint_internal
+  defp user_verification_method("faceprint_internal"),   do: :user_verify_faceprint_internal
+  defp user_verification_method("location_internal"),    do: :user_verify_location_internal
+  defp user_verification_method("eyeprint_internal"),    do: :user_verify_eyeprint_internal
+  defp user_verification_method("pattern_internal"),     do: :user_verify_pattern_internal
+  defp user_verification_method("handprint_internal"),   do: :user_verify_handprint_internal
+  defp user_verification_method("passcode_external"),    do: :user_verify_passcode_external
+  defp user_verification_method("pattern_external"),     do: :user_verify_pattern_external
+  defp user_verification_method("none"),                 do: :user_verify_none
+  defp user_verification_method("all"),                  do: :user_verify_all
 
   @spec code_accuracy_descriptor(map()) ::
     Wax.Metadata.Statement.VerificationMethodDescriptor.CodeAccuracyDescriptor.t()
@@ -549,9 +566,9 @@ defmodule Wax.Metadata.Statement do
 
   @spec matcher_protection(non_neg_integer()) :: matcher_protection()
 
-  defp matcher_protection(0x0001), do: :matcher_protection_software
-  defp matcher_protection(0x0002), do: :matcher_protection_tee
-  defp matcher_protection(0x0004), do: :matcher_protection_on_chip
+  defp matcher_protection("software"), do: :matcher_protection_software
+  defp matcher_protection("tee"), do: :matcher_protection_tee
+  defp matcher_protection("on_chip"), do: :matcher_protection_on_chip
 
   @spec attachment_hint(non_neg_integer()) :: [attachment_hint()]
 

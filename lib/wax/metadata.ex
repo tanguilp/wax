@@ -37,7 +37,7 @@ defmodule Wax.Metadata do
 
   # client API
 
-  def start_link do
+  def start_link(_opts \\ []) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
@@ -199,21 +199,14 @@ defmodule Wax.Metadata do
   def update_metadata(serial_number) do
     Logger.info("Starting FIDO metadata update process")
 
-    if Application.get_env(:wax_, :metadata_access_token) do
-      case http_get("https://mds2.fidoalliance.org/") do
-        {:ok, jws_toc} ->
-          process_metadata_toc(jws_toc, serial_number)
+    case http_get("https://mds.fidoalliance.org/") do
+      {:ok, jws_toc} ->
+        process_metadata_toc(jws_toc, serial_number)
 
-        {:error, reason} ->
-          Logger.warn("Unable to download metadata (#{inspect(reason)})")
+      {:error, reason} ->
+        Logger.warn("Unable to download metadata (#{inspect(reason)})")
 
-          :not_updated
-      end
-    else
-      Logger.warn("No access token configured for FIDO metadata, metadata not updated. " <>
-        "Some attestation formats and types won't be supported")
-
-      :not_updated
+        :not_updated
     end
   end
 
@@ -222,19 +215,11 @@ defmodule Wax.Metadata do
   defp process_metadata_toc(jws, serial_number) do
     case Wax.Utils.JWS.verify_with_x5c(jws, @fido_alliance_root_cer_der, @crl_uris) do
       :ok ->
-        {%{"alg" => alg}, metadata} = parse_jwt(jws)
+        {_, metadata} = parse_jwt(jws)
 
         if metadata["no"] > serial_number do
-          # one of sha256, sha512, etc
-          digest_alg = digest_from_jws_alg(alg)
-
           toc_payload_entry = Enum.map(metadata["entries"], &build_toc_payload_entry/1)
-
-          metadata_statements = Task.async_stream(
-            metadata["entries"],
-            fn entry -> get_metadata_statement(entry, digest_alg) end,
-            max_concurrency: 10, timeout: 10_000, on_timeout: :kill_task
-          )
+          metadata_statements = Enum.map(metadata["entries"], &build_metadata_statement_entry/1)
 
           :ets.match_delete(:wax_metadata, {:_, :_, :_, :MDSv2})
 
@@ -269,30 +254,6 @@ defmodule Wax.Metadata do
       {:error, :crl_retrieval_failed}
   end
 
-  @spec get_metadata_statement(map(), atom()) :: Wax.Metadata.Statement.t() | :error
-  def get_metadata_statement(entry, digest_alg) do
-    case http_get(entry["url"]) do
-      {:ok, body} ->
-        if :crypto.hash(digest_alg, body) == Base.url_decode64!(entry["hash"], padding: false) do
-          body
-          |> Base.url_decode64!()
-          |> Jason.decode!()
-          |> Wax.Metadata.Statement.from_json!()
-        else
-          Logger.warn("Invalid hash for metadata entry at " <> entry["url"])
-
-          :error
-        end
-
-      {:error, reason} ->
-        Logger.warn(
-          "Failed to download metadata statement at #{entry["url"]} (reason: #{inspect(reason)})"
-        )
-
-        :error
-    end
-  end
-
   @spec parse_jwt(binary()) :: {map(), map()}
   defp parse_jwt(binary) do
     [header_b64, body_b64, _sig] = String.split(binary, ".")
@@ -325,6 +286,12 @@ defmodule Wax.Metadata do
       rogue_list_url: entry["rogueListURL"],
       rogue_list_hash: entry["rogueListHash"]
     }
+  end
+
+  @spec build_metadata_statement_entry(map()) :: Wax.Metadata.Statement.t()
+  defp build_metadata_statement_entry(%{"metadataStatement" => metadata_statement}) do
+    {:ok, statement} = Wax.Metadata.Statement.from_json(metadata_statement)
+    statement
   end
 
   @spec build_biometric_status_report(map()) :: Wax.Metadata.TOCEntry.BiometricStatusReport.t()
@@ -473,13 +440,12 @@ defmodule Wax.Metadata do
   end
 
   defp http_get(url) do
-    access_token = Application.fetch_env!(:wax_, :metadata_access_token)
     client =
       Application.get_env(:wax_, :tesla_middlewares, [])
       |> Kernel.++([Tesla.Middleware.FollowRedirects])
       |> Tesla.client()
 
-    case Tesla.get(client, url <> "?token=" <> access_token) do
+    case Tesla.get(client, url) do
       {:ok, %Tesla.Env{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 
