@@ -30,29 +30,18 @@ defmodule Wax do
 
   The FIDO Alliance provides with a list of metadata statements of certified **FIDO2**
   authenticators. A metadata statement contains trust anchors (root certificates) to verify
-  attestations. Wax can automatically keep this metadata up to date but needs a access token which
-  is provided by the FIDO Alliance. One can request it here:
-  [https://mds2.fidoalliance.org/tokens/](https://mds2.fidoalliance.org/tokens/).
+  attestations. Wax automatically keeps this metadata up to date by downloading the
+  blob from `https://mds.fidoalliance.org/` as documented here https://fidoalliance.org/metadata/.
 
-  Once the token has been granted, it has to be added in the configuration file (consider
-  adding it to your `*.secret.exs` files) with the `:metadata_access_token` key. The update
-  frquency can be configured with the `:metadata_update_interval` key (in seconds, defaults
+  The update frequency can be configured with the `:metadata_update_interval` key (in seconds, defaults
   to 12 hours). Example:
 
   `config/dev.exs`:
   ```elixir
-  use Mix.Config
+  import Config
 
   config :wax_,
     metadata_update_interval: 3600,
-  ```
-
-  `config/dev.secret.exs`:
-  ```elixir
-  use Mix.Config
-
-  config :wax_,
-    metadata_access_token: "d4904acd10a36f62d7a7d33e4c9a86628a2b0eea0c3b1a6c"
   ```
 
   Note that some **FIDO1** certififed authenticators, such as Yubikeys, won't be present in this

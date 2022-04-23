@@ -6,7 +6,7 @@ defmodule Wax.Application do
 
   def start(_type, _args) do
     children = [
-      worker(Wax.Metadata, [])
+      Wax.Metadata
     ]
 
     opts = [strategy: :one_for_one, name: Wax.Supervisor]
