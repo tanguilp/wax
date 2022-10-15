@@ -137,7 +137,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {:error, :invalid_attestation_conveyance_preference}
   end
 
-  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["ver"]) and
          is_integer(att_stmt["alg"]) and
@@ -152,11 +151,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec version_valid?(map()) :: :ok | {:error, any()}
   defp version_valid?(%{"ver" => "2.0"}), do: :ok
   defp version_valid?(_), do: {:error, :attestation_tpm_invalid_version}
-
-  @spec parse_cert_info(binary) :: {:ok, map()} | {:error, any()}
 
   defp parse_cert_info(<<
          0xFF544347::unsigned-big-integer-size(32),
@@ -188,8 +184,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
   end
 
   defp parse_cert_info(_), do: {:error, :attestation_tpm_invalid_cert_info}
-
-  @spec parse_pub_area(binary) :: {:ok, map()} | {:error, any()}
 
   defp parse_pub_area(<<
          @tpm_alg_rsa::unsigned-big-integer-size(16),
@@ -257,8 +251,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   defp parse_pub_area(_), do: {:error, :attestation_tpm_invalid_pub_area}
 
-  @spec verify_public_key(map(), Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
-
   defp verify_public_key(pub_area, auth_data) do
     pub_area_erlang_public_key = to_erlang_public_key(pub_area)
 
@@ -271,9 +263,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
       {:error, :attestation_tpm_public_key_mismatch}
     end
   end
-
-  @spec cert_info_valid?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash(), map()) ::
-          :ok | {:error, any()}
 
   defp cert_info_valid?(
          cert_info,
@@ -299,7 +288,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec signature_valid?(map()) :: :ok | {:error, any()}
   defp signature_valid?(%{
          "certInfo" => cert_info,
          "sig" => sig,
@@ -319,8 +307,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
       {:error, :attestation_tpm_invalid_signature}
     end
   end
-
-  @spec aik_cert_valid?(binary(), Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
 
   defp aik_cert_valid?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
@@ -356,7 +342,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
     end
   end
 
-  @spec parse_cert_utc_time(charlist()) :: non_neg_integer()
   defp parse_cert_utc_time(datetime) do
     <<
       year::binary-size(2),
@@ -432,8 +417,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {:fail, reason}
   end
 
-  @spec get_tcpaTpmManufacturer_field(any()) :: String.t()
-
   # the field looks like:
   # {:Extension, {2, 5, 29, 17}, true,
   #  [
@@ -471,7 +454,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
     |> String.slice(2..-1)
   end
 
-  @spec to_erlang_curve(non_neg_integer()) :: tuple()
   defp to_erlang_curve(@tpm_ecc_nist_p192), do: :pubkey_cert_records.namedCurves(:secp192r1)
   defp to_erlang_curve(@tpm_ecc_nist_p224), do: :pubkey_cert_records.namedCurves(:secp224r1)
   defp to_erlang_curve(@tpm_ecc_nist_p256), do: :pubkey_cert_records.namedCurves(:secp256r1)
@@ -482,8 +464,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
   # defp to_erlang_curve(@tpm_ecc_bn_p638), do:
   # defp to_erlang_curve(@tpm_ecc_sm2_p256), do:
 
-  @spec to_erlang_public_key(map()) :: :public_key.public_key()
-
   defp to_erlang_public_key(%{type: :rsa, modulus: n, exponent: e}) do
     {:RSAPublicKey, n, e}
   end
@@ -492,7 +472,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
     {{:ECPoint, <<4>> <> x <> y}, {:namedCurve, curve}}
   end
 
-  @spec name_alg_to_erlang_digest(non_neg_integer()) :: atom()
   defp name_alg_to_erlang_digest(@tpm_alg_sha1), do: :sha
   defp name_alg_to_erlang_digest(@tpm_alg_sha256), do: :sha256
   defp name_alg_to_erlang_digest(@tpm_alg_sha384), do: :sha384

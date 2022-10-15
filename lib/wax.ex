@@ -105,7 +105,6 @@ defmodule Wax do
           | {:android_key_allow_software_enforcement, boolean()}
           | {:silent_authentication_enabled, boolean()}
 
-  @spec set_opts(opts()) :: opts()
   defp set_opts(opts) do
     attestation =
       case opts[:attestation] do
@@ -229,7 +228,6 @@ defmodule Wax do
   """
 
   @spec new_registration_challenge(opts()) :: Wax.Challenge.t()
-
   def new_registration_challenge(opts) do
     opts = set_opts(Keyword.put(opts, :type, :attestation))
 
@@ -304,7 +302,6 @@ defmodule Wax do
 
   @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t()) ::
           {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, atom()}
-
   def register(attestation_object_cbor, client_data_json_raw, challenge) do
     with :ok <- not_expired?(challenge),
          {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
@@ -420,7 +417,6 @@ defmodule Wax do
 
   @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts()) ::
           Wax.Challenge.t()
-
   def new_authentication_challenge(allow_credentials, opts) do
     opts = set_opts(Keyword.put(opts, :type, :authentication))
 
@@ -458,7 +454,6 @@ defmodule Wax do
           Wax.ClientData.raw_string(),
           Wax.Challenge.t()
         ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, atom()}
-
   def authenticate(
         credential_id,
         auth_data_bin,
@@ -482,7 +477,6 @@ defmodule Wax do
     end
   end
 
-  @spec not_expired?(Wax.Challenge.t()) :: :ok | {:error, :challenge_expired}
   defp not_expired?(%Wax.Challenge{issued_at: issued_at, timeout: timeout}) do
     current_time = :erlang.monotonic_time(:second)
 
@@ -493,8 +487,6 @@ defmodule Wax do
     end
   end
 
-  @spec type_create?(Wax.ClientData.t()) :: :ok | {:error, atom()}
-
   defp type_create?(client_data) do
     if client_data.type == :create do
       :ok
@@ -502,8 +494,6 @@ defmodule Wax do
       {:error, :attestation_invalid_type}
     end
   end
-
-  @spec type_get?(Wax.ClientData.t()) :: :ok | {:error, atom()}
 
   defp type_get?(client_data) do
     if client_data.type == :get do
@@ -513,8 +503,6 @@ defmodule Wax do
     end
   end
 
-  @spec valid_challenge?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, any()}
-
   defp valid_challenge?(client_data, challenge) do
     if client_data.challenge == challenge.bytes do
       :ok
@@ -522,8 +510,6 @@ defmodule Wax do
       {:error, :invalid_challenge}
     end
   end
-
-  @spec valid_origin?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, atom()}
 
   defp valid_origin?(client_data, challenge) do
     if client_data.origin == challenge.origin do
@@ -533,7 +519,6 @@ defmodule Wax do
     end
   end
 
-  @spec valid_rp_id?(Wax.AuthenticatorData.t(), Wax.Challenge.t()) :: :ok | {:error, atom()}
   defp valid_rp_id?(auth_data, challenge) do
     if auth_data.rp_id_hash == :crypto.hash(:sha256, challenge.rp_id) do
       :ok
@@ -542,10 +527,6 @@ defmodule Wax do
     end
   end
 
-  @spec user_present_flag_set?(
-          Wax.AuthenticatorData.t(),
-          Wax.Challenge.t()
-        ) :: :ok | {:error, any()}
   defp user_present_flag_set?(
          _auth_data,
          %Wax.Challenge{type: :authentication, silent_authentication_enabled: true}
@@ -561,8 +542,6 @@ defmodule Wax do
     end
   end
 
-  @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(), Wax.Challenge.t()) ::
-          :ok | {:error, atom()}
   defp maybe_user_verified_flag_set?(auth_data, challenge) do
     case challenge.user_verification do
       "required" ->
@@ -577,9 +556,6 @@ defmodule Wax do
     end
   end
 
-  @spec attestation_trustworthy?(Wax.Attestation.result(), Wax.Challenge.t()) ::
-          :ok | {:error, any()}
-
   defp attestation_trustworthy?({type, _, _}, %Wax.Challenge{trusted_attestation_types: tatl}) do
     if type in tatl do
       :ok
@@ -587,9 +563,6 @@ defmodule Wax do
       {:error, :untrusted_attestation_type}
     end
   end
-
-  @spec cose_key_from_credential_id(Wax.CredentialId.t(), Wax.Challenge.t()) ::
-          {:ok, Wax.CoseKey.t()} | {:error, any()}
 
   defp cose_key_from_credential_id(credential_id, challenge) do
     case List.keyfind(challenge.allow_credentials, credential_id, 0) do

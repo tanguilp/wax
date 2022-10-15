@@ -71,7 +71,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     {:error, :invalid_attestation_conveyance_preference}
   end
 
-  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     # only these two keys
     if is_binary(att_stmt["ver"]) and
@@ -83,11 +82,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     end
   end
 
-  @spec verify_signature(
-          String.t(),
-          Wax.AuthenticatorData.t(),
-          Wax.Challenge.t()
-        ) :: :ok | {:error, any()}
   defp verify_signature(jws, auth_data, challenge) do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
       {:ok, metadata_statement} ->
@@ -136,7 +130,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   defp algs_match?("ed25519_eddsa_sha512_raw", "EdDSA"), do: true
   defp algs_match?(_, _), do: false
 
-  @spec do_verify_signature(String.t(), [binary()]) :: :ok | {:error, atom()}
   defp do_verify_signature(_jws, []) do
     {:error, :attestation_safetynet_invalid_jws_signature}
   end
@@ -150,8 +143,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
         do_verify_signature(jws, remaining_root_certs_der)
     end
   end
-
-  @spec valid_safetynet_response?(map() | Keyword.t() | nil, String.t()) :: :ok | {:error, any()}
 
   defp valid_safetynet_response?(%{} = safetynet_response, version) do
     (safetynet_response["ctsProfileMatch"] == true and
@@ -174,9 +165,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
   defp valid_safetynet_response?(_, _), do: {:error, :attestation_safetynet_invalid_payload}
 
-  @spec nonce_valid?(Wax.AuthenticatorData.t(), binary(), map()) ::
-          :ok | {:error, any()}
-
   defp nonce_valid?(auth_data, client_data_hash, payload) do
     expected_nonce = Base.encode64(:crypto.hash(:sha256, auth_data.raw_bytes <> client_data_hash))
 
@@ -187,7 +175,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     end
   end
 
-  @spec valid_cert_hostname?(map()) :: :ok | {:error, any()}
   defp valid_cert_hostname?(header) do
     leaf_cert =
       header["x5c"]

@@ -68,7 +68,6 @@ defmodule Wax.CoseKey do
   """
 
   @spec verify(message :: binary(), t(), signature :: binary()) :: :ok | {:error, atom()}
-
   def verify(msg, %{@alg => alg} = cose_key, sig) when alg in @pss_algs do
     # Use PSS padding; requires workaround for https://bugs.erlang.org/browse/ERL-878
     {:RSAPublicKey, n, e} = to_erlang_public_key(cose_key)
@@ -102,7 +101,6 @@ defmodule Wax.CoseKey do
   @doc false
 
   @spec to_erlang_public_key(t()) :: :public_key.public_key()
-
   def to_erlang_public_key(%{@kty => @key_type_EC2, -1 => curve, -2 => x, -3 => y}) do
     {
       {:ECPoint, <<4>> <> x <> y},

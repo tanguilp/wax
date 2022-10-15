@@ -60,7 +60,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     {:error, :invalid_attestation_conveyance_preference}
   end
 
-  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
   defp valid_cbor?(att_stmt) do
     if is_binary(att_stmt["sig"]) and
          is_list(att_stmt["x5c"]) and
@@ -72,7 +71,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec valid_signature?(binary(), binary(), X509.Certificate.t()) :: :ok | {:error, any()}
   defp valid_signature?(sig, verification_data, first_cert) do
     public_key = X509.Certificate.public_key(first_cert)
 
@@ -82,9 +80,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
       {:error, :attestation_androidkey_invalid_signature}
     end
   end
-
-  @spec public_key_matches_first_cert?(Wax.AuthenticatorData.t(), X509.Certificate.t()) ::
-          :ok | {:error, any()}
 
   defp public_key_matches_first_cert?(auth_data, first_cert) do
     pk = auth_data.attested_credential_data.credential_public_key
@@ -96,9 +91,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec valid_extension_data?(X509.Certificate.t(), binary(), Wax.Challenge.t()) ::
-          :ok
-          | {:error, any()}
   defp valid_extension_data?(cert, client_data_hash, challenge) do
     try do
       {:Extension, _oid, _critical, asn} =
@@ -117,7 +109,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec asn_v1_valid?(binary(), binary, Wax.Challenge.t()) :: boolean
   defp asn_v1_valid?(asn, client_data_hash, challenge) do
     case :AndroidKeyAttestationV1.decode(:AndroidKeyAttestationV1, asn) do
       {:ok,
@@ -185,7 +176,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec asn_v2_valid?(binary(), binary, Wax.Challenge.t()) :: boolean
   defp asn_v2_valid?(asn, client_data_hash, challenge) do
     case :AndroidKeyAttestationV2.decode(:AndroidKeyAttestationV2, asn) do
       {:ok,
@@ -271,7 +261,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec asn_v3_valid?(binary(), binary, Wax.Challenge.t()) :: boolean
   defp asn_v3_valid?(asn, client_data_hash, challenge) do
     case :AndroidKeyAttestationV3.decode(:AndroidKeyAttestationV3, asn) do
       {:ok,
@@ -367,11 +356,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec validate_x5c_path(
-          Wax.AuthenticatorData.t(),
-          [binary()],
-          Wax.Challenge.t()
-        ) :: :ok | {:error, any()}
   defp validate_x5c_path(auth_data, cert_chain, challenge) do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
       {:ok, metadata_statement} ->
@@ -386,10 +370,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     end
   end
 
-  @spec do_validate_x5c_path(
-          root_certs :: [binary()],
-          cert_chain :: [binary()]
-        ) :: :ok | {:error, atom()}
   defp do_validate_x5c_path([], _) do
     {:error, :attestation_androidkey_path_validation_failed}
   end

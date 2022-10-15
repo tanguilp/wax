@@ -58,7 +58,6 @@ defmodule Wax.Challenge do
     )
   end
 
-  @spec random_bytes() :: binary
   defp random_bytes() do
     :crypto.strong_rand_bytes(32)
   end

@@ -193,7 +193,7 @@ defmodule Wax.Metadata do
     {:noreply, state}
   end
 
-  def handle_info(reason, state) do
+  def handle_info(_reason, state) do
     {:noreply, state}
   end
 

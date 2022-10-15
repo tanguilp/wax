@@ -2,13 +2,11 @@ defmodule Wax.Utils.Certificate do
   @moduledoc false
 
   @spec version(X509.Certificate.t()) :: atom()
-
   def version({:OTPCertificate, {:OTPTBSCertificate, version, _, _, _, _, _, _, _, _, _}, _, _}) do
     version
   end
 
   @spec serial_number(X509.Certificate.t()) :: integer()
-
   def serial_number(
         {:OTPCertificate, {:OTPTBSCertificate, _, serial_number, _, _, _, _, _, _, _, _}, _, _}
       ) do
@@ -16,7 +14,6 @@ defmodule Wax.Utils.Certificate do
   end
 
   @spec basic_constraints_ext_ca_component(X509.Certificate.t()) :: boolean()
-
   def basic_constraints_ext_ca_component(cert) do
     {:Extension, {2, 5, 29, 19}, _, {:BasicConstraints, ca_component, _}} =
       X509.Certificate.extension(cert, :basic_constraints)
@@ -25,7 +22,6 @@ defmodule Wax.Utils.Certificate do
   end
 
   @spec attestation_certificate_key_identifier(binary()) :: binary()
-
   # we take the raw certificate into parameter because we'll convert it to TBSCertificate
   # insted of OTPTBSCertificate
   def attestation_certificate_key_identifier(cert_der) do

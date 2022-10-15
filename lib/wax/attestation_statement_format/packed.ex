@@ -302,8 +302,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
-
   defp valid_cbor?(%{"x5c" => _} = att_stmt) do
     if is_integer(att_stmt["alg"]) and
          is_binary(att_stmt["sig"]) and
@@ -324,9 +322,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
       {:error, :attestation_packed_invalid_cbor}
     end
   end
-
-  @spec valid_x5c_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash()) ::
-          :ok | {:error, any()}
 
   defp valid_x5c_signature?(att_stmt, auth_data, client_data_hash) do
     pub_key =
@@ -349,9 +344,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec valid_self_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash()) ::
-          :ok | {:error, any()}
-
   defp valid_self_signature?(att_stmt, auth_data, client_data_hash) do
     Wax.CoseKey.verify(
       auth_data.raw_bytes <> client_data_hash,
@@ -367,8 +359,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
-  @spec algs_match?(map(), Wax.AuthenticatorData.t()) :: :ok | {:error, any()}
-
   defp algs_match?(att_stmt, auth_data) do
     if att_stmt["alg"] == auth_data.attested_credential_data.credential_public_key[3] do
       :ok
@@ -376,10 +366,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
       {:attestation_packed_algs_mismatch}
     end
   end
-
-  @spec valid_attestation_certificate?(binary(), Wax.AuthenticatorData.t()) ::
-          :ok
-          | {:error, any()}
 
   defp valid_attestation_certificate?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)

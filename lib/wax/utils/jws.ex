@@ -59,7 +59,6 @@ defmodule Wax.Utils.JWS do
       {:error, :jws_decode_error}
   end
 
-  @spec maybe_encoded_sig(binary(), String.t()) :: binary()
   defp maybe_encoded_sig(sig, alg) when alg in ["ES256", "ES384", "ES512"] do
     der_encoded_sig(sig)
   end
@@ -68,7 +67,6 @@ defmodule Wax.Utils.JWS do
     sig
   end
 
-  @spec der_encoded_sig(binary()) :: binary()
   defp der_encoded_sig(sig) do
     sig
     |> new_der_encoded_sig()
@@ -90,7 +88,6 @@ defmodule Wax.Utils.JWS do
     :public_key.der_encode(:"ECDSA-Sig-Value", signature)
   end
 
-  @spec digest_alg(String.t()) :: :public_key.digest_type()
   defp digest_alg("RS256"), do: :sha256
   defp digest_alg("RS384"), do: :sha384
   defp digest_alg("RS512"), do: :sha512
