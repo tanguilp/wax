@@ -13,7 +13,6 @@ defmodule Wax.Challenge do
 
   defstruct [
     :type,
-    :attestation,
     :bytes,
     :origin,
     :rp_id,
@@ -26,6 +25,7 @@ defmodule Wax.Challenge do
     :issued_at,
     :timeout,
     android_key_allow_software_enforcement: false,
+    attestation: "none",
     silent_authentication_enabled: false
   ]
 
