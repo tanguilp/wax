@@ -7,48 +7,98 @@ defmodule Wax.Metadata do
   @fido_alliance_root_cer_der \
     """
     -----BEGIN CERTIFICATE-----
-    MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4
-    GA1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjMxEzARBgNVBAoTCkdsb2JhbF
-    NpZ24xEzARBgNVBAMTCkdsb2JhbFNpZ24wHhcNMDkwMzE4MTAwMDAwWhcNMjkwM
-    zE4MTAwMDAwWjBMMSAwHgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzET
-    MBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbjCCASIwDQY
-    JKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMwldpB5BngiFvXAg7aEyiie/QV2Ec
-    WtiHL8RgJDx7KKnQRfJMsuS+FggkbhUqsMgUdwbN1k0ev1LKMPgj0MK66X17YUh
-    hB5uzsTgHeMCOFJ0mpiLx9e+pZo34knlTifBtc+ycsmWQ1z3rDI6SYOgxXG71uL
-    0gRgykmmKPZpO/bLyCiR5Z2KYVc3rHQU3HTgOu5yLy6c+9C7v/U9AOEGM+iCK65
-    TpjoWc4zdQQ4gOsC0p6Hpsk+QLjJg6VfLuQSSaGjlOCZgdbKfd/+RFO+uIEn8rU
-    AVSNECMWEZXriX7613t2Saer9fwRPvm2L7DWzgVGkWqQPabumDk3F2xmmFghcCA
-    wEAAaNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0O
-    BBYEFI/wS3+oLkUkrk1Q+mOai97i3Ru8MA0GCSqGSIb3DQEBCwUAA4IBAQBLQNv
-    AUKr+yAzv95ZURUm7lgAJQayzE4aGKAczymvmdLm6AC2upArT9fHxD4q/c2dKg8
-    dEe3jgr25sbwMpjjM5RcOO5LlXbKr8EpbsU8Yt5CRsuZRj+9xTaGdWPoO4zzUhw
-    8lo/s7awlOqzJCK6fBdRoyV3XpYKBovHd7NADdBj+1EbddTKJd+82cEHhXXipa0
-    095MJ6RMG3NzdvQXmcIfeg7jLQitChws/zyrVQ4PkX4268NXSb7hLi18YIvDQVE
-    TI53O9zJrlAGomecsMx86OyXShkDOOyyGeMlhLxS67ttVb9+E7gUJTb0o2HLO02
-    JQZR7rkpeDMdmztcpHWD9f
+    MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4G
+    A1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjMxEzARBgNVBAoTCkdsb2JhbFNp
+    Z24xEzARBgNVBAMTCkdsb2JhbFNpZ24wHhcNMDkwMzE4MTAwMDAwWhcNMjkwMzE4
+    MTAwMDAwWjBMMSAwHgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEG
+    A1UEChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbjCCASIwDQYJKoZI
+    hvcNAQEBBQADggEPADCCAQoCggEBAMwldpB5BngiFvXAg7aEyiie/QV2EcWtiHL8
+    RgJDx7KKnQRfJMsuS+FggkbhUqsMgUdwbN1k0ev1LKMPgj0MK66X17YUhhB5uzsT
+    gHeMCOFJ0mpiLx9e+pZo34knlTifBtc+ycsmWQ1z3rDI6SYOgxXG71uL0gRgykmm
+    KPZpO/bLyCiR5Z2KYVc3rHQU3HTgOu5yLy6c+9C7v/U9AOEGM+iCK65TpjoWc4zd
+    QQ4gOsC0p6Hpsk+QLjJg6VfLuQSSaGjlOCZgdbKfd/+RFO+uIEn8rUAVSNECMWEZ
+    XriX7613t2Saer9fwRPvm2L7DWzgVGkWqQPabumDk3F2xmmFghcCAwEAAaNCMEAw
+    DgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFI/wS3+o
+    LkUkrk1Q+mOai97i3Ru8MA0GCSqGSIb3DQEBCwUAA4IBAQBLQNvAUKr+yAzv95ZU
+    RUm7lgAJQayzE4aGKAczymvmdLm6AC2upArT9fHxD4q/c2dKg8dEe3jgr25sbwMp
+    jjM5RcOO5LlXbKr8EpbsU8Yt5CRsuZRj+9xTaGdWPoO4zzUhw8lo/s7awlOqzJCK
+    6fBdRoyV3XpYKBovHd7NADdBj+1EbddTKJd+82cEHhXXipa0095MJ6RMG3NzdvQX
+    mcIfeg7jLQitChws/zyrVQ4PkX4268NXSb7hLi18YIvDQVETI53O9zJrlAGomecs
+    Mx86OyXShkDOOyyGeMlhLxS67ttVb9+E7gUJTb0o2HLO02JQZR7rkpeDMdmztcpH
+    WD9f
     -----END CERTIFICATE-----
     """
     |> X509.Certificate.from_pem!()
     |> X509.Certificate.to_der()
 
-  @table :wax_metadata
+  @persistent_term_key {__MODULE__, :mdsv3_metadata}
 
-  @crl_uris ["http://crl.globalsign.com/root-r3.crl"]
+  @typedoc """
+  A metadata statement
+
+  For instance:
+
+  ```
+  %{
+    "aaguid" => "2c0df832-92de-4be1-8412-88a8f074df4a",
+    "metadataStatement" => %{
+      "aaguid" => "2c0df832-92de-4be1-8412-88a8f074df4a",
+      "attachmentHint" => ["external", "wireless", "nfc"],
+      "attestationRootCertificates" => ["MIIB2DCCAX6gAwIBAgIQGBUrQbdDrm20FZnDsX2CBTAKBggqhkjOPQQDAjBLMQswCQYDVQQGEwJVUzEdMBsGA1UECgwURmVpdGlhbiBUZWNobm9sb2dpZXMxHTAbBgNVBAMMFEZlaXRpYW4gRklETyBSb290IENBMCAXDTE4MDQwMTAwMDAwMFoYDzIwNDgwMzMxMjM1OTU5WjBLMQswCQYDVQQGEwJVUzEdMBsGA1UECgwURmVpdGlhbiBUZWNobm9sb2dpZXMxHTAbBgNVBAMMFEZlaXRpYW4gRklETyBSb290IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsFYEEhiJuqqnMgQjSiivBjV7DGCTf4XBBH/B7uvZsKxXShF0L8uDISWUvcExixRs6gB3oldSrjox6L8T94NOzqNCMEAwHQYDVR0OBBYEFEu9hyYRrRyJzwRYvnDSCIxrFiO3MA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIDHSb2mbNDAUNXvpPU0oWKeNye0fQ2l9D01AR2+sLZdhAiEAo3wz684IFMVsCCRmuJqxH6FQRESNqezuo1E+KkGxWuM=",
+       "MIIBfjCCASWgAwIBAgIBATAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxGVCBGSURPIDAyMDAwIBcNMTYwNTAxMDAwMDAwWhgPMjA1MDA1MDEwMDAwMDBaMBcxFTATBgNVBAMMDEZUIEZJRE8gMDIwMDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNBmrRqVOxztTJVN19vtdqcL7tKQeol2nnM2/yYgvksZnr50SKbVgIEkzHQVOu80LVEE3lVheO1HjggxAlT6o4WjYDBeMB0GA1UdDgQWBBRJFWQt1bvG3jM6XgmV/IcjNtO/CzAfBgNVHSMEGDAWgBRJFWQt1bvG3jM6XgmV/IcjNtO/CzAMBgNVHRMEBTADAQH/MA4GA1UdDwEB/wQEAwIBBjAKBggqhkjOPQQDAgNHADBEAiAwfPqgIWIUB+QBBaVGsdHy0s5RMxlkzpSX/zSyTZmUpQIgB2wJ6nZRM8oX/nA43Rh6SJovM2XwCCH//+LirBAbB0M=",
+       "MIIB2DCCAX6gAwIBAgIQFZ97ws2JGPEoa5NI+p8z1jAKBggqhkjOPQQDAjBLMQswCQYDVQQGEwJDTjEdMBsGA1UECgwURmVpdGlhbiBUZWNobm9sb2dpZXMxHTAbBgNVBAMMFEZlaXRpYW4gRklETyBSb290IENBMCAXDTE4MDQwMTAwMDAwMFoYDzIwNDgwMzMxMjM1OTU5WjBLMQswCQYDVQQGEwJDTjEdMBsGA1UECgwURmVpdGlhbiBUZWNobm9sb2dpZXMxHTAbBgNVBAMMFEZlaXRpYW4gRklETyBSb290IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnfAKbjvMX1Ey1b6k+WQQdNVMt9JgGWyJ3PvM4BSK5XqTfo++0oAj/4tnwyIL0HFBR9St+ktjqSXDfjiXAurs86NCMEAwHQYDVR0OBBYEFNGhmE2Bf8O5a/YHZ71QEv6QRfFUMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIQC3sT1lBjGeF+xKTpzV1KYU2ckahTd4mLJyzYOhaHv4igIgD2JYkfyH5Q4Bpo8rroO0It7oYjF2kgy/eSZ3U9Glaqw="],
+      "attestationTypes" => ["basic_full"],
+      "authenticationAlgorithms" => ["secp256r1_ecdsa_sha256_raw"],
+      "authenticatorGetInfo" => %{
+        "aaguid" => "2c0df83292de4be1841288a8f074df4a",
+        "algorithms" => [%{"alg" => -7, "type" => "public-key"}],
+        "extensions" => ["credProtect", "hmac-secret"],
+        "maxCredentialCountInList" => 6,
+        "maxCredentialIdLength" => 96,
+        ...
+      },
+      "authenticatorVersion" => 1,
+      "cryptoStrength" => 128,
+      "description" => "Feitian FIDO Smart Card",
+      "icon" => "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAUCAMAAAAtBkrlAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABHZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bXA6Q3JlYXRvclRvb2w9IkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE0IChNYWNpbnRvc2gpIiB4bXA6Q3JlYXRlRGF0ZT0iMjAxNi0xMi0zMFQxNDozMzowOCswODowMCIgeG1wOk1vZGlmeURhdGU9IjIwMTYtMTItMzBUMDc6MzE6NTkrMDg6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMTYtMTItMzBUMDc6MzE6NTkrMDg6MDAiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6SGlzdG9yeT0iMjAxNi0xMi0zMFQxNTozMDoyNyswODowMCYjeDk75paH5Lu2IOacquagh+mimC0xIOW3suaJk+W8gCYjeEE7IiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjJFNzFCRkZDQzY3RjExRTY5NzhEQTlDQkI2NDYzRjkwIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjJFNzFCRkZEQzY3RjExRTY5NzhEQTlDQkI2NDYzRjkwIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MkU3MUJGRkFDNjdGMTFFNjk3OERBOUNCQjY0NjNGOTAiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MkU3MUJGRkJDNjdGMTFFNjk3OERBOUNCQjY0NjNGOTAiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz477JXFAAAAYFBMVEX///8EVqIXZavG2OoqcLG2zOOkwt0BSJtqlcXV4u+autlWhbzk7PUAMY9HcrKjtNbq8feAl8aBoszz9vpdjsGGqtF3n8uTsNSZpc6JsNT5+v0xYKnu8Pff5/L48fg/friczJgYAAADAElEQVR42kRUCZbDIAjFXZOY1TatNc39bzksSYc3r4ME4fMBAaD6zl8y/9TOget8d5jfN78bwM/dDCRpR521zXfojHJ05IIyhBAUSVAONdGzBYt2f7KFrfkJaAkHh9FZhcDXHRkTKo9MLihGaavImnV3qyEX0Eprgz/4DwUD7kCHRnd8QFN43Go4UVmDDgza4w27oizdA2+cK+uuUpjjo2+xwc/42W50x5LGYeDBsR0HVIx5x8iF60CblbTEEkFr27bNDBUVSq1OKVPbE62b3EH8FqBg5OOOEuc2t8ZJiqMOuGp+cKjg7wVGceozqN4pxgVPQkjFYgbVJKDUhDCjYrawP5q4ETgC9fIMRHtitpQcCvJOELcbMsQgnciRkljpyQjvG44jqBUETFiBi1PEIyekOzsW+Ty5cLHos5R+dMS1LtSSxf3gQHczR2CI4gMNpW4IRA1QMa6tJ4+C6uHuGE8mNDIyFqg/OP/MMUueS6Iq8S90dAeBJSEy/qKkK+BNwz8cYY4jb5J6u4iWCI2B1Z56LW5kEc4hkdMpsvUC5585SX0QubcgNqyfgDFEcTt+40/0S5Nx0waCw3OKkcObA5In0AYp01pjjw2n626UDjtHwa28iHuTKqtrv+reW41NZ6iGlr7uuLJCfkFtctcG04sgm1eNS+ZaDnpaTErGoyX5JK2iMz8xs0nOwWGcPDN49qaCd4bzJozDZm/aBK+EozLw+XhNBiYwHf0siOu1XPkG/zKwvqYKcfSwDEcH/oUe07es/WQ8rIyg2DOXj8tjkZduDB/b8hzDllMMOCS5BEnd534f8ti3UZc4kMs3xLyafMSsJhdG8XPqjNk5tAgO25feKChnVdDj/J0FMkOsU/xMBv0wFhYeEGfVH13fuDU0yDFLa4fc7RnWHBfuTFV2tEmNwadc7ac3UY2jfBl7HT36fe34iQO5mNCFFBW07KjPgqhOLU01vZ8PueZ2JClFZN8jkUs69uka9ePp6+EfL4AF5+NywSbirHtcB8Ml/gkwAEjkK64KjHPeAAAAAElFTkSuQmCC",
+      "keyProtection" => [...],
+      ...
+    },
+    "statusReports" => [
+      %{"effectiveDate" => "2020-04-24", "status" => "NOT_FIDO_CERTIFIED"}
+    ],
+    "timeOfLastStatusChange" => "2020-04-24"
+  }
+  ```
+  """
+  @type statement :: map()
+
+  defmodule MetadataStatementNotFound do
+    defexception message: "Authenticator metadata was not found"
+  end
+
+  defmodule AuthenticatorStatusNotAcceptable do
+    defexception [:status]
+
+    @impl true
+    def message(%{status: status}) do
+      """
+      Authenticator was not accepted. Its security might have been broken,
+      or he's not sufficiently certified yet. Rejected status: #{status}
+      """
+    end
+  end
 
   # client API
 
-  def start_link do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  @spec get_by_aaguid(binary(), Wax.Challenge.t()) :: Wax.Metadata.Statement.t() | nil
+  @spec get_by_aaguid(binary(), Wax.Challenge.t()) :: {:ok, statement()} | {:error, Exception.t()}
+  def get_by_aaguid(aaguid_bin, challenge) do
+    ensure_loaded()
 
-  def get_by_aaguid(
-    aaguid_bin,
-    %Wax.Challenge{acceptable_authenticator_statuses: acceptable_authenticator_statuses}
-  ) do
-    # it is needed to convert binary aaguid (16 bytes) to its string representation as
-    # used in the metadata service, such as `77010bd7-212a-4fc9-b236-d2ca5e9d4084`
     <<
       a::binary-size(8),
       b::binary-size(4),
@@ -59,128 +109,87 @@ defmodule Wax.Metadata do
 
     aaguid_str = a <> "-" <> b <> "-" <> c <> "-" <> d <> "-" <> e
 
-    case GenServer.call(__MODULE__, {:get, {:aaguid, aaguid_str}}) do
-      {nil, metadata_statement} ->
-        metadata_statement
-
-      {toc_entry, metadata_statement} ->
-        if authenticator_status_allowed?(toc_entry, acceptable_authenticator_statuses) do
-          metadata_statement
-        else
-          Logger.warn(
-            "Authenticator `#{metadata_statement}` was not used because its status is " <>
-            "not whitelisted (TOC entry: `#{toc_entry}`)"
-          )
-
-          nil
-        end
+    @persistent_term_key
+    |> :persistent_term.get([])
+    |> Enum.find(fn
+      %{"aaguid" => ^aaguid_str} ->
+        true
 
       _ ->
-        nil
-    end
+        false
+    end)
+    |> check_metadata_validity_and_return(challenge)
   end
 
-  @spec get_by_acki(binary(), Wax.Challenge.t()) :: Wax.Metadata.Statement.t() | nil
+  @spec get_by_acki(binary(), Wax.Challenge.t()) :: {:ok, statement()} | {:error, Exception.t()}
+  def get_by_acki(acki_bin, challenge) do
+    ensure_loaded()
 
-  def get_by_acki(
-    acki_bin,
-    %Wax.Challenge{acceptable_authenticator_statuses: acceptable_authenticator_statuses}
-  ) do
     acki_str = Base.encode16(acki_bin, case: :lower)
 
-    case GenServer.call(__MODULE__, {:get, {:acki, acki_str}}) do
-      {nil, metadata_statement} ->
-        metadata_statement
+    @persistent_term_key
+    |> :persistent_term.get([])
+    |> Enum.find(fn
+      %{"attestationCertificateKeyIdentifiers" => ackis} ->
+        acki_str in ackis
 
-      {toc_entry, metadata_statement} ->
-        if authenticator_status_allowed?(toc_entry, acceptable_authenticator_statuses) do
-          metadata_statement
-        else
-          Logger.warn(
-            "Authenticator `#{metadata_statement}` was not used because its status is " <>
-            "not whitelisted (TOC entry: `#{toc_entry}`)"
-          )
+      _ ->
+        false
+    end)
+    |> check_metadata_validity_and_return(challenge)
+  end
 
-          nil
-        end
-
-      nil ->
-        nil
+  defp check_metadata_validity_and_return(%{} = metadata, challenge) do
+    if metadata["statusReports"]["status"] in challenge.acceptable_authenticator_statuses do
+      {:ok, metadata["metadataStatement"]}
+    else
+      {:error, %AuthenticatorStatusNotAcceptable{status: metadata["statusReports"]["status"]}}
     end
   end
 
-  @spec authenticator_status_allowed?(map(), [Wax.Metadata.TOCEntry.StatusReport.status()]) ::
-    bool()
-  defp authenticator_status_allowed?(
-    %{status_reports: status_reports},
-    acceptable_authenticator_statuses
-  ) do
-    latest_report = List.last(status_reports)
+  defp check_metadata_validity_and_return(nil, _challenge) do
+    {:error, %MetadataStatementNotFound{}}
+  end
 
-    latest_report.status in acceptable_authenticator_statuses
+  defp ensure_loaded() do
+    GenServer.call(__MODULE__, :ping, :infinity)
   end
 
   # server callbacks
 
   @impl true
   def init(_state) do
-    :ets.new(@table, [:named_table, :set, :protected, {:read_concurrency, true}])
-
-    {:ok, [serial_number: 0], {:continue, :update_metadata}}
+    {:ok, %{last_modified: nil, version_number: -1}, {:continue, :update_metadata}}
   end
 
   @impl true
   def handle_continue(:update_metadata, state) do
-    serial_number =
-      case update_metadata(state[:serial_number]) do
-        new_serial_number when is_integer(new_serial_number) ->
-          new_serial_number
-
-        _ ->
-          state[:serial_number]
-      end
+    state = update_metadata(state)
 
     schedule_update()
 
     Process.send(self(), :update_from_file, [])
 
-    {:noreply, [serial_number: serial_number]}
+    {:noreply, state}
   end
 
   @impl true
-  def handle_call({:get, {type, value}}, _from, state) do
-    case :ets.lookup(@table, {type, value}) do
-      [{_, toc_payload_entry, metadata_statement, _source}] ->
-        {:reply, {toc_payload_entry, metadata_statement}, state}
-
-      _ ->
-        {:reply, nil, state}
-    end
+  def handle_call(:ping, _from, state) do
+    {:reply, :pong, state}
   end
-
-  def handle_call(_, _, state), do: {:noreply, state}
-
-  @impl true
-  def handle_cast(_, state), do: {:noreply, state}
 
   @impl true
   def handle_info(:update_metadata, state) do
-    serial_number =
-      case update_metadata(state[:serial_number]) do
-        new_serial_number when is_integer(new_serial_number) ->
-          new_serial_number
-
-        _ ->
-          state[:serial_number]
-      end
+    state = update_metadata(state)
 
     schedule_update()
 
-    {:noreply, [serial_number: serial_number]}
+    {:noreply, state}
   end
 
   def handle_info(:update_from_file, state) do
-    load_from_dir()
+    #TODO: handle loading by file
+    #load_from_dir()
 
     {:noreply, state}
   end
@@ -193,301 +202,152 @@ defmodule Wax.Metadata do
   defp schedule_update() do
     Process.send_after(self(),
       :update_metadata,
-      Application.get_env(:wax_, :metadata_update_interval, 12 * 3600) * 1000)
+      Application.get_env(:wax_, :metadata_update_interval, 3600) * 1000)
   end
 
-  def update_metadata(serial_number) do
-    Logger.info("Starting FIDO metadata update process")
-
-    if Application.get_env(:wax_, :metadata_access_token) do
-      case http_get("https://mds2.fidoalliance.org/") do
-        {:ok, jws_toc} ->
-          process_metadata_toc(jws_toc, serial_number)
-
-        {:error, reason} ->
-          Logger.warn("Unable to download metadata (#{inspect(reason)})")
-
-          :not_updated
-      end
+  defp update_metadata(state) do
+    if Application.get_env(:wax_, :update_metadata) do
+      do_update_metadata(state)
     else
-      Logger.warn("No access token configured for FIDO metadata, metadata not updated. " <>
-        "Some attestation formats and types won't be supported")
-
-      :not_updated
+      state
     end
   end
 
-  @spec process_metadata_toc(String.t(), non_neg_integer()) :: non_neg_integer() | :not_updated
+  defp do_update_metadata(state) do
+    certs = :public_key.cacerts_get()
 
-  defp process_metadata_toc(jws, serial_number) do
-    case Wax.Utils.JWS.verify_with_x5c(jws, @fido_alliance_root_cer_der, @crl_uris) do
-      :ok ->
-        {%{"alg" => alg}, metadata} = parse_jwt(jws)
+    ssl_opts = [
+      cacerts: certs,
+      verify: :verify_peer,
+      customize_hostname_check: [
+        match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+      ],
+      crl_check: true,
+      crl_cache: {:ssl_crl_cache, {:internal, [http: 1000]}}
+    ]
 
-        if metadata["no"] > serial_number do
-          # one of sha256, sha512, etc
-          digest_alg = digest_from_jws_alg(alg)
+    headers =
+      if state[:last_modified] do
+        [{'if-modified-since', state[:last_modified]}]
+      else
+        []
+      end
 
-          toc_payload_entry = Enum.map(metadata["entries"], &build_toc_payload_entry/1)
-
-          metadata_statements = Task.async_stream(
-            metadata["entries"],
-            fn entry -> get_metadata_statement(entry, digest_alg) end,
-            max_concurrency: 10, timeout: 10_000, on_timeout: :kill_task
-          )
-
-          :ets.match_delete(:wax_metadata, {:_, :_, :_, :MDSv2})
-
-          Enum.each(
-            Enum.zip(toc_payload_entry, metadata_statements),
-            fn {toc_entry, {:ok, metadata_statement}} ->
-              case metadata_statement do
-                %Wax.Metadata.Statement{} ->
-                  save_metadata_statement(metadata_statement, :MDSv2, toc_entry)
-
-                _ ->
-                  Logger.error("Failed to load data for TOC entry `#{inspect(toc_entry)}`")
-
-                  :ok
-              end
-            end
-          )
-
-          metadata["no"]
-        else
-          Logger.info("Metadata not updated (`no` has not changed)")
-
-          :not_updated
-        end
-
-      {:error, reason} ->
-        Logger.warn(
-          "Invalid TOC metadata JWS signature, metadata not updated #{inspect(reason)}")
-    end
-  rescue
-    _e ->
-      {:error, :crl_retrieval_failed}
-  end
-
-  @spec get_metadata_statement(map(), atom()) :: Wax.Metadata.Statement.t() | :error
-  def get_metadata_statement(entry, digest_alg) do
-    case http_get(entry["url"]) do
-      {:ok, body} ->
-        if :crypto.hash(digest_alg, body) == Base.url_decode64!(entry["hash"], padding: false) do
+    :httpc.request(:get, {"https://mds.fidoalliance.org", headers}, [ssl: ssl_opts], [])
+    |> case do
+      {:ok, {{_, 200, _}, headers, body}} ->
+        version_number =
           body
-          |> Base.url_decode64!()
-          |> Jason.decode!()
-          |> Wax.Metadata.Statement.from_json!()
-        else
-          Logger.warn("Invalid hash for metadata entry at " <> entry["url"])
+          |> :erlang.list_to_binary()
+          |> process_and_save_metadata(state)
 
-          :error
+        last_modified = List.keyfind(headers, "last-modified", 0)
+
+        %{state | last_modified: last_modified, version_number: version_number}
+
+      {:ok, {{_, 304, _}, _headers, _body}} ->
+        state
+
+      error ->
+        Logger.info("#{__MODULE__}: failed to download MDSv3 metadata, error: #{inspect(error)}")
+
+        state
+    end
+  end
+
+  defp process_and_save_metadata(jws, state) do
+    case Wax.Utils.JWS.verify_with_x5c(jws, @fido_alliance_root_cer_der) do
+      {:ok, metadata} ->
+        if metadata["no"] > state.version_number do
+          :persistent_term.put(@persistent_term_key, metadata["entries"])
         end
+
+        metadata["no"]
 
       {:error, reason} ->
-        Logger.warn(
-          "Failed to download metadata statement at #{entry["url"]} (reason: #{inspect(reason)})"
-        )
+        Logger.info("Failed to verify FIDO MDSV3 metadata (reason: #{inspect(reason)})")
 
-        :error
+        -1
     end
   end
 
-  @spec parse_jwt(binary()) :: {map(), map()}
-  defp parse_jwt(binary) do
-    [header_b64, body_b64, _sig] = String.split(binary, ".")
+  #@spec load_from_dir() :: any()
+  #defp load_from_dir() do
+  #  :ets.match_delete(:wax_metadata, {:_, :_, :_, :file})
 
-    {
-      header_b64
-      |> Base.url_decode64!(padding: false)
-      |> Jason.decode!(),
-      body_b64
-      |> Base.url_decode64!(padding: false)
-      |> Jason.decode!(),
-    }
-  end
+  #  files =
+  #    case Application.get_env(:wax_, :metadata_dir, nil) do
+  #      nil ->
+  #        []
 
-  @spec build_toc_payload_entry(map()) :: Wax.Metadata.TOCEntry.t()
-  defp build_toc_payload_entry(entry) do
-    %Wax.Metadata.TOCEntry{
-      aaid: entry["aaid"],
-      aaguid: entry["aaguid"],
-      attestation_certificate_key_identifiers: entry["attestationCertificateKeyIdentifiers"],
-      hash: entry["hash"],
-      url: entry["url"],
-      biometric_status_reports:
-        Enum.map(entry["biometricStatusReports"] || [], &build_biometric_status_report/1),
-      status_reports: Enum.map(entry["statusReports"], &build_status_report/1),
-      time_of_last_status_change:
-        if entry["timeOfLastStatusChange"] do
-          Date.from_iso8601!(entry["timeOfLastStatusChange"])
-        end,
-      rogue_list_url: entry["rogueListURL"],
-      rogue_list_hash: entry["rogueListHash"]
-    }
-  end
+  #      app when is_atom(app) ->
+  #        app
+  #        |> :code.priv_dir()
+  #        |> List.to_string()
+  #        |> Kernel.<>("/fido2_metadata/*")
+  #        |> Path.wildcard()
 
-  @spec build_biometric_status_report(map()) :: Wax.Metadata.TOCEntry.BiometricStatusReport.t()
-  defp build_biometric_status_report(status) do
-    %Wax.Metadata.TOCEntry.BiometricStatusReport{
-      cert_level: status["certLevel"],
-      modality: status["modality"],
-      effective_date:
-        if status["effectiveDate"] do
-          Date.from_iso8601!(status["effectiveDate"])
-        end,
-      certification_descriptor: status["certificationDescriptor"],
-      certificate_number: status["certificateNumber"],
-      certification_policy_version: status["certificationPolicyVersion"],
-      certification_requirements_version: status["certificationRequirementsVersion"]
-    }
-  end
+  #      path when is_binary(path) ->
+  #        Path.wildcard(path <> "/*")
+  #    end
 
-  @spec build_status_report(map()) :: Wax.Metadata.TOCEntry.StatusReport.t()
-  defp build_status_report(status) do
-    %Wax.Metadata.TOCEntry.StatusReport{
-      status: authenticator_status(status["status"]),
-      effective_date:
-        if status["effectiveDate"] do
-          Date.from_iso8601!(status["effectiveDate"])
-        end,
-      certificate: status["certificate"],
-      url: status["url"],
-      certification_descriptor: status["certificationDescriptor"],
-      certificate_number: status["certificateNumber"],
-      certification_policy_version: status["certificationPolicyVersion"],
-      certification_requirements_version: status["certificationRequirementsVersion"]
-    }
-  end
+  #  Enum.each(
+  #    files,
+  #    fn file_path ->
+  #      with {:ok, file_content} <- File.read(file_path),
+  #           {:ok, parsed_json} <- Jason.decode(file_content),
+  #           {:ok, metadata_statement} <- Wax.Metadata.Statement.from_json(parsed_json)
+  #      do
+  #        save_metadata_statement(metadata_statement, :file, nil)
+  #      else
+  #        {:error, reason} ->
+  #          Logger.warn(
+  #            "Failed to load metadata statement from `#{file_path}` (reason: #{inspect(reason)})"
+  #          )
+  #      end
+  #    end
+  #  )
+  #end
 
-  @spec authenticator_status(String.t()) :: Wax.Metadata.TOCEntry.StatusReport.status()
-  defp authenticator_status("NOT_FIDO_CERTIFIED"), do: :not_fido_certified
-  defp authenticator_status("FIDO_CERTIFIED"), do: :fido_certified
-  defp authenticator_status("USER_VERIFICATION_BYPASS"), do: :user_verification_bypass
-  defp authenticator_status("ATTESTATION_KEY_COMPROMISE"), do: :attestation_key_compromise
-  defp authenticator_status("USER_KEY_REMOTE_COMPROMISE"), do: :user_key_remote_compromise
-  defp authenticator_status("USER_KEY_PHYSICAL_COMPROMISE"), do: :user_key_physical_compromise
-  defp authenticator_status("UPDATE_AVAILABLE"), do: :update_available
-  defp authenticator_status("REVOKED"), do: :revoked
-  defp authenticator_status("SELF_ASSERTION_SUBMITTED"), do: :self_assertion_submitted
-  defp authenticator_status("FIDO_CERTIFIED_L1"), do: :fido_certified_l1
-  defp authenticator_status("FIDO_CERTIFIED_L1plus"), do: :fido_certified_l1plus
-  defp authenticator_status("FIDO_CERTIFIED_L2"), do: :fido_certified_l2
-  defp authenticator_status("FIDO_CERTIFIED_L2plus"), do: :fido_certified_l2plus
-  defp authenticator_status("FIDO_CERTIFIED_L3"), do: :fido_certified_l3
-  defp authenticator_status("FIDO_CERTIFIED_L3plus"), do: :fido_certified_l3plus
+  #@spec save_metadata_statement(
+  #  Wax.Metadata.Statement.t(),
+  #  source :: atom(),
+  #  Wax.Metadata.TOCEntry.t() | nil
+  #) :: any()
+  #defp save_metadata_statement(metadata_statement, source, maybe_toc_entry) do
+  #  desc = metadata_statement.description
 
-  #see section 3.1 of https://www.rfc-editor.org/rfc/rfc7518.txt
-  @spec digest_from_jws_alg(String.t()) :: atom()
-  defp digest_from_jws_alg("HS256"), do: :sha256
-  defp digest_from_jws_alg("HS384"), do: :sha384
-  defp digest_from_jws_alg("HS512"), do: :sha512
-  defp digest_from_jws_alg("RS256"), do: :sha256
-  defp digest_from_jws_alg("RS384"), do: :sha384
-  defp digest_from_jws_alg("RS512"), do: :sha512
-  defp digest_from_jws_alg("ES256"), do: :sha256
-  defp digest_from_jws_alg("ES384"), do: :sha384
-  defp digest_from_jws_alg("ES512"), do: :sha512
-  defp digest_from_jws_alg("PS256"), do: :sha256
-  defp digest_from_jws_alg("PS384"), do: :sha384
-  defp digest_from_jws_alg("PS512"), do: :sha512
+  #  case metadata_statement do
+  #    %Wax.Metadata.Statement{aaguid: aaguid} when is_binary(aaguid) ->
+  #      Logger.debug("Saving metadata for aaguid `#{aaguid}` (#{desc})")
 
-  @spec load_from_dir() :: any()
-  defp load_from_dir() do
-    :ets.match_delete(:wax_metadata, {:_, :_, :_, :file})
+  #      :ets.insert(
+  #        :wax_metadata,
+  #        {{:aaguid, aaguid}, maybe_toc_entry, metadata_statement, source}
+  #      )
 
-    files =
-      case Application.get_env(:wax_, :metadata_dir, nil) do
-        nil ->
-          []
+  #    %Wax.Metadata.Statement{aaid: aaid} when is_binary(aaid) ->
+  #      Logger.debug("Saving metadata for aaid `#{aaid}` (#{desc})")
 
-        app when is_atom(app) ->
-          app
-          |> :code.priv_dir()
-          |> List.to_string()
-          |> Kernel.<>("/fido2_metadata/*")
-          |> Path.wildcard()
+  #      :ets.insert(
+  #        :wax_metadata,
+  #        {{:aaguid, aaid}, maybe_toc_entry, metadata_statement, source}
+  #      )
 
-        path when is_binary(path) ->
-          Path.wildcard(path <> "/*")
-      end
+  #    %Wax.Metadata.Statement{attestation_certificate_key_identifiers: acki_list} ->
+  #      Enum.each(
+  #        acki_list,
+  #        fn acki ->
+  #          Logger.debug(
+  #            "Saving metadata for attestation certificate key identifier `#{acki}` (#{desc})"
+  #          )
 
-    Enum.each(
-      files,
-      fn file_path ->
-        with {:ok, file_content} <- File.read(file_path),
-             {:ok, parsed_json} <- Jason.decode(file_content),
-             {:ok, metadata_statement} <- Wax.Metadata.Statement.from_json(parsed_json)
-        do
-          save_metadata_statement(metadata_statement, :file, nil)
-        else
-          {:error, reason} ->
-            Logger.warn(
-              "Failed to load metadata statement from `#{file_path}` (reason: #{inspect(reason)})"
-            )
-        end
-      end
-    )
-  end
-
-  @spec save_metadata_statement(
-    Wax.Metadata.Statement.t(),
-    source :: atom(),
-    Wax.Metadata.TOCEntry.t() | nil
-  ) :: any()
-  defp save_metadata_statement(metadata_statement, source, maybe_toc_entry) do
-    desc = metadata_statement.description
-
-    case metadata_statement do
-      %Wax.Metadata.Statement{aaguid: aaguid} when is_binary(aaguid) ->
-        Logger.debug("Saving metadata for aaguid `#{aaguid}` (#{desc})")
-
-        :ets.insert(
-          :wax_metadata,
-          {{:aaguid, aaguid}, maybe_toc_entry, metadata_statement, source}
-        )
-
-      %Wax.Metadata.Statement{aaid: aaid} when is_binary(aaid) ->
-        Logger.debug("Saving metadata for aaid `#{aaid}` (#{desc})")
-
-        :ets.insert(
-          :wax_metadata,
-          {{:aaguid, aaid}, maybe_toc_entry, metadata_statement, source}
-        )
-
-      %Wax.Metadata.Statement{attestation_certificate_key_identifiers: acki_list} ->
-        Enum.each(
-          acki_list,
-          fn acki ->
-            Logger.debug(
-              "Saving metadata for attestation certificate key identifier `#{acki}` (#{desc})"
-            )
-
-            :ets.insert(
-              :wax_metadata,
-              {{:acki, acki}, maybe_toc_entry, metadata_statement, source}
-            )
-          end
-        )
-    end
-  end
-
-  defp http_get(url) do
-    access_token = Application.fetch_env!(:wax_, :metadata_access_token)
-    client =
-      Application.get_env(:wax_, :tesla_middlewares, [])
-      |> Kernel.++([Tesla.Middleware.FollowRedirects])
-      |> Tesla.client()
-
-    case Tesla.get(client, url <> "?token=" <> access_token) do
-      {:ok, %Tesla.Env{status: status, body: body}} when status in 200..299 ->
-        {:ok, body}
-
-      {:ok, %Tesla.Env{status: status}} ->
-        {:error, "MDSv2 responded with HTTP error #{status}"}
-
-      {:error, _} = error ->
-        error
-    end
-  end
+  #          :ets.insert(
+  #            :wax_metadata,
+  #            {{:acki, acki}, maybe_toc_entry, metadata_statement, source}
+  #          )
+  #        end
+  #      )
+  #  end
+  #end
 end

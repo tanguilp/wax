@@ -380,18 +380,19 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     Wax.AuthenticatorData.t(),
     [binary()],
     Wax.Challenge.t()
-  ) :: :ok | {:error, atom()}
+  ) :: :ok | {:error, any()}
   defp validate_x5c_path(auth_data, cert_chain, challenge) do
-    root_certs =
-      case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
-        %Wax.Metadata.Statement{} = attestation_statement ->
-          attestation_statement.attestation_root_certificates
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+      {:ok, metadata_statement} ->
+        root_certs = metadata_statement["metadataStatement"]["attestationRootCertificates"]
+        do_validate_x5c_path(root_certs, cert_chain)
 
-        _ ->
-          [@android_key_root_cert_der]
-      end
+      {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
+        do_validate_x5c_path([@android_key_root_cert_der], cert_chain)
 
-    do_validate_x5c_path(root_certs, cert_chain)
+      {:error, _} = error ->
+        error
+    end
   end
 
   @spec do_validate_x5c_path(

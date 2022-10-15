@@ -37,15 +37,10 @@ defmodule Wax.AttestationStatementFormat.Packed do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
          :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
-         :ok <- attestation_path_valid?(att_stmt["x5c"], auth_data, challenge)
+         {:ok, metadata_statement} <- Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge),
+         :ok <- attestation_path_valid?(att_stmt["x5c"], challenge, metadata_statement)
     do
-      {:ok,
-        {
-          determine_attestation_type(auth_data, challenge),
-          att_stmt["x5c"],
-          Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge)
-        }
-      }
+      {:ok, {attestation_type(metadata_statement), att_stmt["x5c"], metadata_statement}}
     end
   end
 
@@ -203,67 +198,48 @@ defmodule Wax.AttestationStatementFormat.Packed do
       {:error, :attestation_packed_invalid_attestation_subject_field}
   end
 
-  @spec determine_attestation_type(Wax.AuthenticatorData.t(), Wax.Challenge.t()) :: Wax.Attestation.type()
+  defp attestation_type(metadata_statement) do
+    attestation_types = metadata_statement["metadataStatement"]["attestationTypes"]
 
-  defp determine_attestation_type(auth_data, challenge) do
-    aaguid = auth_data.attested_credential_data.aaguid
+    cond do
+      "basic_full" in attestation_types ->
+        :basic
 
-    Logger.debug("#{__MODULE__}: determining attestation type for aaguid=#{inspect(aaguid)}")
+      "attca" in attestation_types ->
+        :attca
 
-    case Wax.Metadata.get_by_aaguid(aaguid, challenge) do
-      nil ->
+      true ->
         :uncertain
-
-      metadata_statement ->
-        if :tag_attestation_basic_full in metadata_statement.attestation_types do
-          :basic
-        else
-          if :tag_attestation_attca in metadata_statement.attestation_types do
-            :attca
-          else
-            :uncertain
-          end
-        end
     end
   end
-
-  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t(), Wax.Challenge.t()) ::
-  :ok
-  | {:error, any()}
 
   defp attestation_path_valid?(
     der_list,
-    auth_data,
-    %Wax.Challenge{verify_trust_root: true} = challenge
+    %Wax.Challenge{verify_trust_root: true},
+    metadata_statement
   ) do
-    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
-      %Wax.Metadata.Statement{attestation_root_certificates: arcs} ->
-        if Enum.any?(
-          arcs,
-          fn arc ->
-            case :public_key.pkix_path_validation(arc,
-                                                  [arc | Enum.reverse(der_list)],
-                                                  [])
-            do
-              {:ok, _} ->
-                true
+    if Enum.any?(
+      metadata_statement["metadataStatement"]["attestationRootCertificates"],
+      fn arc ->
+        case :public_key.pkix_path_validation(arc,
+                                              [arc | Enum.reverse(der_list)],
+                                              [])
+        do
+          {:ok, _} ->
+            true
 
-              {:error, _} ->
-                false
-            end
-          end
-        ) do
-          :ok
-        else
-          {:error, :attestation_packed_no_attestation_root_certificate_found}
+          {:error, _} ->
+            false
         end
-
-      _ ->
-        {:error, :attestation_packed_no_attestation_metadata_statement_found}
+      end
+    ) do
+      :ok
+    else
+      {:error, :attestation_packed_no_attestation_root_certificate_found}
     end
   end
 
-  defp attestation_path_valid?(_, _, %Wax.Challenge{verify_trust_root: false}) do
+  defp attestation_path_valid?(_, %Wax.Challenge{verify_trust_root: false}, _) do
     :ok
   end
 end

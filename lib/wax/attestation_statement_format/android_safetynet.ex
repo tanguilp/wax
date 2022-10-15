@@ -90,10 +90,13 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     String.t(),
     Wax.AuthenticatorData.t(),
     Wax.Challenge.t()
-  ) :: :ok | {:error, atom()}
+  ) :: :ok | {:error, any()}
   defp verify_signature(jws, auth_data, challenge) do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
-      %Wax.Metadata.Statement{} = attestation_statement ->
+      {:ok, metadata_statement} ->
+        authentication_algorithms =
+          metadata_statement["metadataStatement"]["authenticationAlgorithms"]
+
         [header_b64, _payload_b64, _sig_b64] = String.split(jws, ".")
 
         jws_alg =
@@ -102,33 +105,37 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           |> Jason.decode!()
           |> Map.get("alg")
 
-        if algs_match?(attestation_statement.authentication_algorithm, jws_alg) do
-          do_verify_signature(jws, attestation_statement.attestation_root_certificates)
+        if Enum.any?(authentication_algorithms, &algs_match?(&1, jws_alg)) do
+          root_certificates = metadata_statement["metadataStatement"]["attestationRootCertificates"]
+
+          do_verify_signature(jws, root_certificates)
         else
           {:error, :attestation_safetynet_algs_dont_match}
         end
 
-      _ ->
+      {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
         do_verify_signature(jws, [@root_cert_der])
+
+      {:error, _} = error ->
+        error
     end
   end
 
-  @spec algs_match?(Wax.Metadata.Statement.authentication_algorithm(), String.t()) :: boolean()
-  defp algs_match?(:alg_sign_secp256r1_ecdsa_sha256_raw, "ES256"), do: true
-  defp algs_match?(:alg_sign_secp256r1_ecdsa_sha256_der, "ES256"), do: true
-  defp algs_match?(:alg_sign_rsassa_pss_sha256_raw, "PS256"), do: true
-  defp algs_match?(:alg_sign_rsassa_pss_sha256_der, "PS256"), do: true
-  defp algs_match?(:alg_sign_secp256k1_ecdsa_sha256_raw, "ES256K"), do: true
-  defp algs_match?(:alg_sign_secp256k1_ecdsa_sha256_der, "ES256K"), do: true
-  defp algs_match?(:alg_sign_rsassa_pss_sha384_raw, "PS384"), do: true
-  defp algs_match?(:alg_sign_rsassa_pss_sha512_raw, "PS512"), do: true
-  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha256_raw, "RS256"), do: true
-  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha384_raw, "RS384"), do: true
-  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha512_raw, "RS512"), do: true
-  defp algs_match?(:alg_sign_rsassa_pkcsv15_sha1_raw, "RS1"), do: true
-  defp algs_match?(:alg_sign_secp384r1_ecdsa_sha384_raw, "ES384"), do: true
-  defp algs_match?(:alg_sign_secp521r1_ecdsa_sha512_raw, "ES512"), do: true
-  defp algs_match?(:alg_sign_ed25519_eddsa_sha256_raw, "EdDSA"), do: true
+  defp algs_match?("secp256r1_ecdsa_sha256_raw", "ES256"), do: true
+  defp algs_match?("secp256r1_ecdsa_sha256_der", "ES256"), do: true
+  defp algs_match?("rsassa_pss_sha256_raw", "PS256"), do: true
+  defp algs_match?("rsassa_pss_sha256_der", "PS256"), do: true
+  defp algs_match?("secp256k1_ecdsa_sha256_raw", "ES256K"), do: true
+  defp algs_match?("secp256k1_ecdsa_sha256_der", "ES256K"), do: true
+  defp algs_match?("rsassa_pss_sha384_raw", "PS384"), do: true
+  defp algs_match?("rsassa_pss_sha256_raw", "PS512"), do: true
+  defp algs_match?("rsassa_pkcsv15_sha256_raw", "RS256"), do: true
+  defp algs_match?("rsassa_pkcsv15_sha384_raw", "RS384"), do: true
+  defp algs_match?("rsassa_pkcsv15_sha512_raw", "RS512"), do: true
+  defp algs_match?("rsassa_pkcsv15_sha1_raw", "RS1"), do: true
+  defp algs_match?("secp384r1_ecdsa_sha384_raw", "ES384"), do: true
+  defp algs_match?("secp512r1_ecdsa_sha256_raw", "ES512"), do: true
+  defp algs_match?("ed25519_eddsa_sha512_raw", "EdDSA"), do: true
   defp algs_match?(_, _), do: false
 
   @spec do_verify_signature(String.t(), [binary()]) :: :ok | {:error, atom()}
@@ -138,7 +145,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
   defp do_verify_signature(jws, [root_cert_der | remaining_root_certs_der]) do
     case Wax.Utils.JWS.verify_with_x5c(jws, root_cert_der) do
-      :ok ->
+      {:ok, _} ->
         :ok
 
       {:error, _} ->

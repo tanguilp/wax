@@ -32,7 +32,7 @@ it at your own risks or blindly trust its author!
 
 ## Compatibility
 
-OTP22+
+OTP25+
 
 ## Installation
 
@@ -186,7 +186,7 @@ These options are:
 |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `"preferred"`| |
 |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
 |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
-|`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
+|`acceptable_authenticator_statuses`|`[String.t()]`|<ul style="margin:0"><li>registration</li></ul>|`["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]`| The `"UPDATE_AVAILABLE"` status is not whitelisted by default |
 |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
 |`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
 |`silent_authentication_enabled`|`boolean()`|<ul style="margin:0"><li>authentication</li></ul>|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |

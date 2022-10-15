@@ -97,12 +97,10 @@ defmodule Wax.AttestationStatementFormat.TPM do
          :ok <- cert_info_valid?(cert_info, auth_data, client_data_hash, att_stmt),
          :ok <- signature_valid?(att_stmt),
          :ok <- aik_cert_valid?(List.first(att_stmt["x5c"]), auth_data),
-         {:ok, metadata_statement} <- attestation_path_valid?(att_stmt["x5c"], auth_data, challenge)
+         {:ok, metadata_statement} <- Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge),
+         :ok <- attestation_path_valid?(att_stmt["x5c"], metadata_statement)
     do
       {:ok, {:basic, att_stmt["x5c"], metadata_statement}}
-    else
-      error ->
-        error
     end
   end
 
@@ -377,37 +375,27 @@ defmodule Wax.AttestationStatementFormat.TPM do
     |> DateTime.to_unix()
   end
 
-  @spec attestation_path_valid?([binary()], Wax.AuthenticatorData.t(), Wax.Challenge.t()) ::
-  {:ok, Wax.Metadata.Statement.t()}
-  | {:error, any()}
+  defp attestation_path_valid?(der_list, metadata_statement) do
+    if Enum.any?(
+      metadata_statement["metadataStatement"]["attestationRootCertificates"],
+      fn arc ->
+        :public_key.pkix_path_validation(
+          arc,
+          [arc | Enum.reverse(der_list)],
+          verify_fun: {&verify_fun/3, %{}}
+        )
+        |> case do
+          {:ok, _} ->
+            true
 
-  defp attestation_path_valid?(der_list, auth_data, challenge) do
-    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
-      %Wax.Metadata.Statement{attestation_root_certificates: arcs} = metadata_statement ->
-        if Enum.any?(
-          arcs,
-          fn arc ->
-            :public_key.pkix_path_validation(
-              arc,
-              [arc | Enum.reverse(der_list)],
-              verify_fun: {&verify_fun/3, %{}}
-            )
-            |> case do
-              {:ok, _} ->
-                true
-
-              {:error, _} ->
-                false
-            end
-          end
-        ) do
-          {:ok, metadata_statement}
-        else
-          {:error, :attestation_tpm_no_attestation_root_certificate_found}
+          {:error, _} ->
+            false
         end
-
-      _ ->
-        {:error, :attestation_tpm_no_attestation_metadata_statement_found}
+      end
+    ) do
+      :ok
+    else
+      {:error, :attestation_tpm_no_attestation_root_certificate_found}
     end
   end
 

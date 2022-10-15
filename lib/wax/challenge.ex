@@ -40,7 +40,7 @@ defmodule Wax.Challenge do
     allow_credentials: [binary()],
     trusted_attestation_types: [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
     verify_trust_root: boolean(),
-    acceptable_authenticator_statuses: [Wax.Metadata.TOCEntry.StatusReport.status()],
+    acceptable_authenticator_statuses: [String.t()],
     issued_at: integer(),
     timeout: non_neg_integer(),
     android_key_allow_software_enforcement: boolean(),
