@@ -1,6 +1,4 @@
 defmodule Wax.AttestationStatementFormat.FIDOU2F do
-  require Logger
-
   @moduledoc false
 
   @behaviour Wax.AttestationStatementFormat
@@ -48,11 +46,6 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
         pub_key = X509.Certificate.public_key(cert)
 
-        Logger.debug(
-          "#{__MODULE__}: verifying validity of public key for certificate " <>
-            "#{inspect(cert)}"
-        )
-
         if Wax.Utils.Certificate.public_key_algorithm(cert) == {1, 2, 840, 10045, 2, 1} and
              elem(pub_key, 1) == {:namedCurve, {1, 2, 840, 10045, 3, 1, 7}} do
           {:ok, pub_key}
@@ -89,12 +82,6 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   end
 
   defp valid_signature?(sig, verification_data, pub_key) do
-    Logger.debug(
-      "#{__MODULE__}: verifying signature #{inspect(sig)} " <>
-        "of data #{inspect(verification_data)} " <>
-        "with public key #{inspect(pub_key)}"
-    )
-
     if :public_key.verify(verification_data, :sha256, sig, pub_key) do
       :ok
     else

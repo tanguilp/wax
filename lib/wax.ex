@@ -88,8 +88,6 @@ defmodule Wax do
   metadata statements. On failure, a warning is emitted.
   """
 
-  require Logger
-
   alias Wax.Utils
 
   @type opts :: [opt()]

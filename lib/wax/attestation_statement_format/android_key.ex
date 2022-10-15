@@ -1,8 +1,7 @@
 defmodule Wax.AttestationStatementFormat.AndroidKey do
-  # test cert can be found at https://fidoalliance.org/wp-content/uploads/Hardware-backed_Keystore_White_Paper_June2018.pdf
-  require Logger
-
   @moduledoc false
+  #
+  # test cert can be found at https://fidoalliance.org/wp-content/uploads/Hardware-backed_Keystore_White_Paper_June2018.pdf
 
   # from https://github.com/NuclearAndroidProject1/android_hardware_libhardware/blob/master/include/hardware/keymaster_defs.h
   @km_origin_generated 0

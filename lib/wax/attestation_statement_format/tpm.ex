@@ -1,6 +1,4 @@
 defmodule Wax.AttestationStatementFormat.TPM do
-  require Logger
-
   @moduledoc false
 
   # structures described in http://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
@@ -223,8 +221,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
          modulus: unique
        }}
 
-    Logger.debug("#{__MODULE__}: decoded cert_info: #{inspect(cert_info)}")
-
     cert_info
   end
 
@@ -256,8 +252,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
          y: unique_y
        }}
 
-    Logger.debug("#{__MODULE__}: decoded pub_area: #{inspect(pub_area)}")
-
     pub_area
   end
 
@@ -270,12 +264,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
     auth_data_erlang_public_key =
       Wax.CoseKey.to_erlang_public_key(auth_data.attested_credential_data.credential_public_key)
-
-    Logger.debug(
-      "#{__MODULE__}: verifying public keys, " <>
-        "pub_area: #{inspect(pub_area_erlang_public_key)} ; " <>
-        "auth_data: #{inspect(auth_data_erlang_public_key)}"
-    )
 
     if pub_area_erlang_public_key == auth_data_erlang_public_key do
       :ok
@@ -302,12 +290,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
       cert_info[:attested_name_digest]
       |> name_alg_to_erlang_digest()
       |> :crypto.hash(att_stmt["pubArea"])
-
-    Logger.debug(
-      "#{__MODULE__}: verifying cert_info is valid: digest: #{inspect(digest)} ; " <>
-        "att to be signed: #{inspect(att_to_be_signed)} ; " <>
-        "pub_area hash: #{inspect(pub_area_hash)}"
-    )
 
     if cert_info[:extra_data] == :crypto.hash(digest, att_to_be_signed) and
          cert_info[:attested_name_hash] == pub_area_hash do
@@ -342,8 +324,6 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   defp aik_cert_valid?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
-
-    Logger.debug("#{__MODULE__}: verifying validity of aik certificate: #{inspect(cert)}")
 
     {:Validity, {:utcTime, valid_from}, {:utcTime, valid_to}} = X509.Certificate.validity(cert)
 

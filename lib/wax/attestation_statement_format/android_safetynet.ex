@@ -1,6 +1,4 @@
 defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
-  require Logger
-
   @moduledoc false
 
   @behaviour Wax.AttestationStatementFormat
@@ -156,11 +154,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   @spec valid_safetynet_response?(map() | Keyword.t() | nil, String.t()) :: :ok | {:error, any()}
 
   defp valid_safetynet_response?(%{} = safetynet_response, version) do
-    Logger.debug(
-      "#{__MODULE__}: verifying SafetyNet response validity: " <>
-        "#{inspect(safetynet_response)}"
-    )
-
     (safetynet_response["ctsProfileMatch"] == true and
        version != nil and
        is_integer(safetynet_response["timestampMs"]) and
@@ -201,8 +194,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
       |> List.first()
       |> Base.decode64!()
       |> X509.Certificate.from_der!()
-
-    Logger.debug("#{__MODULE__}: verifying certificate: #{inspect(leaf_cert)}")
 
     # {2, 5, 4, 3} is the OID for CN
     case X509.Certificate.subject(leaf_cert, {2, 5, 4, 3}) do

@@ -1,6 +1,4 @@
 defmodule Wax.AttestationStatementFormat.Packed do
-  require Logger
-
   @moduledoc false
 
   @behaviour Wax.AttestationStatementFormat
@@ -339,11 +337,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
 
     digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
 
-    Logger.debug(
-      "#{__MODULE__}: verifying signature with public key #{inspect(pub_key)} " <>
-        "(digest: #{inspect(digest)})"
-    )
-
     if :public_key.verify(
          auth_data.raw_bytes <> client_data_hash,
          digest,
@@ -390,8 +383,6 @@ defmodule Wax.AttestationStatementFormat.Packed do
 
   defp valid_attestation_certificate?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
-
-    Logger.debug("#{__MODULE__}: verifying certificate info of #{inspect(cert)}")
 
     subject = X509.Certificate.subject(cert)
 

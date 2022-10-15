@@ -194,7 +194,6 @@ defmodule Wax.Metadata do
   end
 
   def handle_info(reason, state) do
-    Logger.debug("#{__MODULE__}: received handle_info/2 message: #{inspect(reason)}")
     {:noreply, state}
   end
 
