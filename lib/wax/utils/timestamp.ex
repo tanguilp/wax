@@ -5,7 +5,8 @@ defmodule Wax.Utils.Timestamp do
              do: Wax.Utils.Timestamp.TimeTravel,
              else: Wax.Utils.Timestamp.Real
 
-  @spec get_timestamp() :: non_neg_integer()
+  @callback get_timestamp :: non_neg_integer()
+
   def get_timestamp do
     @adapter.get_timestamp()
   end
