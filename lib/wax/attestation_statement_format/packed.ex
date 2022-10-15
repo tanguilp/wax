@@ -8,38 +8,272 @@ defmodule Wax.AttestationStatementFormat.Packed do
   # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements
   # on the 27/01/2019
   @iso_3166_codes [
-    "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX",
-    "AZ", "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ",
-    "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD", "CF", "CG", "CH", "CI",
-    "CK", "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK",
-    "DM", "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI", "FJ", "FK", "FM", "FO",
-    "FR", "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR",
-    "GS", "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM",
-    "IN", "IO", "IQ", "IR", "IS", "IT", "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM",
-    "KN", "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU",
-    "LV", "LY", "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP",
-    "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG",
-    "NI", "NL", "NO", "NP", "NR", "NU", "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL",
-    "PM", "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB",
-    "SC", "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST",
-    "SV", "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO",
-    "TR", "TT", "TV", "TW", "IS", "TZ", "UA", "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE",
-    "VG", "VI", "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"
+    "AD",
+    "AE",
+    "AF",
+    "AG",
+    "AI",
+    "AL",
+    "AM",
+    "AO",
+    "AQ",
+    "AR",
+    "AS",
+    "AT",
+    "AU",
+    "AW",
+    "AX",
+    "AZ",
+    "BA",
+    "BB",
+    "BD",
+    "BE",
+    "BF",
+    "BG",
+    "BH",
+    "BI",
+    "BJ",
+    "BL",
+    "BM",
+    "BN",
+    "BO",
+    "BQ",
+    "BQ",
+    "BR",
+    "BS",
+    "BT",
+    "BV",
+    "BW",
+    "BY",
+    "BZ",
+    "CA",
+    "CC",
+    "CD",
+    "CF",
+    "CG",
+    "CH",
+    "CI",
+    "CK",
+    "CL",
+    "CM",
+    "CN",
+    "CO",
+    "CR",
+    "CU",
+    "CV",
+    "CW",
+    "CX",
+    "CY",
+    "CZ",
+    "DE",
+    "DJ",
+    "DK",
+    "DM",
+    "DO",
+    "DZ",
+    "EC",
+    "EE",
+    "EG",
+    "EH",
+    "ER",
+    "ES",
+    "ET",
+    "FI",
+    "FJ",
+    "FK",
+    "FM",
+    "FO",
+    "FR",
+    "GA",
+    "GB",
+    "GD",
+    "GE",
+    "GF",
+    "GG",
+    "GH",
+    "GI",
+    "GL",
+    "GM",
+    "GN",
+    "GP",
+    "GQ",
+    "GR",
+    "GS",
+    "GT",
+    "GU",
+    "GW",
+    "GY",
+    "HK",
+    "HM",
+    "HN",
+    "HR",
+    "HT",
+    "HU",
+    "ID",
+    "IE",
+    "IL",
+    "IM",
+    "IN",
+    "IO",
+    "IQ",
+    "IR",
+    "IS",
+    "IT",
+    "JE",
+    "JM",
+    "JO",
+    "JP",
+    "KE",
+    "KG",
+    "KH",
+    "KI",
+    "KM",
+    "KN",
+    "KP",
+    "KR",
+    "KW",
+    "KY",
+    "KZ",
+    "LA",
+    "LB",
+    "LC",
+    "LI",
+    "LK",
+    "LR",
+    "LS",
+    "LT",
+    "LU",
+    "LV",
+    "LY",
+    "MA",
+    "MC",
+    "MD",
+    "ME",
+    "MF",
+    "MG",
+    "MH",
+    "MK",
+    "ML",
+    "MM",
+    "MN",
+    "MO",
+    "MP",
+    "MQ",
+    "MR",
+    "MS",
+    "MT",
+    "MU",
+    "MV",
+    "MW",
+    "MX",
+    "MY",
+    "MZ",
+    "NA",
+    "NC",
+    "NE",
+    "NF",
+    "NG",
+    "NI",
+    "NL",
+    "NO",
+    "NP",
+    "NR",
+    "NU",
+    "NZ",
+    "OM",
+    "PA",
+    "PE",
+    "PF",
+    "PG",
+    "PH",
+    "PK",
+    "PL",
+    "PM",
+    "PN",
+    "PR",
+    "PS",
+    "PT",
+    "PW",
+    "PY",
+    "QA",
+    "RE",
+    "RO",
+    "RS",
+    "RU",
+    "RW",
+    "SA",
+    "SB",
+    "SC",
+    "SD",
+    "SE",
+    "SG",
+    "SH",
+    "SI",
+    "SJ",
+    "SK",
+    "SL",
+    "SM",
+    "SN",
+    "SO",
+    "SR",
+    "SS",
+    "ST",
+    "SV",
+    "SX",
+    "SY",
+    "SZ",
+    "TC",
+    "TD",
+    "TF",
+    "TG",
+    "TH",
+    "TJ",
+    "TK",
+    "TL",
+    "TM",
+    "TN",
+    "TO",
+    "TR",
+    "TT",
+    "TV",
+    "TW",
+    "IS",
+    "TZ",
+    "UA",
+    "UG",
+    "UM",
+    "US",
+    "UY",
+    "UZ",
+    "VA",
+    "VC",
+    "VE",
+    "VG",
+    "VI",
+    "VN",
+    "VU",
+    "WF",
+    "WS",
+    "YE",
+    "YT",
+    "ZA",
+    "ZM",
+    "ZW"
   ]
 
   @impl Wax.AttestationStatementFormat
   def verify(
-    %{"x5c" => _} = att_stmt,
-    auth_data,
-    client_data_hash,
-    %Wax.Challenge{attestation: "direct"} = challenge
-  ) do
+        %{"x5c" => _} = att_stmt,
+        auth_data,
+        client_data_hash,
+        %Wax.Challenge{attestation: "direct"} = challenge
+      ) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
          :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
-         {:ok, metadata_statement} <- Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge),
-         :ok <- attestation_path_valid?(att_stmt["x5c"], challenge, metadata_statement)
-    do
+         {:ok, metadata_statement} <-
+           Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge),
+         :ok <- attestation_path_valid?(att_stmt["x5c"], challenge, metadata_statement) do
       {:ok, {attestation_type(metadata_statement), att_stmt["x5c"], metadata_statement}}
     end
   end
@@ -49,11 +283,11 @@ defmodule Wax.AttestationStatementFormat.Packed do
   end
 
   def verify(
-    %{"ecdaaKeyId" => _},
-    _auth_data,
-    _client_hash_data,
-    %Wax.Challenge{attestation: "direct"}
-  ) do
+        %{"ecdaaKeyId" => _},
+        _auth_data,
+        _client_hash_data,
+        %Wax.Challenge{attestation: "direct"}
+      ) do
     {:error, :attestation_packed_unimplemented}
   end
 
@@ -62,8 +296,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
   def verify(att_stmt, auth_data, client_data_hash, _challenge) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- algs_match?(att_stmt, auth_data),
-         :ok <- valid_self_signature?(att_stmt, auth_data, client_data_hash)
-    do
+         :ok <- valid_self_signature?(att_stmt, auth_data, client_data_hash) do
       {:ok, {:self, nil, nil}}
     else
       error ->
@@ -74,11 +307,10 @@ defmodule Wax.AttestationStatementFormat.Packed do
   @spec valid_cbor?(Wax.Attestation.statement()) :: :ok | {:error, any()}
 
   defp valid_cbor?(%{"x5c" => _} = att_stmt) do
-    if is_integer(att_stmt["alg"])
-    and is_binary(att_stmt["sig"])
-    and is_list(att_stmt["x5c"])
-    and length(Map.keys(att_stmt)) == 3
-    do
+    if is_integer(att_stmt["alg"]) and
+         is_binary(att_stmt["sig"]) and
+         is_list(att_stmt["x5c"]) and
+         length(Map.keys(att_stmt)) == 3 do
       :ok
     else
       {:error, :attestation_packed_invalid_cbor}
@@ -86,18 +318,17 @@ defmodule Wax.AttestationStatementFormat.Packed do
   end
 
   defp valid_cbor?(att_stmt) do
-    if is_integer(att_stmt["alg"])
-    and is_binary(att_stmt["sig"])
-    and length(Map.keys(att_stmt)) == 2
-    do
+    if is_integer(att_stmt["alg"]) and
+         is_binary(att_stmt["sig"]) and
+         length(Map.keys(att_stmt)) == 2 do
       :ok
     else
       {:error, :attestation_packed_invalid_cbor}
     end
   end
 
-  @spec valid_x5c_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash())
-    :: :ok | {:error, any()}
+  @spec valid_x5c_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash()) ::
+          :ok | {:error, any()}
 
   defp valid_x5c_signature?(att_stmt, auth_data, client_data_hash) do
     pub_key =
@@ -108,22 +339,25 @@ defmodule Wax.AttestationStatementFormat.Packed do
 
     digest = Wax.CoseKey.to_erlang_digest(%{3 => att_stmt["alg"]})
 
-    Logger.debug("#{__MODULE__}: verifying signature with public key #{inspect(pub_key)} " <>
-      "(digest: #{inspect(digest)})")
+    Logger.debug(
+      "#{__MODULE__}: verifying signature with public key #{inspect(pub_key)} " <>
+        "(digest: #{inspect(digest)})"
+    )
 
-    if :public_key.verify(auth_data.raw_bytes <> client_data_hash,
-                          digest,
-                          att_stmt["sig"],
-                          pub_key)
-    do
+    if :public_key.verify(
+         auth_data.raw_bytes <> client_data_hash,
+         digest,
+         att_stmt["sig"],
+         pub_key
+       ) do
       :ok
     else
       {:error, :attestation_packed_invalid_signature}
     end
   end
 
-  @spec valid_self_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash())
-    :: :ok | {:error, any()}
+  @spec valid_self_signature?(map(), Wax.AuthenticatorData.t(), Wax.ClientData.hash()) ::
+          :ok | {:error, any()}
 
   defp valid_self_signature?(att_stmt, auth_data, client_data_hash) do
     Wax.CoseKey.verify(
@@ -151,8 +385,8 @@ defmodule Wax.AttestationStatementFormat.Packed do
   end
 
   @spec valid_attestation_certificate?(binary(), Wax.AuthenticatorData.t()) ::
-  :ok
-  | {:error, any()}
+          :ok
+          | {:error, any()}
 
   defp valid_attestation_certificate?(cert_der, auth_data) do
     cert = X509.Certificate.from_der!(cert_der)
@@ -169,13 +403,12 @@ defmodule Wax.AttestationStatementFormat.Packed do
     [subject_ou] = X509.RDNSequence.get_attr(subject, "OU")
     [subject_cn] = X509.RDNSequence.get_attr(subject, "CN")
 
-    if Wax.Utils.Certificate.version(cert) == :v3
-      and subject_c in @iso_3166_codes
-      and is_binary(subject_o) and subject_o != ""
-      and subject_ou == "Authenticator Attestation"
-      and is_binary(subject_cn) and subject_cn != ""
-      and Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false
-    do
+    if Wax.Utils.Certificate.version(cert) == :v3 and
+         subject_c in @iso_3166_codes and
+         is_binary(subject_o) and subject_o != "" and
+         subject_ou == "Authenticator Attestation" and
+         is_binary(subject_cn) and subject_cn != "" and
+         Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false do
       # checking if oid of id-fido-gen-ce-aaguid is present and, if so, aaguid
       case X509.Certificate.extension(cert, {1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}) do
         # the <<4, 16>> 2 bytes are the tag for ASN octet string (aaguid is embedded twice)
@@ -214,25 +447,26 @@ defmodule Wax.AttestationStatementFormat.Packed do
   end
 
   defp attestation_path_valid?(
-    der_list,
-    %Wax.Challenge{verify_trust_root: true},
-    metadata_statement
-  ) do
+         der_list,
+         %Wax.Challenge{verify_trust_root: true},
+         metadata_statement
+       ) do
     if Enum.any?(
-      metadata_statement["metadataStatement"]["attestationRootCertificates"],
-      fn arc ->
-        case :public_key.pkix_path_validation(arc,
-                                              [arc | Enum.reverse(der_list)],
-                                              [])
-        do
-          {:ok, _} ->
-            true
+         metadata_statement["metadataStatement"]["attestationRootCertificates"],
+         fn arc ->
+           case :public_key.pkix_path_validation(
+                  arc,
+                  [arc | Enum.reverse(der_list)],
+                  []
+                ) do
+             {:ok, _} ->
+               true
 
-          {:error, _} ->
-            false
-        end
-      end
-    ) do
+             {:error, _} ->
+               false
+           end
+         end
+       ) do
       :ok
     else
       {:error, :attestation_packed_no_attestation_root_certificate_found}

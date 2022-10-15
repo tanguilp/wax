@@ -19,7 +19,7 @@ defmodule Wax.CoseKey do
     -36 => "ES512",
     -35 => "ES384",
     -8 => "EdDSA",
-    -7 => "ES256",
+    -7 => "ES256"
   }
 
   @pss_algs [-39, -38, -37]
@@ -82,8 +82,8 @@ defmodule Wax.CoseKey do
     end
   end
 
-  def verify(msg, %{@alg => alg} = cose_key, sig) when alg in unquote(Map.keys(@cose_alg_string))
-  do
+  def verify(msg, %{@alg => alg} = cose_key, sig)
+      when alg in unquote(Map.keys(@cose_alg_string)) do
     key = to_erlang_public_key(cose_key)
 
     digest = to_erlang_digest(cose_key)
@@ -142,7 +142,9 @@ defmodule Wax.CoseKey do
   def to_erlang_digest(%{@alg => -37}), do: :sha256
   def to_erlang_digest(%{@alg => -36}), do: :sha512
   def to_erlang_digest(%{@alg => -35}), do: :sha384
-  def to_erlang_digest(%{@alg => -8, -1 => 6}), do: :sha256   #ed25519
-  def to_erlang_digest(%{@alg => -8, -1 => 7}), do: :sha3_256 #ed448
+  # ed25519
+  def to_erlang_digest(%{@alg => -8, -1 => 6}), do: :sha256
+  # ed448
+  def to_erlang_digest(%{@alg => -8, -1 => 7}), do: :sha3_256
   def to_erlang_digest(%{@alg => -7}), do: :sha256
 end

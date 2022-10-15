@@ -8,9 +8,9 @@ defmodule Wax.ClientData do
     ]
 
     @type t :: %__MODULE__{
-      status: String.t(),
-      id: String.t()
-    }
+            status: String.t(),
+            id: String.t()
+          }
   end
 
   @enforce_keys [:type, :challenge, :origin]
@@ -23,11 +23,11 @@ defmodule Wax.ClientData do
   ]
 
   @type t :: %__MODULE__{
-    type: :create | :get,
-    challenge: binary(),
-    origin: String.t(),
-    token_binding: TokenBinding.t()
-  }
+          type: :create | :get,
+          challenge: binary(),
+          origin: String.t(),
+          token_binding: TokenBinding.t()
+        }
 
   @type hash :: binary()
 
@@ -45,8 +45,7 @@ defmodule Wax.ClientData do
 
   def parse_raw_json(client_data_json_raw) do
     with {:ok, client_data_map} <- Jason.decode(client_data_json_raw),
-         {:ok, maybe_token_binding} <- parse_token_binding(client_data_map["tokenBinding"])
-    do
+         {:ok, maybe_token_binding} <- parse_token_binding(client_data_map["tokenBinding"]) do
       type =
         case client_data_map["type"] do
           "webauthn.create" ->
@@ -56,12 +55,13 @@ defmodule Wax.ClientData do
             :get
         end
 
-      {:ok, %__MODULE__{
-        type: type,
-        challenge: Base.url_decode64!(client_data_map["challenge"], padding: false),
-        origin: client_data_map["origin"],
-        token_binding: maybe_token_binding
-        }}
+      {:ok,
+       %__MODULE__{
+         type: type,
+         challenge: Base.url_decode64!(client_data_map["challenge"], padding: false),
+         origin: client_data_map["origin"],
+         token_binding: maybe_token_binding
+       }}
     else
       {:error, %Jason.DecodeError{}} ->
         {:error, :client_data_json_parse_error}
@@ -76,9 +76,8 @@ defmodule Wax.ClientData do
     {:ok, nil}
   end
 
-  defp parse_token_binding(
-    %{"status" => status} = token_binding)when status in ["supported", "not-supported"]
-  do
+  defp parse_token_binding(%{"status" => status} = token_binding)
+       when status in ["supported", "not-supported"] do
     {:ok, %TokenBinding{status: status, id: token_binding["id"]}}
   end
 

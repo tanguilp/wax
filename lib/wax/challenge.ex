@@ -30,22 +30,23 @@ defmodule Wax.Challenge do
   ]
 
   @type t :: %__MODULE__{
-    type: :attestation | :authentication,
-    attestation: String.t(),
-    bytes: binary(),
-    origin: String.t(),
-    rp_id: String.t(),
-    user_verification: String.t(),
-    token_binding_status: any(),
-    allow_credentials: [binary()],
-    trusted_attestation_types: [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
-    verify_trust_root: boolean(),
-    acceptable_authenticator_statuses: [String.t()],
-    issued_at: integer(),
-    timeout: non_neg_integer(),
-    android_key_allow_software_enforcement: boolean(),
-    silent_authentication_enabled: boolean()
-  }
+          type: :attestation | :authentication,
+          attestation: String.t(),
+          bytes: binary(),
+          origin: String.t(),
+          rp_id: String.t(),
+          user_verification: String.t(),
+          token_binding_status: any(),
+          allow_credentials: [binary()],
+          trusted_attestation_types:
+            [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
+          verify_trust_root: boolean(),
+          acceptable_authenticator_statuses: [String.t()],
+          issued_at: integer(),
+          timeout: non_neg_integer(),
+          android_key_allow_software_enforcement: boolean(),
+          silent_authentication_enabled: boolean()
+        }
 
   @doc false
 

@@ -8,12 +8,12 @@ defmodule Wax.Attestation do
   The attestation type
   """
   @type type ::
-    :basic
-    | :self
-    | :attca
-    | :ecdaa
-    | :uncertain
-    | :none
+          :basic
+          | :self
+          | :attca
+          | :ecdaa
+          | :uncertain
+          | :none
 
   @typedoc """
   The attestation path
@@ -21,21 +21,19 @@ defmodule Wax.Attestation do
   @type trust_path :: [binary()] | binary() | nil
 
   @type result ::
-  {__MODULE__.type(), __MODULE__.trust_path() | nil, Wax.Metadata.statement() | nil}
+          {__MODULE__.type(), __MODULE__.trust_path() | nil, Wax.Metadata.statement() | nil}
 
   @type attestation_statement_format_verify_fun ::
-  (
-    Wax.Attestation.statement(),
-    Wax.AuthenticatorData.t(),
-    Wax.ClientData.hash(),
-    Wax.Challenge.t() ->
-      {:ok, __MODULE__.result()} | {:error, any()}
-  )
+          (Wax.Attestation.statement(),
+           Wax.AuthenticatorData.t(),
+           Wax.ClientData.hash(),
+           Wax.Challenge.t() ->
+             {:ok, __MODULE__.result()} | {:error, any()})
 
   @doc false
 
   @spec statement_verify_fun(binary()) ::
-    {:ok, attestation_statement_format_verify_fun} | {:error, any()}
+          {:ok, attestation_statement_format_verify_fun} | {:error, any()}
 
   def statement_verify_fun("none") do
     {:ok, &Wax.AttestationStatementFormat.None.verify/4}

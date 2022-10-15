@@ -38,7 +38,8 @@ defmodule Wax.Utils.JWS do
       |> Base.url_decode64!(padding: false)
       |> maybe_encoded_sig(header["alg"])
 
-    with {:ok, _} <- :public_key.pkix_path_validation(root_cert_der, Enum.reverse(cert_chain), []),
+    with {:ok, _} <-
+           :public_key.pkix_path_validation(root_cert_der, Enum.reverse(cert_chain), []),
          true <- :public_key.verify(message, digest_alg, sig, public_key) do
       payload_b64
       |> Base.url_decode64!(padding: false)
@@ -96,5 +97,5 @@ defmodule Wax.Utils.JWS do
   defp digest_alg("ES256"), do: :sha256
   defp digest_alg("ES384"), do: :sha384
   defp digest_alg("ES512"), do: :sha512
-  defp digest_alg(_), do: raise "jws unsupported digest alg"
+  defp digest_alg(_), do: raise("jws unsupported digest alg")
 end

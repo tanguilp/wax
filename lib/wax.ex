@@ -95,17 +95,17 @@ defmodule Wax do
   @type opts :: [opt()]
 
   @type opt ::
-  {:attestation, String.t()}
-  | {:origin, String.t()}
-  | {:rp_id, String.t() | :auto}
-  | {:user_verification, String.t()}
-  | {:trusted_attestation_types, [Wax.Attestation.type()]}
-  | {:verify_trust_root, boolean()}
-  | {:acceptable_authenticator_statuses, [String.t()]}
-  | {:issued_at, integer()}
-  | {:timeout, non_neg_integer()}
-  | {:android_key_allow_software_enforcement, boolean()}
-  | {:silent_authentication_enabled, boolean()}
+          {:attestation, String.t()}
+          | {:origin, String.t()}
+          | {:rp_id, String.t() | :auto}
+          | {:user_verification, String.t()}
+          | {:trusted_attestation_types, [Wax.Attestation.type()]}
+          | {:verify_trust_root, boolean()}
+          | {:acceptable_authenticator_statuses, [String.t()]}
+          | {:issued_at, integer()}
+          | {:timeout, non_neg_integer()}
+          | {:android_key_allow_software_enforcement, boolean()}
+          | {:silent_authentication_enabled, boolean()}
 
   @spec set_opts(opts()) :: opts()
   defp set_opts(opts) do
@@ -152,9 +152,9 @@ defmodule Wax do
       end
 
     if opts[:user_verification] &&
-      opts[:user_verification] not in ["discouraged", "preferred", "required"] do
+         opts[:user_verification] not in ["discouraged", "preferred", "required"] do
       raise "Invalid `:user_verification` parameter, must be one of: " <>
-        "\"discouraged\", \"preferred\", \"required\""
+              "\"discouraged\", \"preferred\", \"required\""
     end
 
     [
@@ -163,31 +163,41 @@ defmodule Wax do
       origin: origin,
       rp_id: rp_id,
       user_verification:
-        opts[:user_verification]
-        || Application.get_env(:wax_, :user_verification, "preferred"),
+        opts[:user_verification] ||
+          Application.get_env(:wax_, :user_verification, "preferred"),
       trusted_attestation_types:
-        opts[:trusted_attestation_types] || Application.get_env(
-          :wax_,
-          :trusted_attestation_types,
-          [:none, :basic, :uncertain, :attca, :self]
-        ),
+        opts[:trusted_attestation_types] ||
+          Application.get_env(
+            :wax_,
+            :trusted_attestation_types,
+            [:none, :basic, :uncertain, :attca, :self]
+          ),
       verify_trust_root:
         opts[:verify_trust_root] || Application.get_env(:wax_, :verify_trust_root, true),
       acceptable_authenticator_statuses:
-        opts[:acceptable_authenticator_statuses] || Application.get_env(
-          :wax_,
-          :acceptable_authenticator_statuses,
-          ["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]
-        ),
+        opts[:acceptable_authenticator_statuses] ||
+          Application.get_env(
+            :wax_,
+            :acceptable_authenticator_statuses,
+            [
+              "FIDO_CERTIFIED",
+              "FIDO_CERTIFIED_L1",
+              "FIDO_CERTIFIED_L1plus",
+              "FIDO_CERTIFIED_L2",
+              "FIDO_CERTIFIED_L2plus",
+              "FIDO_CERTIFIED_L3",
+              "FIDO_CERTIFIED_L3plus"
+            ]
+          ),
       issued_at: :erlang.monotonic_time(:second),
       timeout: opts[:timeout] || Application.get_env(:wax_, :timeout, 60 * 20),
       android_key_allow_software_enforcement:
-        opts[:android_key_allow_software_enforcement]
-        || Application.get_env(:wax_, :android_key_allow_software_enforcement)
-        || false,
+        opts[:android_key_allow_software_enforcement] ||
+          Application.get_env(:wax_, :android_key_allow_software_enforcement) ||
+          false,
       silent_authentication_enabled:
-        opts[:silent_authentication_enabled]
-        || Application.get_env(:wax_, :silent_authentication_enabled, false)
+        opts[:silent_authentication_enabled] ||
+          Application.get_env(:wax_, :silent_authentication_enabled, false)
     ]
   end
 
@@ -294,11 +304,10 @@ defmodule Wax do
   2. Store the new tuple (credential id, cose key) for the user
   """
 
-  @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t())
-  :: {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, atom()}
+  @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t()) ::
+          {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, atom()}
 
   def register(attestation_object_cbor, client_data_json_raw, challenge) do
-
     with :ok <- not_expired?(challenge),
          {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
          :ok <- type_create?(client_data),
@@ -311,16 +320,16 @@ defmodule Wax do
          :ok <- valid_rp_id?(auth_data, challenge),
          :ok <- user_present_flag_set?(auth_data, challenge),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
-         {:ok, valid_attestation_statement_format?}
-           <- Wax.Attestation.statement_verify_fun(fmt),
-         {:ok, attestation_result_data} <- valid_attestation_statement_format?.(
-           att_stmt,
-           auth_data,
-           client_data_hash,
-           challenge
-         ),
-         :ok <- attestation_trustworthy?(attestation_result_data, challenge)
-    do
+         {:ok, valid_attestation_statement_format?} <-
+           Wax.Attestation.statement_verify_fun(fmt),
+         {:ok, attestation_result_data} <-
+           valid_attestation_statement_format?.(
+             att_stmt,
+             auth_data,
+             client_data_hash,
+             challenge
+           ),
+         :ok <- attestation_trustworthy?(attestation_result_data, challenge) do
       {:ok, {auth_data, attestation_result_data}}
     end
   end
@@ -411,8 +420,8 @@ defmodule Wax do
   ```
   """
 
-  @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts())
-    :: Wax.Challenge.t()
+  @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts()) ::
+          Wax.Challenge.t()
 
   def new_authentication_challenge(allow_credentials, opts) do
     opts = set_opts(Keyword.put(opts, :type, :authentication))
@@ -444,19 +453,21 @@ defmodule Wax do
   [7.2. Verifying an Authentication Assertion](https://www.w3.org/TR/webauthn-1/#verifying-assertion)
   for more details.
   """
-  @spec authenticate(Wax.CredentialId.t(),
-                     binary(),
-                     binary(),
-                     Wax.ClientData.raw_string(),
-                     Wax.Challenge.t()
-  ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, atom()}
+  @spec authenticate(
+          Wax.CredentialId.t(),
+          binary(),
+          binary(),
+          Wax.ClientData.raw_string(),
+          Wax.Challenge.t()
+        ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, atom()}
 
-  def authenticate(credential_id,
-                   auth_data_bin,
-                   sig,
-                   client_data_json_raw,
-                   challenge)
-  do
+  def authenticate(
+        credential_id,
+        auth_data_bin,
+        sig,
+        client_data_json_raw,
+        challenge
+      ) do
     with :ok <- not_expired?(challenge),
          {:ok, cose_key} <- cose_key_from_credential_id(credential_id, challenge),
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
@@ -468,8 +479,7 @@ defmodule Wax do
          :ok <- user_present_flag_set?(auth_data, challenge),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
          client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
-         :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig)
-    do
+         :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig) do
       {:ok, auth_data}
     end
   end
@@ -535,13 +545,13 @@ defmodule Wax do
   end
 
   @spec user_present_flag_set?(
-    Wax.AuthenticatorData.t(),
-    Wax.Challenge.t()
-  ) :: :ok | {:error, any()}
+          Wax.AuthenticatorData.t(),
+          Wax.Challenge.t()
+        ) :: :ok | {:error, any()}
   defp user_present_flag_set?(
-    _auth_data,
-    %Wax.Challenge{type: :authentication, silent_authentication_enabled: true})
-  do
+         _auth_data,
+         %Wax.Challenge{type: :authentication, silent_authentication_enabled: true}
+       ) do
     :ok
   end
 
@@ -553,8 +563,8 @@ defmodule Wax do
     end
   end
 
-  @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(), Wax.Challenge.t())
-    :: :ok | {:error, atom()}
+  @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(), Wax.Challenge.t()) ::
+          :ok | {:error, atom()}
   defp maybe_user_verified_flag_set?(auth_data, challenge) do
     case challenge.user_verification do
       "required" ->
@@ -569,11 +579,10 @@ defmodule Wax do
     end
   end
 
-  @spec attestation_trustworthy?(Wax.Attestation.result(), Wax.Challenge.t())
-    :: :ok | {:error, any()}
+  @spec attestation_trustworthy?(Wax.Attestation.result(), Wax.Challenge.t()) ::
+          :ok | {:error, any()}
 
-  defp attestation_trustworthy?({type, _, _}, %Wax.Challenge{trusted_attestation_types: tatl})
-  do
+  defp attestation_trustworthy?({type, _, _}, %Wax.Challenge{trusted_attestation_types: tatl}) do
     if type in tatl do
       :ok
     else
@@ -581,8 +590,8 @@ defmodule Wax do
     end
   end
 
-  @spec cose_key_from_credential_id(Wax.CredentialId.t(), Wax.Challenge.t())
-    :: {:ok, Wax.CoseKey.t()} | {:error, any()}
+  @spec cose_key_from_credential_id(Wax.CredentialId.t(), Wax.Challenge.t()) ::
+          {:ok, Wax.CoseKey.t()} | {:error, any()}
 
   defp cose_key_from_credential_id(credential_id, challenge) do
     case List.keyfind(challenge.allow_credentials, credential_id, 0) do

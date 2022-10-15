@@ -9,7 +9,7 @@ defmodule Wax.MixProject do
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      compilers: Mix.compilers ++ [:asn],
+      compilers: Mix.compilers() ++ [:asn],
       dialyzer: [plt_add_apps: [:mix]],
       docs: [
         main: "readme",
