@@ -269,10 +269,10 @@ defmodule Wax.AttestationStatementFormat.Packed do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
          :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
-         {:ok, metadata_statement} <-
-           Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge),
-         :ok <- attestation_path_valid?(att_stmt["x5c"], challenge, metadata_statement) do
-      {:ok, {attestation_type(metadata_statement), att_stmt["x5c"], metadata_statement}}
+         {:ok, maybe_metadata_statement} <-
+           attestation_path_valid?(att_stmt["x5c"], challenge, auth_data) do
+      {:ok,
+       {attestation_type(maybe_metadata_statement), att_stmt["x5c"], maybe_metadata_statement}}
     end
   end
 
@@ -408,6 +408,10 @@ defmodule Wax.AttestationStatementFormat.Packed do
       {:error, :attestation_packed_invalid_attestation_subject_field}
   end
 
+  defp attestation_type(nil) do
+    :uncertain
+  end
+
   defp attestation_type(metadata_statement) do
     attestation_types = metadata_statement["metadataStatement"]["attestationTypes"]
 
@@ -425,32 +429,38 @@ defmodule Wax.AttestationStatementFormat.Packed do
 
   defp attestation_path_valid?(
          der_list,
-         %Wax.Challenge{verify_trust_root: true},
-         metadata_statement
+         %Wax.Challenge{verify_trust_root: true} = challenge,
+         auth_data
        ) do
-    if Enum.any?(
-         metadata_statement["metadataStatement"]["attestationRootCertificates"],
-         fn arc ->
-           case :public_key.pkix_path_validation(
-                  arc,
-                  [arc | Enum.reverse(der_list)],
-                  []
-                ) do
-             {:ok, _} ->
-               true
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+      {:ok, metadata_statement} ->
+        if Enum.any?(
+             metadata_statement["metadataStatement"]["attestationRootCertificates"],
+             fn arc ->
+               case :public_key.pkix_path_validation(
+                      arc,
+                      [arc | Enum.reverse(der_list)],
+                      []
+                    ) do
+                 {:ok, _} ->
+                   true
 
-             {:error, _} ->
-               false
-           end
-         end
-       ) do
-      :ok
-    else
-      {:error, :attestation_packed_no_attestation_root_certificate_found}
+                 {:error, _} ->
+                   false
+               end
+             end
+           ) do
+          {:ok, metadata_statement}
+        else
+          {:error, :attestation_packed_no_attestation_root_certificate_found}
+        end
+
+      {:error, _} = error ->
+        error
     end
   end
 
   defp attestation_path_valid?(_, %Wax.Challenge{verify_trust_root: false}, _) do
-    :ok
+    {:ok, nil}
   end
 end
