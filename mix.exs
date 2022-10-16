@@ -22,16 +22,16 @@ defmodule Wax.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :inets],
       mod: {Wax.Application, []}
     ]
   end
 
   defp deps do
     [
-      {:cbor, "~> 1.0.0"},
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:cbor, "~> 1.0"},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:jason, "~> 1.1"},
       {:x509, "~> 0.8"}
     ]
