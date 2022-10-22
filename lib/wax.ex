@@ -310,20 +310,13 @@ defmodule Wax do
          :ok <- valid_origin?(client_data, challenge),
          client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
          {:ok, att_data, _} <- Utils.CBOR.decode(attestation_object_cbor),
-         %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt} = att_data,
+         %{"fmt" => att_fmt, "authData" => auth_data_bin, "attStmt" => att_stmt} = att_data,
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
          :ok <- valid_rp_id?(auth_data, challenge),
          :ok <- user_present_flag_set?(auth_data, challenge),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
-         {:ok, valid_attestation_statement_format?} <-
-           Wax.Attestation.statement_verify_fun(fmt),
          {:ok, attestation_result_data} <-
-           valid_attestation_statement_format?.(
-             att_stmt,
-             auth_data,
-             client_data_hash,
-             challenge
-           ),
+           Wax.Attestation.verify(att_stmt, att_fmt, auth_data, client_data_hash, challenge),
          :ok <- attestation_trustworthy?(attestation_result_data, challenge) do
       {:ok, {auth_data, attestation_result_data}}
     end
