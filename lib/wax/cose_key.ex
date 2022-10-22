@@ -67,7 +67,7 @@ defmodule Wax.CoseKey do
   Use `supported_algs/0` to determine supported algorithms.
   """
 
-  @spec verify(message :: binary(), t(), signature :: binary()) :: :ok | {:error, atom()}
+  @spec verify(message :: binary(), t(), signature :: binary()) :: :ok | {:error, Exception.t()}
   def verify(msg, %{@alg => alg} = cose_key, sig) when alg in @pss_algs do
     # Use PSS padding; requires workaround for https://bugs.erlang.org/browse/ERL-878
     {:RSAPublicKey, n, e} = to_erlang_public_key(cose_key)
@@ -77,7 +77,7 @@ defmodule Wax.CoseKey do
     if :crypto.verify(:rsa, digest, msg, sig, [e, n], rsa_padding: :rsa_pkcs1_pss_padding) do
       :ok
     else
-      {:error, :invalid_signature}
+      {:error, %Wax.InvalidSignatureError{}}
     end
   end
 
@@ -90,12 +90,12 @@ defmodule Wax.CoseKey do
     if :public_key.verify(msg, digest, sig, key) do
       :ok
     else
-      {:error, :invalid_signature}
+      {:error, %Wax.InvalidSignatureError{}}
     end
   end
 
   def verify(_, _, _) do
-    {:error, :unsupported_signature_algorithm}
+    {:error, %Wax.UnsupportedSignatureAlgorithmError{}}
   end
 
   @doc false

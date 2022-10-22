@@ -90,7 +90,7 @@ defmodule WaxTest do
       |> CBOR.encode()
       |> :erlang.iolist_to_binary()
 
-    assert {:error, :attestation_packed_invalid_signature} ==
+    assert {:error, %Wax.AttestationVerificationError{}} =
              Wax.register(attestation_object, client_data_json, challenge)
   end
 
@@ -138,7 +138,7 @@ defmodule WaxTest do
 
     # test data doesn't have a valid root attestation in FIDO2 MDS and disabling it through
     # the `verify_trust` option works only for `packed` and `u2f` attestation formats
-    assert {:error, :attestation_tpm_invalid_certificate} ==
+    assert {:error, %Wax.AttestationVerificationError{}} =
              Wax.register(attestation_object, client_data_json, challenge)
   end
 
@@ -191,7 +191,7 @@ defmodule WaxTest do
     |> DateTime.to_unix()
     |> Wax.Utils.Timestamp.TimeTravel.set_timestamp()
 
-    assert {:error, :attestation_tpm_invalid_signature} ==
+    assert {:error, %Wax.AttestationVerificationError{}} =
              Wax.register(attestation_object, client_data_json, challenge)
   end
 
@@ -320,7 +320,7 @@ defmodule WaxTest do
       |> CBOR.encode()
       |> :erlang.iolist_to_binary()
 
-    assert {:error, :attestation_fidou2f_invalid_signature} ==
+    assert {:error, %Wax.AttestationVerificationError{}} =
              Wax.register(attestation_object, client_data_json, challenge)
   end
 
@@ -485,7 +485,7 @@ defmodule WaxTest do
         "MEQCIHHZ5/2J9enVkAYKFcmNCAxcFz7Bs/A2f8THzhtCS4PqAiAxZXMONoQrnRQviYWn4wqGwQZr19ukNltjH88SIn9k2Q=="
       )
 
-    assert {:error, :invalid_signature} ==
+    assert {:error, %Wax.InvalidSignatureError{}} ==
              Wax.authenticate(raw_id, auth_data, sig, client_data_json, challenge)
   end
 end

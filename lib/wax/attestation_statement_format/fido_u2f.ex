@@ -25,7 +25,11 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   end
 
   def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
-    {:error, :invalid_attestation_conveyance_preference}
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :fido_u2f,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 
   defp valid_cbor?(att_stmt) do
@@ -35,7 +39,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
          length(Map.keys(att_stmt)) == 2 do
       :ok
     else
-      {:error, :attestation_fidou2f_invalid_cbor}
+      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_cbor}}
     end
   end
 
@@ -50,11 +54,15 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
              elem(pub_key, 1) == {:namedCurve, {1, 2, 840, 10045, 3, 1, 7}} do
           {:ok, pub_key}
         else
-          {:error, :attestation_fidou2f_invalid_public_key_algorithm}
+          {:error,
+           %Wax.AttestationVerificationError{
+             type: :safetynet,
+             reason: :invalid_public_key_algorithm
+           }}
         end
 
       _ ->
-        {:error, :attestation_fidou2f_multiple_x5c}
+        {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :multiple_x5c}}
     end
   end
 
@@ -62,7 +70,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     if :binary.decode_unsigned(auth_data.attested_credential_data.aaguid) == 0 do
       :ok
     else
-      {:error, :attestation_fidou2f_non_nil_aaguid}
+      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :non_nil_aaguid}}
     end
   end
 
@@ -85,7 +93,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     if :public_key.verify(verification_data, :sha256, sig, pub_key) do
       :ok
     else
-      {:error, :attestation_fidou2f_invalid_signature}
+      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_signature}}
     end
   end
 

@@ -96,6 +96,6 @@ defmodule Wax.Attestation do
   end
 
   def verify(_, _, _, _, _) do
-    {:error, :unsupported_statement_format}
+    {:error, %Wax.UnsupportedAttestationFormatError{}}
   end
 end

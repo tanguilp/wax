@@ -41,7 +41,7 @@ defmodule Wax.ClientData do
 
   @doc false
 
-  @spec parse_raw_json(raw_string()) :: {:ok, t()} | {:error, any()}
+  @spec parse_raw_json(raw_string()) :: {:ok, t()} | {:error, Exception.t()}
   def parse_raw_json(client_data_json_raw) do
     with {:ok, client_data_map} <- Jason.decode(client_data_json_raw),
          {:ok, maybe_token_binding} <- parse_token_binding(client_data_map["tokenBinding"]) do
@@ -63,7 +63,7 @@ defmodule Wax.ClientData do
        }}
     else
       {:error, %Jason.DecodeError{}} ->
-        {:error, :client_data_json_parse_error}
+        {:error, %Wax.InvalidClientDataError{reason: :malformed_json}}
 
       error ->
         error
@@ -84,6 +84,6 @@ defmodule Wax.ClientData do
   end
 
   defp parse_token_binding(_) do
-    {:error, :client_data_invalid_token_binding_data}
+    {:error, %Wax.InvalidClientDataError{reason: :invalid_token_binding_data}}
   end
 end

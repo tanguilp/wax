@@ -130,11 +130,15 @@ defmodule Wax.AttestationStatementFormat.TPM do
         _client_data_hash,
         %Wax.Challenge{attestation: "direct"}
       ) do
-    {:error, :attestation_tpm_unsupported_ecdaa_signature}
+    {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :unsupported_ecdaa}}
   end
 
   def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
-    {:error, :invalid_attestation_conveyance_preference}
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :tpm,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 
   defp valid_cbor?(att_stmt) do
@@ -147,12 +151,14 @@ defmodule Wax.AttestationStatementFormat.TPM do
          length(Map.keys(att_stmt)) == 6 do
       :ok
     else
-      {:error, :attestation_tpm_invalid_cbor}
+      {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_cbor}}
     end
   end
 
   defp version_valid?(%{"ver" => "2.0"}), do: :ok
-  defp version_valid?(_), do: {:error, :attestation_tpm_invalid_version}
+
+  defp version_valid?(_),
+    do: {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_version}}
 
   defp parse_cert_info(<<
          0xFF544347::unsigned-big-integer-size(32),
@@ -183,7 +189,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
      }}
   end
 
-  defp parse_cert_info(_), do: {:error, :attestation_tpm_invalid_cert_info}
+  defp parse_cert_info(_),
+    do: {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_cert_info}}
 
   defp parse_pub_area(<<
          @tpm_alg_rsa::unsigned-big-integer-size(16),
@@ -249,7 +256,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
     pub_area
   end
 
-  defp parse_pub_area(_), do: {:error, :attestation_tpm_invalid_pub_area}
+  defp parse_pub_area(_),
+    do: {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_pub_area}}
 
   defp verify_public_key(pub_area, auth_data) do
     pub_area_erlang_public_key = to_erlang_public_key(pub_area)
@@ -260,7 +268,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     if pub_area_erlang_public_key == auth_data_erlang_public_key do
       :ok
     else
-      {:error, :attestation_tpm_public_key_mismatch}
+      {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :public_key_mismatch}}
     end
   end
 
@@ -284,7 +292,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
          cert_info[:attested_name_hash] == pub_area_hash do
       :ok
     else
-      {:error, :attestation_tpm_invalid_cert_info}
+      {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_cert_info}}
     end
   end
 
@@ -304,7 +312,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
     if :public_key.verify(cert_info, digest, sig, public_key) do
       :ok
     else
-      {:error, :attestation_tpm_invalid_signature}
+      {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_signature}}
     end
   end
 
@@ -331,14 +339,14 @@ defmodule Wax.AttestationStatementFormat.TPM do
           if aaguid == auth_data.attested_credential_data.aaguid do
             :ok
           else
-            {:error, :attestation_tpm_invalid_aik_cert}
+            {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_aik_cert}}
           end
 
         nil ->
           :ok
       end
     else
-      {:error, :attestation_tpm_invalid_certificate}
+      {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :invalid_certificate}}
     end
   end
 
@@ -388,7 +396,11 @@ defmodule Wax.AttestationStatementFormat.TPM do
        ) do
       :ok
     else
-      {:error, :attestation_tpm_no_attestation_root_certificate_found}
+      {:error,
+       %Wax.AttestationVerificationError{
+         type: :tpm,
+         reason: :attestation_root_certificate_not_found
+       }}
     end
   end
 

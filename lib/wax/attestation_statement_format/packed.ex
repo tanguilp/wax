@@ -277,7 +277,11 @@ defmodule Wax.AttestationStatementFormat.Packed do
   end
 
   def verify(%{"x5c" => _}, _auth_data, _client_data_hash, _challenge) do
-    {:error, :invalid_attestation_conveyance_preference}
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :packed,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 
   def verify(
@@ -286,7 +290,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
         _client_hash_data,
         %Wax.Challenge{attestation: "direct"}
       ) do
-    {:error, :attestation_packed_unimplemented}
+    {:error, %Wax.AttestationVerificationError{type: :packed, reason: :unsupported_ecdaa}}
   end
 
   # self-attestation case
@@ -309,7 +313,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
          length(Map.keys(att_stmt)) == 3 do
       :ok
     else
-      {:error, :attestation_packed_invalid_cbor}
+      {:error, %Wax.AttestationVerificationError{type: :packed, reason: :invalid_cbor}}
     end
   end
 
@@ -319,7 +323,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
          length(Map.keys(att_stmt)) == 2 do
       :ok
     else
-      {:error, :attestation_packed_invalid_cbor}
+      {:error, %Wax.AttestationVerificationError{type: :packed, reason: :invalid_cbor}}
     end
   end
 
@@ -340,7 +344,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
        ) do
       :ok
     else
-      {:error, :attestation_packed_invalid_signature}
+      {:error, %Wax.AttestationVerificationError{type: :packed, reason: :invalid_signature}}
     end
   end
 
@@ -354,8 +358,8 @@ defmodule Wax.AttestationStatementFormat.Packed do
       :ok ->
         :ok
 
-      {:error, :invalid_signature} ->
-        {:error, :attestation_packed_invalid_signature}
+      {:error, %Wax.InvalidSignatureError{}} ->
+        {:error, %Wax.AttestationVerificationError{type: :packed, reason: :invalid_signature}}
     end
   end
 
@@ -394,18 +398,24 @@ defmodule Wax.AttestationStatementFormat.Packed do
           if aaguid == auth_data.attested_credential_data.aaguid do
             :ok
           else
-            {:error, :attestation_packed_invalid_attestation_cert}
+            {:error,
+             %Wax.AttestationVerificationError{type: :packed, reason: :invalid_attestation_cert}}
           end
 
         nil ->
           :ok
       end
     else
-      {:error, :attestation_packed_invalid_attestation_cert}
+      {:error,
+       %Wax.AttestationVerificationError{type: :packed, reason: :invalid_attestation_cert}}
     end
   rescue
     MatchError ->
-      {:error, :attestation_packed_invalid_attestation_subject_field}
+      {:error,
+       %Wax.AttestationVerificationError{
+         type: :packed,
+         reason: :invalid_attestation_subject_field
+       }}
   end
 
   defp attestation_type(nil) do
@@ -452,7 +462,11 @@ defmodule Wax.AttestationStatementFormat.Packed do
            ) do
           {:ok, metadata_statement}
         else
-          {:error, :attestation_packed_no_attestation_root_certificate_found}
+          {:error,
+           %Wax.AttestationVerificationError{
+             type: :packed,
+             reason: :no_attestation_root_certificate_found
+           }}
         end
 
       {:error, _} = error ->

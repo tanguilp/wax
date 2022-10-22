@@ -301,7 +301,7 @@ defmodule Wax do
   """
 
   @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t()) ::
-          {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, atom()}
+          {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, Exception.t()}
   def register(attestation_object_cbor, client_data_json_raw, challenge) do
     with :ok <- not_expired?(challenge),
          {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
@@ -446,7 +446,7 @@ defmodule Wax do
           binary(),
           Wax.ClientData.raw_string(),
           Wax.Challenge.t()
-        ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, atom()}
+        ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, Exception.t()}
   def authenticate(
         credential_id,
         auth_data_bin,
@@ -470,13 +470,13 @@ defmodule Wax do
     end
   end
 
-  defp not_expired?(%Wax.Challenge{issued_at: issued_at, timeout: timeout}) do
+  defp not_expired?(challenge) do
     current_time = :erlang.monotonic_time(:second)
 
-    if current_time - issued_at < timeout do
+    if current_time - challenge.issued_at < challenge.timeout do
       :ok
     else
-      {:error, :challenge_expired}
+      {:error, %Wax.ExpiredChallengeError{}}
     end
   end
 
@@ -484,7 +484,7 @@ defmodule Wax do
     if client_data.type == :create do
       :ok
     else
-      {:error, :attestation_invalid_type}
+      {:error, %Wax.InvalidClientDataError{reason: :create_type_expected}}
     end
   end
 
@@ -492,7 +492,7 @@ defmodule Wax do
     if client_data.type == :get do
       :ok
     else
-      {:error, :attestation_invalid_type}
+      {:error, %Wax.InvalidClientDataError{reason: :get_type_expected}}
     end
   end
 
@@ -500,7 +500,7 @@ defmodule Wax do
     if client_data.challenge == challenge.bytes do
       :ok
     else
-      {:error, :invalid_challenge}
+      {:error, %Wax.InvalidClientDataError{reason: :challenge_mismatch}}
     end
   end
 
@@ -508,7 +508,7 @@ defmodule Wax do
     if client_data.origin == challenge.origin do
       :ok
     else
-      {:error, :attestation_invalid_origin}
+      {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}}
     end
   end
 
@@ -516,7 +516,7 @@ defmodule Wax do
     if auth_data.rp_id_hash == :crypto.hash(:sha256, challenge.rp_id) do
       :ok
     else
-      {:error, :invalid_rp_id}
+      {:error, %Wax.InvalidClientDataError{reason: :rp_id_mismatch}}
     end
   end
 
@@ -531,7 +531,7 @@ defmodule Wax do
     if auth_data.flag_user_present == true do
       :ok
     else
-      {:error, :flag_user_present_not_set}
+      {:error, %Wax.InvalidClientDataError{reason: :flag_user_present_not_set}}
     end
   end
 
@@ -541,7 +541,7 @@ defmodule Wax do
         if auth_data.flag_user_verified do
           :ok
         else
-          {:error, :user_not_verified}
+          {:error, %Wax.InvalidClientDataError{reason: :user_not_verified}}
         end
 
       _ ->
@@ -549,11 +549,11 @@ defmodule Wax do
     end
   end
 
-  defp attestation_trustworthy?({type, _, _}, %Wax.Challenge{trusted_attestation_types: tatl}) do
-    if type in tatl do
+  defp attestation_trustworthy?({type, _, _}, challenge) do
+    if type in challenge.trusted_attestation_types do
       :ok
     else
-      {:error, :untrusted_attestation_type}
+      {:error, %Wax.UntrustedAttestationTypeError{type: type, challenge: challenge}}
     end
   end
 
@@ -563,7 +563,7 @@ defmodule Wax do
         {:ok, cose_key}
 
       _ ->
-        {:error, :incorrect_credential_id_for_user}
+        {:error, %Wax.InvalidClientDataError{reason: :credential_id_mismatch}}
     end
   end
 end

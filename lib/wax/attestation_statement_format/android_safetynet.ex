@@ -64,11 +64,15 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     end
   rescue
     _ ->
-      {:error, :attestation_safetynet_invalid_att_stmt}
+      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_att_stmt}}
   end
 
   def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
-    {:error, :invalid_attestation_conveyance_preference}
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :safetynet,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 
   defp valid_cbor?(att_stmt) do
@@ -78,7 +82,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
          length(Map.keys(att_stmt)) == 2 do
       :ok
     else
-      {:error, :attestation_safetynet_invalid_cbor}
+      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_cbor}}
     end
   end
 
@@ -102,7 +106,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
 
           do_verify_signature(jws, root_certificates)
         else
-          {:error, :attestation_safetynet_algs_dont_match}
+          {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :algs_mismatch}}
         end
 
       {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
@@ -131,7 +135,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   defp algs_match?(_, _), do: false
 
   defp do_verify_signature(_jws, []) do
-    {:error, :attestation_safetynet_invalid_jws_signature}
+    {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_jws_signature}}
   end
 
   defp do_verify_signature(jws, [root_cert_der | remaining_root_certs_der]) do
@@ -156,14 +160,16 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           :ok
 
         _ ->
-          {:error, :attestation_safetynet_invalid_version}
+          {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_version}}
       end
     else
-      {:error, :attestation_safetynet_invalid_ctsProfileMatch}
+      {:error,
+       %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_ctsProfileMatch}}
     end
   end
 
-  defp valid_safetynet_response?(_, _), do: {:error, :attestation_safetynet_invalid_payload}
+  defp valid_safetynet_response?(_, _),
+    do: {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_payload}}
 
   defp nonce_valid?(auth_data, client_data_hash, payload) do
     expected_nonce = Base.encode64(:crypto.hash(:sha256, auth_data.raw_bytes <> client_data_hash))
@@ -171,7 +177,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
     if payload["nonce"] == expected_nonce do
       :ok
     else
-      {:error, :attestation_safetynet_invalid_nonce}
+      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_nonce}}
     end
   end
 
@@ -188,7 +194,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
         :ok
 
       _ ->
-        {:error, :attestation_safetynet_invalid_hostname}
+        {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_hostname}}
     end
   end
 end

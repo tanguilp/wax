@@ -38,7 +38,7 @@ defmodule Wax.AuthenticatorData do
 
   @type credential_id :: binary()
 
-  @spec decode(binary()) :: {:ok, t()} | {:error, any()}
+  @spec decode(binary()) :: {:ok, t()} | {:error, Exception.t()}
   def decode(
         <<
           rp_id_hash::binary-size(32),
@@ -87,11 +87,11 @@ defmodule Wax.AuthenticatorData do
          raw_bytes: authenticator_data
        }}
     else
-      {:error, :authenticator_illegal_remaining_bytes}
+      {:error, %Wax.InvalidAuthenticatorDataError{}}
     end
   end
 
-  def decode(_), do: {:error, :invalid_auth_data}
+  def decode(_), do: {:error, %Wax.InvalidAuthenticatorDataError{}}
 
   defp to_bool(0), do: false
   defp to_bool(1), do: true

@@ -48,8 +48,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
          :ok <- validate_x5c_path(auth_data, cert_chain, challenge) do
       {:ok, {:basic, att_stmt["x5c"], nil}}
     else
+      {:error, :malformed} ->
+        {:error,
+         %Wax.AttestationVerificationError{type: :android_key, reason: :malformed_certificate}}
+
       {:error, {:bad_cert, _}} ->
-        {:error, :attestation_androidkey_path_validation_bad_cert}
+        {:error,
+         %Wax.AttestationVerificationError{type: :android_key, reason: :path_validation_bad_cert}}
 
       error ->
         error
@@ -57,7 +62,11 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   end
 
   def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
-    {:error, :invalid_attestation_conveyance_preference}
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :android_key,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 
   defp valid_cbor?(att_stmt) do
@@ -67,7 +76,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
          length(Map.keys(att_stmt)) == 3 do
       :ok
     else
-      {:error, :attestation_androidkey_invalid_cbor}
+      {:error, %Wax.AttestationVerificationError{type: :android_key, reason: :invalid_cbor}}
     end
   end
 
@@ -77,7 +86,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     if :public_key.verify(verification_data, :sha256, sig, public_key) do
       :ok
     else
-      {:error, :attestation_androidkey_invalid_signature}
+      {:error, %Wax.AttestationVerificationError{type: :android_key, reason: :invalid_signature}}
     end
   end
 
@@ -87,7 +96,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
     if Wax.CoseKey.to_erlang_public_key(pk) == X509.Certificate.public_key(first_cert) do
       :ok
     else
-      {:error, :attestation_androidkey_keys_mismatch}
+      {:error, %Wax.AttestationVerificationError{type: :android_key, reason: :key_mismatch}}
     end
   end
 
@@ -101,11 +110,13 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
            asn_v1_valid?(asn, client_data_hash, challenge) do
         :ok
       else
-        {:error, :attestation_androidkey_invalid_asn_attestation}
+        {:error,
+         %Wax.AttestationVerificationError{type: :android_key, reason: :_invalid_asn_attestation}}
       end
     rescue
       _ ->
-        {:error, :attestation_androidkey_malformed_asn1_record}
+        {:error,
+         %Wax.AttestationVerificationError{type: :android_key, reason: :_malformed_asn1_record}}
     end
   end
 
@@ -371,7 +382,8 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   end
 
   defp do_validate_x5c_path([], _) do
-    {:error, :attestation_androidkey_path_validation_failed}
+    {:error,
+     %Wax.AttestationVerificationError{type: :android_key, reason: :path_validation_failed}}
   end
 
   defp do_validate_x5c_path([root_cert_der | remaining_root_certs], cert_chain) do
