@@ -30,7 +30,8 @@ defmodule Wax.Metadata do
                               |> X509.Certificate.from_pem!()
                               |> X509.Certificate.to_der()
 
-  @persistent_term_key {__MODULE__, :mdsv3_metadata}
+  @mdsv3_key {__MODULE__, :mdsv3_metadata}
+  @local_key {__MODULE__, :local_metadata}
 
   @typedoc """
   A metadata statement
@@ -101,8 +102,8 @@ defmodule Wax.Metadata do
 
     aaguid_str = a <> "-" <> b <> "-" <> c <> "-" <> d <> "-" <> e
 
-    @persistent_term_key
-    |> :persistent_term.get([])
+    [:persistent_term.get(@mdsv3_key, []), :persistent_term.get(@local_key, [])]
+    |> List.flatten()
     |> Enum.find(fn
       %{"aaguid" => ^aaguid_str} ->
         true
@@ -119,8 +120,8 @@ defmodule Wax.Metadata do
 
     acki_str = Base.encode16(acki_bin, case: :lower)
 
-    @persistent_term_key
-    |> :persistent_term.get([])
+    [:persistent_term.get(@mdsv3_key, []), :persistent_term.get(@local_key, [])]
+    |> List.flatten()
     |> Enum.find(fn
       %{"attestationCertificateKeyIdentifiers" => ackis} ->
         acki_str in ackis
@@ -131,12 +132,18 @@ defmodule Wax.Metadata do
     |> check_metadata_validity_and_return(challenge)
   end
 
-  defp check_metadata_validity_and_return(%{} = metadata, challenge) do
+  # from MDSv3
+  defp check_metadata_validity_and_return(%{"statusReports" => _} = metadata, challenge) do
     if metadata["statusReports"]["status"] in challenge.acceptable_authenticator_statuses do
       {:ok, metadata["metadataStatement"]}
     else
       {:error, %AuthenticatorStatusNotAcceptable{status: metadata["statusReports"]["status"]}}
     end
+  end
+
+  # from local loaded file
+  defp check_metadata_validity_and_return(%{} = metadata, _challenge) do
+    {:ok, metadata}
   end
 
   defp check_metadata_validity_and_return(nil, _challenge) do
@@ -156,6 +163,7 @@ defmodule Wax.Metadata do
 
   @impl true
   def handle_continue(:update_metadata, state) do
+    load_from_dir()
     state = update_metadata(state)
 
     schedule_update()
@@ -175,13 +183,6 @@ defmodule Wax.Metadata do
     state = update_metadata(state)
 
     schedule_update()
-
-    {:noreply, state}
-  end
-
-  def handle_info(:update_from_file, state) do
-    # TODO: handle loading by file
-    # load_from_dir()
 
     {:noreply, state}
   end
@@ -252,7 +253,7 @@ defmodule Wax.Metadata do
     case Wax.Utils.JWS.verify_with_x5c(jws, @fido_alliance_root_cer_der) do
       {:ok, metadata} ->
         if metadata["no"] > state.version_number do
-          :persistent_term.put(@persistent_term_key, metadata["entries"])
+          :persistent_term.put(@mdsv3_key, metadata["entries"])
         end
 
         metadata["no"]
@@ -264,83 +265,31 @@ defmodule Wax.Metadata do
     end
   end
 
-  # @spec load_from_dir() :: any()
-  # defp load_from_dir() do
-  #  :ets.match_delete(:wax_metadata, {:_, :_, :_, :file})
+  @doc """
+  Forces reload of metadata statements from configured directory
+  """
+  @spec load_from_dir() :: [statement()]
+  def load_from_dir() do
+    files =
+      case Application.get_env(:wax_, :metadata_dir, nil) do
+        nil ->
+          []
 
-  #  files =
-  #    case Application.get_env(:wax_, :metadata_dir, nil) do
-  #      nil ->
-  #        []
+        app when is_atom(app) ->
+          app
+          |> :code.priv_dir()
+          |> List.to_string()
+          |> Kernel.<>("/fido2_metadata/*")
+          |> Path.wildcard()
 
-  #      app when is_atom(app) ->
-  #        app
-  #        |> :code.priv_dir()
-  #        |> List.to_string()
-  #        |> Kernel.<>("/fido2_metadata/*")
-  #        |> Path.wildcard()
+        path when is_binary(path) ->
+          Path.wildcard(path <> "/*")
+      end
 
-  #      path when is_binary(path) ->
-  #        Path.wildcard(path <> "/*")
-  #    end
+    statements = for file <- files, do: file |> File.read!() |> Jason.decode!()
 
-  #  Enum.each(
-  #    files,
-  #    fn file_path ->
-  #      with {:ok, file_content} <- File.read(file_path),
-  #           {:ok, parsed_json} <- Jason.decode(file_content),
-  #           {:ok, metadata_statement} <- Wax.Metadata.Statement.from_json(parsed_json)
-  #      do
-  #        save_metadata_statement(metadata_statement, :file, nil)
-  #      else
-  #        {:error, reason} ->
-  #          Logger.warn(
-  #            "Failed to load metadata statement from `#{file_path}` (reason: #{inspect(reason)})"
-  #          )
-  #      end
-  #    end
-  #  )
-  # end
+    :persistent_term.put(@local_key, statements)
 
-  # @spec save_metadata_statement(
-  #  Wax.Metadata.Statement.t(),
-  #  source :: atom(),
-  #  Wax.Metadata.TOCEntry.t() | nil
-  # ) :: any()
-  # defp save_metadata_statement(metadata_statement, source, maybe_toc_entry) do
-  #  desc = metadata_statement.description
-
-  #  case metadata_statement do
-  #    %Wax.Metadata.Statement{aaguid: aaguid} when is_binary(aaguid) ->
-  #      Logger.debug("Saving metadata for aaguid `#{aaguid}` (#{desc})")
-
-  #      :ets.insert(
-  #        :wax_metadata,
-  #        {{:aaguid, aaguid}, maybe_toc_entry, metadata_statement, source}
-  #      )
-
-  #    %Wax.Metadata.Statement{aaid: aaid} when is_binary(aaid) ->
-  #      Logger.debug("Saving metadata for aaid `#{aaid}` (#{desc})")
-
-  #      :ets.insert(
-  #        :wax_metadata,
-  #        {{:aaguid, aaid}, maybe_toc_entry, metadata_statement, source}
-  #      )
-
-  #    %Wax.Metadata.Statement{attestation_certificate_key_identifiers: acki_list} ->
-  #      Enum.each(
-  #        acki_list,
-  #        fn acki ->
-  #          Logger.debug(
-  #            "Saving metadata for attestation certificate key identifier `#{acki}` (#{desc})"
-  #          )
-
-  #          :ets.insert(
-  #            :wax_metadata,
-  #            {{:acki, acki}, maybe_toc_entry, metadata_statement, source}
-  #          )
-  #        end
-  #      )
-  #  end
-  # end
+    statements
+  end
 end
