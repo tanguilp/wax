@@ -20,7 +20,7 @@ defmodule Wax.AttestedCredentialData do
         }
 
   @doc false
-  @spec decode(binary()) :: {t(), binary()} | {:error, atom()}
+  @spec decode(binary()) :: {:ok, {t(), binary()}} | {:error, any()}
   def decode(<<
         aaguid::binary-size(16),
         credential_id_length::unsigned-big-integer-size(16),
@@ -28,14 +28,15 @@ defmodule Wax.AttestedCredentialData do
         rest::binary
       >>) do
     with {:ok, credential_public_key, extensions} <- Utils.CBOR.decode(rest) do
-      {
-        %__MODULE__{
-          aaguid: aaguid,
-          credential_id: credential_id,
-          credential_public_key: credential_public_key
-        },
-        extensions
-      }
+      {:ok,
+       {
+         %__MODULE__{
+           aaguid: aaguid,
+           credential_id: credential_id,
+           credential_public_key: credential_public_key
+         },
+         extensions
+       }}
     end
   end
 

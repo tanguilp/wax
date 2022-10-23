@@ -5,5 +5,5 @@ defmodule Wax.AttestationStatementFormat do
               Wax.ClientData.hash(),
               Wax.Challenge.t()
             ) ::
-              {:ok, Wax.Attestation.result()} | {:error, any()}
+              {:ok, Wax.Attestation.result()} | {:error, Exception.t()}
 end

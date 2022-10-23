@@ -57,23 +57,11 @@ defmodule Wax.AuthenticatorData do
     flag_attested_credential_data = to_bool(flag_attested_credential_data)
     flag_extension_data_included = to_bool(flag_extension_data_included)
 
-    {maybe_attested_credential_data, remaining_bytes} =
-      if flag_attested_credential_data do
-        Wax.AttestedCredentialData.decode(rest)
-      else
-        {nil, rest}
-      end
-
-    {extensions, remaining_bytes} =
-      if flag_extension_data_included do
-        {:ok, extensions, remaining_bytes} = Utils.CBOR.decode(remaining_bytes)
-
-        {extensions, remaining_bytes}
-      else
-        {nil, remaining_bytes}
-      end
-
-    if remaining_bytes == "" do
+    with {:ok, {maybe_attested_credential_data, remaining_bytes}} <-
+           attested_credential_data(rest, flag_attested_credential_data),
+         {:ok, maybe_extensions, remaining_bytes} <-
+           extensions(remaining_bytes, flag_extension_data_included),
+         :ok <- check_no_remaining_bytes(remaining_bytes) do
       {:ok,
        %__MODULE__{
          rp_id_hash: rp_id_hash,
@@ -83,15 +71,22 @@ defmodule Wax.AuthenticatorData do
          flag_extension_data_included: flag_extension_data_included,
          sign_count: sign_count,
          attested_credential_data: maybe_attested_credential_data,
-         extensions: extensions,
+         extensions: maybe_extensions,
          raw_bytes: authenticator_data
        }}
-    else
-      {:error, %Wax.InvalidAuthenticatorDataError{}}
     end
   end
 
   def decode(_), do: {:error, %Wax.InvalidAuthenticatorDataError{}}
+
+  defp attested_credential_data(bytes, true), do: Wax.AttestedCredentialData.decode(bytes)
+  defp attested_credential_data(bytes, false), do: {:ok, {nil, bytes}}
+
+  defp extensions(bytes, true), do: Utils.CBOR.decode(bytes)
+  defp extensions(bytes, false), do: {:ok, nil, bytes}
+
+  defp check_no_remaining_bytes(""), do: :ok
+  defp check_no_remaining_bytes(_), do: {:error, %Wax.InvalidAuthenticatorDataError{}}
 
   defp to_bool(0), do: false
   defp to_bool(1), do: true
