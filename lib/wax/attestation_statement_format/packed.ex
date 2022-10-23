@@ -423,7 +423,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
   end
 
   defp attestation_type(metadata_statement) do
-    attestation_types = metadata_statement["metadataStatement"]["attestationTypes"]
+    attestation_types = metadata_statement["attestationTypes"]
 
     cond do
       "basic_full" in attestation_types ->
@@ -445,7 +445,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
       {:ok, metadata_statement} ->
         if Enum.any?(
-             metadata_statement["metadataStatement"]["attestationRootCertificates"],
+             metadata_statement["attestationRootCertificates"],
              fn arc ->
                case :public_key.pkix_path_validation(
                       arc,

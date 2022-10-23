@@ -89,8 +89,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   defp verify_signature(jws, auth_data, challenge) do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
       {:ok, metadata_statement} ->
-        authentication_algorithms =
-          metadata_statement["metadataStatement"]["authenticationAlgorithms"]
+        authentication_algorithms = metadata_statement["authenticationAlgorithms"]
 
         [header_b64, _payload_b64, _sig_b64] = String.split(jws, ".")
 
@@ -101,8 +100,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           |> Map.get("alg")
 
         if Enum.any?(authentication_algorithms, &algs_match?(&1, jws_alg)) do
-          root_certificates =
-            metadata_statement["metadataStatement"]["attestationRootCertificates"]
+          root_certificates = metadata_statement["attestationRootCertificates"]
 
           do_verify_signature(jws, root_certificates)
         else

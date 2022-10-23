@@ -115,7 +115,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
   end
 
   defp determine_attestation_type(metadata_statement) do
-    attestation_types = metadata_statement["metadataStatement"]["attestationTypes"]
+    attestation_types = metadata_statement["attestationTypes"]
 
     cond do
       "basic_full" in attestation_types ->

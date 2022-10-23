@@ -378,7 +378,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
   defp attestation_path_valid?(der_list, metadata_statement) do
     if Enum.any?(
-         metadata_statement["metadataStatement"]["attestationRootCertificates"],
+         metadata_statement["attestationRootCertificates"],
          fn arc ->
            :public_key.pkix_path_validation(
              arc,
