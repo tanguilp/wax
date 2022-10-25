@@ -29,7 +29,7 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
         att_stmt,
         auth_data,
         client_data_hash,
-        _challenge
+        challenge
       ) do
     with :ok <- valid_cbor?(att_stmt),
          %{"x5c" => [att_cert_der | _]} = att_stmt,
@@ -37,7 +37,7 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
          :ok <- check_vertificate_validity(att_cert),
          :ok <- check_nonces_match(att_cert, auth_data, client_data_hash),
          :ok <- check_keys_match(auth_data, att_cert),
-         :ok <- check_certificate_path(att_stmt) do
+         :ok <- check_certificate_path(att_stmt, auth_data, challenge) do
       {:ok, {:anonca, att_stmt["x5c"], nil}}
     else
       {:error, :malformed} ->
@@ -88,15 +88,38 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
     end
   end
 
-  defp check_certificate_path(att_stmt) do
+  defp check_certificate_path(att_stmt, auth_data, challenge) do
     certs_der = Enum.reverse(att_stmt["x5c"])
 
-    case :public_key.pkix_path_validation(@apple_root_cert_der, certs_der, []) do
-      {:ok, _} ->
-        :ok
+    case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
+      {:ok, metadata_statement} ->
+        root_certs =
+          metadata_statement["attestationRootCertificates"] |> Enum.map(&Base.decode64!/1)
+
+        if Enum.any?(root_certs, &certificate_path_valid?([&1 | certs_der])) do
+          :ok
+        else
+          {:error,
+           %Wax.AttestationVerificationError{type: :apple, reason: :path_validation_failed}}
+        end
 
       {:error, _} ->
-        {:error, %Wax.AttestationVerificationError{type: :apple, reason: :path_validation_failed}}
+        if certificate_path_valid?([@apple_root_cert_der | certs_der]) do
+          :ok
+        else
+          {:error,
+           %Wax.AttestationVerificationError{type: :apple, reason: :path_validation_failed}}
+        end
+    end
+  end
+
+  defp certificate_path_valid?(chain) do
+    case :public_key.pkix_path_validation(hd(chain), chain, []) do
+      {:ok, _} ->
+        true
+
+      {:error, _} ->
+        false
     end
   end
 end

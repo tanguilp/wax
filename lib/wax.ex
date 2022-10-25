@@ -19,7 +19,7 @@ defmodule Wax do
   |`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | **Mandatory**. Example: `https://www.example.com` |
   |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
   |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `"preferred"`| |
-  |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
+  |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
   |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
   |`acceptable_authenticator_statuses`|`[String.t()]`|<ul style="margin:0"><li>registration</li></ul>|`["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]`| The `"UPDATE_AVAILABLE"` status is not whitelisted by default |
   |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
@@ -167,7 +167,7 @@ defmodule Wax do
           Application.get_env(
             :wax_,
             :trusted_attestation_types,
-            [:none, :basic, :uncertain, :attca, :self]
+            [:none, :basic, :uncertain, :attca, :anonca, :self]
           ),
       verify_trust_root:
         opts[:verify_trust_root] || Application.get_env(:wax_, :verify_trust_root, true),
