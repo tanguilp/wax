@@ -5,6 +5,6 @@ config :wax_,
   rp_id: :auto,
   update_metadata: true,
   allowed_attestation_types: [:basic, :uncertain, :attca, :self],
-  tesla_middlewares: [Tesla.Middleware.Logger]
+  metadata_dir: "metadata/metadata/metadataStatements/"
 
 # import_config "dev.secret.exs"

@@ -488,4 +488,50 @@ defmodule WaxTest do
     assert {:error, %Wax.InvalidSignatureError{}} ==
              Wax.authenticate(raw_id, auth_data, sig, client_data_json, challenge)
   end
+
+  test "valid apple attestation statement" do
+    # https://github.com/WebauthnWorks/webauthn-snippets/blob/main/attestation-samples/apple-anonymous.json
+    test_data = %{
+      rawId: "YZVmTA6TxoNglppCxfsiSHHWzbQ",
+      id: "YZVmTA6TxoNglppCxfsiSHHWzbQ",
+      response: %{
+        clientDataJSON:
+          "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiVi1RTFI4QXBCazlnVHNYUnBLWncxeWVYRlg2QW9IZHJXTnRXLWdBV1REZyIsIm9yaWdpbiI6Imh0dHBzOi8vd2ViYXV0aG53b3Jrcy5naXRodWIuaW8ifQ",
+        attestationObject:
+          "o2NmbXRlYXBwbGVnYXR0U3RtdKJjYWxnJmN4NWOCWQJHMIICQzCCAcmgAwIBAgIGAXagcCErMAoGCCqGSM49BAMCMEgxHDAaBgNVBAMME0FwcGxlIFdlYkF1dGhuIENBIDExEzARBgNVBAoMCkFwcGxlIEluYy4xEzARBgNVBAgMCkNhbGlmb3JuaWEwHhcNMjAxMjI1MTkwNDMxWhcNMjAxMjI4MTkwNDMxWjCBkTFJMEcGA1UEAwxANGJiNjY4ZjRkNTZlOTZmZjQwNTc0MThhOWFmZTNlNjJmNDlhOWEyNDUyOGMwNTU4ZTkxZDA2MGQ3NDJlMDQ2ZTEaMBgGA1UECwwRQUFBIENlcnRpZmljYXRpb24xEzARBgNVBAoMCkFwcGxlIEluYy4xEzARBgNVBAgMCkNhbGlmb3JuaWEwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR6JwnVMcs0V09NqnYLYqAQKGQLSFPjHShTIsuC0qBEOhfiABl9IGSwjn--Zez0StflHcn8KgxgWDBI8uU7OZlJo1UwUzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB_wQEAwIE8DAzBgkqhkiG92NkCAIEJjAkoSIEIFzbnZBzQEVbY3PmdStz_DaEU2AiFfrqu3wWXwutrAfMMAoGCCqGSM49BAMCA2gAMGUCMQCRuW8mwdBiWX50NpAbT_ArXRqu_R4U1nw1qoB9-fcBKG37bLJLSzUHH3eaDn9VpgMCMCluiKlZhwcRCMkIhpeowhZZimKJWwn6XWPSYakvstRyDH935BtMCASob93RiUpOTFkCODCCAjQwggG6oAMCAQICEFYlU5XHp_tA6-Io2CYIU7YwCgYIKoZIzj0EAwMwSzEfMB0GA1UEAwwWQXBwbGUgV2ViQXV0aG4gUm9vdCBDQTETMBEGA1UECgwKQXBwbGUgSW5jLjETMBEGA1UECAwKQ2FsaWZvcm5pYTAeFw0yMDAzMTgxODM4MDFaFw0zMDAzMTMwMDAwMDBaMEgxHDAaBgNVBAMME0FwcGxlIFdlYkF1dGhuIENBIDExEzARBgNVBAoMCkFwcGxlIEluYy4xEzARBgNVBAgMCkNhbGlmb3JuaWEwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASDLocvJhSRgQIlufX81rtjeLX1Xz_LBFvHNZk0df1UkETfm_4ZIRdlxpod2gULONRQg0AaQ0-yTREtVsPhz7_LmJH-wGlggb75bLx3yI3dr0alruHdUVta-quTvpwLJpGjZjBkMBIGA1UdEwEB_wQIMAYBAf8CAQAwHwYDVR0jBBgwFoAUJtdk2cV4wlpn0afeaxLQG2PxxtcwHQYDVR0OBBYEFOuugsT_oaxbUdTPJGEFAL5jvXeIMA4GA1UdDwEB_wQEAwIBBjAKBggqhkjOPQQDAwNoADBlAjEA3YsaNIGl-tnbtOdle4QeFEwnt1uHakGGwrFHV1Azcifv5VRFfvZIlQxjLlxIPnDBAjAsimBE3CAfz-Wbw00pMMFIeFHZYO1qdfHrSsq-OM0luJfQyAW-8Mf3iwelccboDgdoYXV0aERhdGFYmMx1DPn13vHz03OyEHQFPMYaJ0ZmXg850aiannHVUXFDRQAAAAAAAAAAAAAAAAAAAAAAAAAAABRhlWZMDpPGg2CWmkLF-yJIcdbNtKUBAgMmIAEhWCB6JwnVMcs0V09NqnYLYqAQKGQLSFPjHShTIsuC0qBEOiJYIBfiABl9IGSwjn--Zez0StflHcn8KgxgWDBI8uU7OZlJ"
+      }
+    }
+
+    test_client_data =
+      test_data[:response][:clientDataJSON]
+      |> Base.url_decode64!(padding: false)
+      |> Wax.ClientData.parse_raw_json()
+      |> elem(1)
+
+    challenge = %Wax.Challenge{
+      type: :attestation,
+      attestation: "direct",
+      bytes: Map.get(test_client_data, :challenge),
+      origin: Map.get(test_client_data, :origin),
+      rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
+      trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
+      verify_trust_root: true,
+      issued_at: :erlang.monotonic_time(:second),
+      timeout: 100,
+      silent_authentication_enabled: false
+    }
+
+    client_data_json = Base.url_decode64!(test_data[:response][:clientDataJSON], padding: false)
+
+    attestation_object =
+      Base.url_decode64!(test_data[:response][:attestationObject], padding: false)
+
+    ~N[2016-05-26 00:00:00]
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_unix()
+    |> Wax.Utils.Timestamp.TimeTravel.set_timestamp()
+
+    assert {:error, %Wax.AttestationVerificationError{reason: :path_validation_failed}} =
+             Wax.register(attestation_object, client_data_json, challenge)
+  end
 end

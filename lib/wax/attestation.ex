@@ -11,6 +11,7 @@ defmodule Wax.Attestation do
           :basic
           | :self
           | :attca
+          | :anonca
           | :ecdaa
           | :uncertain
           | :none
@@ -88,6 +89,15 @@ defmodule Wax.Attestation do
 
   def verify(att_statement, "packed", auth_data, client_data_hash, challenge) do
     Wax.AttestationStatementFormat.Packed.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
+  end
+
+  def verify(att_statement, "apple", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.AppleAnonymous.verify(
       att_statement,
       auth_data,
       client_data_hash,
