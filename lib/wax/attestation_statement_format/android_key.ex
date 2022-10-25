@@ -373,28 +373,23 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
         root_certs =
           metadata_statement["attestationRootCertificates"] |> Enum.map(&Base.decode64!/1)
 
-        do_validate_x5c_path(root_certs, cert_chain)
+        if Wax.Utils.PKIX.path_valid?(root_certs, Enum.reverse(cert_chain)) do
+          :ok
+        else
+          {:error,
+           %Wax.AttestationVerificationError{type: :android_key, reason: :path_validation_failed}}
+        end
 
       {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
-        do_validate_x5c_path([@android_key_root_cert_der], cert_chain)
+        if Wax.Utils.PKIX.path_valid?(@android_key_root_cert_der, Enum.reverse(cert_chain)) do
+          :ok
+        else
+          {:error,
+           %Wax.AttestationVerificationError{type: :android_key, reason: :path_validation_failed}}
+        end
 
       {:error, _} = error ->
         error
-    end
-  end
-
-  defp do_validate_x5c_path([], _) do
-    {:error,
-     %Wax.AttestationVerificationError{type: :android_key, reason: :path_validation_failed}}
-  end
-
-  defp do_validate_x5c_path([root_cert_der | remaining_root_certs], cert_chain) do
-    case :public_key.pkix_path_validation(root_cert_der, Enum.reverse(cert_chain), []) do
-      {:ok, _} ->
-        :ok
-
-      {:error, _} ->
-        do_validate_x5c_path(remaining_root_certs, cert_chain)
     end
   end
 end

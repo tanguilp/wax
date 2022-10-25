@@ -96,30 +96,23 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
         root_certs =
           metadata_statement["attestationRootCertificates"] |> Enum.map(&Base.decode64!/1)
 
-        if Enum.any?(root_certs, &certificate_path_valid?([&1 | certs_der])) do
+        if Wax.Utils.PKIX.path_valid?(root_certs, certs_der) do
           :ok
         else
           {:error,
            %Wax.AttestationVerificationError{type: :apple, reason: :path_validation_failed}}
         end
 
-      {:error, _} ->
-        if certificate_path_valid?([@apple_root_cert_der | certs_der]) do
+      {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
+        if Wax.Utils.PKIX.path_valid?(@apple_root_cert_der, certs_der) do
           :ok
         else
           {:error,
            %Wax.AttestationVerificationError{type: :apple, reason: :path_validation_failed}}
         end
-    end
-  end
 
-  defp certificate_path_valid?(chain) do
-    case :public_key.pkix_path_validation(hd(chain), chain, []) do
-      {:ok, _} ->
-        true
-
-      {:error, _} ->
-        false
+      {:error, _} = error ->
+        error
     end
   end
 end

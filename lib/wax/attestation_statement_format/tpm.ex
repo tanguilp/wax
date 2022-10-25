@@ -378,25 +378,13 @@ defmodule Wax.AttestationStatementFormat.TPM do
   end
 
   defp attestation_path_valid?(der_list, metadata_statement) do
-    if Enum.any?(
-         metadata_statement["attestationRootCertificates"],
-         fn arc_b64 ->
-           arc = Base.decode64!(arc_b64)
+    root_certs =
+      metadata_statement["attestationRootCertificates"]
+      |> Enum.map(&Base.decode64!/1)
 
-           :public_key.pkix_path_validation(
-             arc,
-             [arc | Enum.reverse(der_list)],
-             verify_fun: {&verify_fun/3, %{}}
-           )
-           |> case do
-             {:ok, _} ->
-               true
+    opts = [verify_fun: {&verify_fun/3, %{}}]
 
-             {:error, _} ->
-               false
-           end
-         end
-       ) do
+    if Wax.Utils.PKIX.path_valid?(root_certs, Enum.reverse(der_list), opts) do
       :ok
     else
       {:error,

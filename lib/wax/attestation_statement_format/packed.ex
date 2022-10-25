@@ -444,24 +444,11 @@ defmodule Wax.AttestationStatementFormat.Packed do
        ) do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
       {:ok, metadata_statement} ->
-        if Enum.any?(
-             metadata_statement["attestationRootCertificates"],
-             fn arc_b64 ->
-               arc = Base.decode64!(arc_b64)
+        root_certs =
+          metadata_statement["attestationRootCertificates"]
+          |> Enum.map(&Base.decode64!/1)
 
-               case :public_key.pkix_path_validation(
-                      arc,
-                      [arc | Enum.reverse(der_list)],
-                      []
-                    ) do
-                 {:ok, _} ->
-                   true
-
-                 {:error, _} ->
-                   false
-               end
-             end
-           ) do
+        if Wax.Utils.PKIX.path_valid?(root_certs, Enum.reverse(der_list)) do
           {:ok, metadata_statement}
         else
           {:error,
