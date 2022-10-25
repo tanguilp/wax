@@ -100,7 +100,8 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           |> Map.get("alg")
 
         if Enum.any?(authentication_algorithms, &algs_match?(&1, jws_alg)) do
-          root_certificates = metadata_statement["attestationRootCertificates"]
+          root_certificates =
+            metadata_statement["attestationRootCertificates"] |> Enum.map(&Base.decode64!/1)
 
           do_verify_signature(jws, root_certificates)
         else

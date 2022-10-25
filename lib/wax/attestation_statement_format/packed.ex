@@ -446,7 +446,9 @@ defmodule Wax.AttestationStatementFormat.Packed do
       {:ok, metadata_statement} ->
         if Enum.any?(
              metadata_statement["attestationRootCertificates"],
-             fn arc ->
+             fn arc_b64 ->
+               arc = Base.decode64!(arc_b64)
+
                case :public_key.pkix_path_validation(
                       arc,
                       [arc | Enum.reverse(der_list)],

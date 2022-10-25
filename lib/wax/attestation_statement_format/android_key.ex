@@ -370,7 +370,9 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
   defp validate_x5c_path(auth_data, cert_chain, challenge) do
     case Wax.Metadata.get_by_aaguid(auth_data.attested_credential_data.aaguid, challenge) do
       {:ok, metadata_statement} ->
-        root_certs = metadata_statement["attestationRootCertificates"]
+        root_certs =
+          metadata_statement["attestationRootCertificates"] |> Enum.map(&Base.decode64!/1)
+
         do_validate_x5c_path(root_certs, cert_chain)
 
       {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
