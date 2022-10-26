@@ -21,7 +21,7 @@ defmodule Wax.Utils.PKIX do
     else
       Enum.any?(
         root_certs,
-        &match?({:ok, _}, :public_key.pkix_path_validation(&1, [&1 | rest_of_chain], []))
+        &match?({:ok, _}, :public_key.pkix_path_validation(&1, [&1 | rest_of_chain], opts))
       )
     end
   end
