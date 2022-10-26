@@ -15,14 +15,20 @@ defmodule Wax.Utils.PKIX do
   end
 
   def path_valid?(root_certs, rest_of_chain, opts) do
-    if match?({:ok, _}, :public_key.pkix_path_validation(hd(rest_of_chain), rest_of_chain, opts)) do
+    cond do
       # A test in the suite checks if providing a full path fails
-      false
-    else
-      Enum.any?(
-        root_certs,
-        &match?({:ok, _}, :public_key.pkix_path_validation(&1, [&1 | rest_of_chain], opts))
-      )
+      match?({:ok, _}, :public_key.pkix_path_validation(hd(rest_of_chain), rest_of_chain, opts)) ->
+        false
+
+      # Won't validate with :public_key, but it's allowed by https://github.com/w3c/webauthn/pull/1509
+      length(rest_of_chain) == 1 and hd(rest_of_chain) in root_certs ->
+        true
+
+      true ->
+        Enum.any?(
+          root_certs,
+          &match?({:ok, _}, :public_key.pkix_path_validation(&1, [&1 | rest_of_chain], opts))
+        )
     end
   end
 end
