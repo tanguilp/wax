@@ -15,57 +15,30 @@ defmodule Wax do
 
   |  Option       |  Type         |  Applies to       |  Default value                | Notes |
   |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
-  |`attestation`|`"none"` or `"direct"`|<ul style="margin:0"><li>registration</li></ul>| `"none"` | |
-  |`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | **Mandatory**. Example: `https://www.example.com` |
-  |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
-  |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `"preferred"`| |
-  |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
-  |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
-  |`acceptable_authenticator_statuses`|`[String.t()]`|<ul style="margin:0"><li>registration</li></ul>|`["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]`| The `"UPDATE_AVAILABLE"` status is not whitelisted by default |
-  |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
-  |`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
-  |`silent_authentication_enabled`|`boolean()`|<ul style="margin:0"><li>authentication</li></ul>|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
+  |`attestation`|`"none"` or `"direct"`|registration|`"none"`| |
+  |`origin`|`String.t()`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` |
+  |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
+  |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|registration & authentication|`"preferred"`| |
+  |`trusted_attestation_types`|`t:Wax.Attestation.type/0`|registration|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
+  |`verify_trust_root`|`boolean()`|registration|`true`|Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata|
+  |`acceptable_authenticator_statuses`|`[String.t()]`|registration|`["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]`| The `"UPDATE_AVAILABLE"` status is not whitelisted by default |
+  |`timeout`|`non_neg_integer()`|registration & authentication|`20 * 60`| The validity duration of a challenge, in seconds |
+  |`android_key_allow_software_enforcement`|`boolean()`|registration|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
+  |`silent_authentication_enabled`|`boolean()`|authentication|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
 
-  ## FIDO2 Metadata service (MDS) configuration
+  ## FIDO2 Metadata
 
-  The FIDO Alliance provides with a list of metadata statements of certified **FIDO2**
-  authenticators. A metadata statement contains trust anchors (root certificates) to verify
-  attestations. Wax can automatically keep this metadata up to date but needs a access token which
-  is provided by the FIDO Alliance. One can request it here:
-  [https://mds2.fidoalliance.org/tokens/](https://mds2.fidoalliance.org/tokens/).
+  If you use attestation, you need to enabled metadata.
 
-  Once the token has been granted, it has to be added in the configuration file (consider
-  adding it to your `*.secret.exs` files) with the `:metadata_access_token` key. The update
-  frquency can be configured with the `:metadata_update_interval` key (in seconds, defaults
-  to 12 hours). Example:
+  ### Configuring MDSv3 metadata
 
-  `config/dev.exs`:
-  ```elixir
-  use Mix.Config
+  This is the official metadata service of the FIDO foundation.
 
-  config :wax_,
-    metadata_update_interval: 3600,
-  ```
+  Set the `:update_metadata` environment variable to `true` and metadata will load
+  automatically through HTTP from
+  [https://mds3.fidoalliance.org/](https://fidoalliance.org/metadata/).
 
-  `config/dev.secret.exs`:
-  ```elixir
-  use Mix.Config
-
-  config :wax_,
-    metadata_access_token: "d4904acd10a36f62d7a7d33e4c9a86628a2b0eea0c3b1a6c"
-  ```
-
-  Note that some **FIDO1** certififed authenticators, such as Yubikeys, won't be present in this
-  list and Wax doesn't load data from the former ("FIDO1") metadata Web Service. The FIDO
-  Alliance plans to provides with a web service having both FIDO1 and FIDO2, but there is no
-  roadmap as of September 2019.
-
-  During the registration process, when trust root is verified against FIDO2 metadata, only
-  metadata entries whose last status is whitelisted by the `:acceptable_authenticator_statuses`
-  will be used. Otherwise a warning is logged and the registration process fails. Metadata is still
-  loaded for debugging purpose in the `:wax_metadata` ETS table.
-
-  ## Loading FIDO2 metadata from a directory
+  ### Loading FIDO2 metadata from a directory
 
   In addition to the FIDO2 metadata service, it is possible to load metadata from a directory.
   To do so, the `:metadata_dir` application environment variable must be set to one of:
@@ -75,7 +48,7 @@ defmodule Wax do
 
   In both case, Wax tries to load all files (even directories and other special files).
 
-  ### Example configuration
+  #### Example configuration
 
   ```elixir
   config :wax_,
@@ -84,8 +57,17 @@ defmodule Wax do
     metadata_dir: :my_application
   ```
 
-  will try to load all files of the `"priv/fido2_metadata/"` if the `:my_application` as FIDO2
+  will try to load all files of the `"priv/fido2_metadata/"` of the `:my_application` as FIDO2
   metadata statements. On failure, a warning is emitted.
+
+  ## Security considerations
+
+  - Make sure to understand the implications of not using attested credentials before
+  accepting `none` or `self` attestation types, or disabling it for `packed` and `u2f`
+  formats by disabling it with the `verify_trust_root` option
+  - This library has **not** be reviewed by independent security / FIDO2 specialists - use
+  it at your own risks or blindly trust its author! If you're knowledgeable about
+  FIDO2 and willing to help reviewing it, please contact the author
   """
 
   alias Wax.Utils
@@ -264,8 +246,8 @@ defmodule Wax do
   case Wax.register(attestation_object, client_data_json_raw, challenge) do
     {:ok, {authenticator_data, {_, _, metadata_statement}}} ->
       # tee is for "trusted execution platform"
-      if :key_protection_tee in metadata_statement.key_protection or
-         :key_protection_secure_element in metadata_statement.key_protection
+      if "tee" in metadata_statement["keyProtection"] or
+         "secure_element" in metadata_statement["keyProtection"]
       do
         register_key(user, credential_id, authenticator_data.attested_credential_data.cose_key)
 
@@ -291,13 +273,13 @@ defmodule Wax do
 
   A credential id is related to a cose key, and vice-versa.
 
-  Note that a user can have several (credential id, cose key) pairs, for example if the
+  Note that a user can have several `{credential id, cose key}` pairs, for example if the
   user uses different authenticators. The unique key (for storage, etc.) is therefore the tuple
-  (user id, credential id).
+  `{user id, credential id}`.
 
   In the success case, and after calling `register/3`, a server shall:
   1. Verify that no other user has the same credential id (and should fail otherwise)
-  2. Store the new tuple (credential id, cose key) for the user
+  2. Store the new tuple `{credential id, cose key}` for the user
   """
 
   @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t()) ::
@@ -432,8 +414,7 @@ defmodule Wax do
   - `challenge`: the challenge that was generated beforehand, and whose bytes has been sent
   to the browser and used as an input by the WebAuthn javascript API
 
-  The call returns `{:ok, authenticator_data}` in case of success, or `{:error, :reason}`
-  otherwise.
+  The call returns `{:ok, authenticator_data}` in case of success, or `{:error, e}` otherwise.
 
   The `auth_data.sign_count` is the number of signature performed by this authenticator for this
   credential id, and can be used to detect cloning of authenticator. See point 17 of the

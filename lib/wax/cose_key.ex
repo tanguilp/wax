@@ -33,40 +33,36 @@ defmodule Wax.CoseKey do
     8 => :secp256k1
   }
 
+  @typedoc """
+  A cose key
+
+  ## Example:
+
+  ```elixir
+  %{
+    -3 => <<182, 81, 183, 218, 92, 107, 106, 120, 60, 51, 75, 104, 141, 130,
+      119, 232, 34, 245, 84, 203, 246, 165, 148, 179, 169, 31, 205, 126, 241,
+      188, 241, 176>>,
+    -2 => <<89, 29, 193, 225, 4, 234, 101, 162, 32, 6, 15, 14, 130, 179, 223,
+      207, 53, 2, 134, 184, 178, 127, 51, 145, 57, 180, 104, 242, 138, 96, 27,
+      221>>,
+    -1 => 1,
+    1 => 2,
+    3 => -7
+  }
+  ```
+  """
   @type t :: %{required(integer()) => integer}
 
-  @type cose_alg :: integer()
+  @typep cose_alg :: integer()
 
-  @doc """
-  Returns the list of supported algorithms
-
-      iex> Wax.CoseKey.supported_algs()
-      %{
-        -65535 => "RSASSA-PKCS1-v1_5 w/ SHA-1",
-        -259 => "RS512 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
-        -258 => "RS384 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
-        -257 => "RS256 (TEMPORARY - registered 2018-04-19, expires 2019-04-19)",
-        -42 => "RSAES-OAEP w/ SHA-512",
-        -41 => "RSAES-OAEP w/ SHA-256",
-        -39 => "PS512",
-        -38 => "PS384",
-        -37 => "PS256",
-        -36 => "ES512",
-        -35 => "ES384",
-        -7 => "ES256"
-      }
-  """
+  @doc false
   @spec supported_algs() :: %{required(cose_alg()) => String.t()}
   def supported_algs() do
     @cose_alg_string
   end
 
-  @doc """
-  Verifies the signature of a message against a COSE key
-
-  Use `supported_algs/0` to determine supported algorithms.
-  """
-
+  @doc false
   @spec verify(message :: binary(), t(), signature :: binary()) :: :ok | {:error, Exception.t()}
   def verify(msg, %{@alg => alg} = cose_key, sig) when alg in @pss_algs do
     # Use PSS padding; requires workaround for https://bugs.erlang.org/browse/ERL-878

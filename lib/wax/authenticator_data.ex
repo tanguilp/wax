@@ -38,6 +38,7 @@ defmodule Wax.AuthenticatorData do
 
   @type credential_id :: binary()
 
+  @doc false
   @spec decode(binary()) :: {:ok, t()} | {:error, Exception.t()}
   def decode(
         <<

@@ -34,6 +34,7 @@ defmodule Wax.Attestation do
 
   @type result :: {type(), trust_path() | nil, Wax.Metadata.statement() | nil}
 
+  @doc false
   @spec verify(
           statement(),
           format :: String.t(),

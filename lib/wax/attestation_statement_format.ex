@@ -1,4 +1,6 @@
 defmodule Wax.AttestationStatementFormat do
+  @moduledoc false
+
   @callback verify(
               Wax.Attestation.statement(),
               Wax.AuthenticatorData.t(),

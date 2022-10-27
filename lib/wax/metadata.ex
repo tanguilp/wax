@@ -2,8 +2,6 @@ defmodule Wax.Metadata do
   require Logger
   use GenServer
 
-  @moduledoc false
-
   @fido_alliance_root_cer_der """
                               -----BEGIN CERTIFICATE-----
                               MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4G
@@ -64,7 +62,7 @@ defmodule Wax.Metadata do
   }
   ```
   """
-  @type statement :: map()
+  @type statement :: %{optional(String.t()) => any()}
 
   defmodule MetadataStatementNotFound do
     defexception message: "Authenticator metadata was not found"
@@ -84,6 +82,7 @@ defmodule Wax.Metadata do
 
   # client API
 
+  @doc false
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
