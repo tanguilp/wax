@@ -55,12 +55,11 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
          :ok <- valid_safetynet_response?(payload, att_stmt["ver"]),
          :ok <- nonce_valid?(auth_data, client_data_hash, payload),
          :ok <- valid_cert_hostname?(header) do
-      leaf_cert =
+      trust_path =
         header["x5c"]
-        |> List.first()
-        |> Base.decode64!()
+        |> Enum.map(&Base.decode64!/1)
 
-      {:ok, {:basic, leaf_cert, nil}}
+      {:ok, {:basic, trust_path, nil}}
     end
   rescue
     _ ->

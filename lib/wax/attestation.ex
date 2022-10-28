@@ -29,8 +29,10 @@ defmodule Wax.Attestation do
 
   @typedoc """
   The attestation path
+
+  Der-encoded certificates, the first certificate is the leaf / attestation certificate
   """
-  @type trust_path :: [binary()] | binary()
+  @type trust_path :: [binary()]
 
   @type result :: {type(), trust_path() | nil, Wax.Metadata.statement() | nil}
 
