@@ -107,7 +107,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :algs_mismatch}}
         end
 
-      {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
+      {:error, %Wax.MetadataStatementNotFoundError{}} ->
         do_verify_signature(jws, [@root_cert_der])
 
       {:error, _} = error ->

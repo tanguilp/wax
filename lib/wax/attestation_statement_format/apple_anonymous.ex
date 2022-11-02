@@ -103,7 +103,7 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
            %Wax.AttestationVerificationError{type: :apple, reason: :path_validation_failed}}
         end
 
-      {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
+      {:error, %Wax.MetadataStatementNotFoundError{}} ->
         if Wax.Utils.PKIX.path_valid?(@apple_root_cert_der, certs_der) do
           :ok
         else

@@ -64,22 +64,6 @@ defmodule Wax.Metadata do
   """
   @type statement :: %{optional(String.t()) => any()}
 
-  defmodule MetadataStatementNotFound do
-    defexception message: "Authenticator metadata was not found"
-  end
-
-  defmodule AuthenticatorStatusNotAcceptable do
-    defexception [:status]
-
-    @impl true
-    def message(%{status: status}) do
-      """
-      Authenticator was not accepted. Its security might have been broken,
-      or he's not sufficiently certified yet. Rejected status: #{status}
-      """
-    end
-  end
-
   # client API
 
   @doc false
@@ -136,7 +120,8 @@ defmodule Wax.Metadata do
     if metadata["statusReports"]["status"] in challenge.acceptable_authenticator_statuses do
       {:ok, metadata["metadataStatement"]}
     else
-      {:error, %AuthenticatorStatusNotAcceptable{status: metadata["statusReports"]["status"]}}
+      {:error,
+       %Wax.AuthenticatorStatusNotAcceptableError{status: metadata["statusReports"]["status"]}}
     end
   end
 
@@ -146,7 +131,7 @@ defmodule Wax.Metadata do
   end
 
   defp check_metadata_validity_and_return(nil, _challenge) do
-    {:error, %MetadataStatementNotFound{}}
+    {:error, %Wax.MetadataStatementNotFoundError{}}
   end
 
   defp ensure_loaded() do

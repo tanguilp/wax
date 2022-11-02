@@ -49,3 +49,19 @@ defmodule Wax.AttestationVerificationError do
     "Failed to verify attestation of type #{type} (reason: #{reason})"
   end
 end
+
+defmodule Wax.MetadataStatementNotFoundError do
+  defexception message: "Authenticator metadata was not found"
+end
+
+defmodule Wax.AuthenticatorStatusNotAcceptableError do
+  defexception [:status]
+
+  @impl true
+  def message(%{status: status}) do
+    """
+    Authenticator was not accepted. Its security might have been broken,
+    or he's not sufficiently certified yet. Rejected status: #{status}
+    """
+  end
+end

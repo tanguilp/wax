@@ -380,7 +380,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
            %Wax.AttestationVerificationError{type: :android_key, reason: :path_validation_failed}}
         end
 
-      {:error, %Wax.Metadata.MetadataStatementNotFound{}} ->
+      {:error, %Wax.MetadataStatementNotFoundError{}} ->
         if Wax.Utils.PKIX.path_valid?(@android_key_root_cert_der, Enum.reverse(cert_chain)) do
           :ok
         else
