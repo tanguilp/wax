@@ -38,8 +38,7 @@ defmodule Wax.Challenge do
           user_verification: String.t(),
           token_binding_status: any(),
           allow_credentials: [binary()],
-          trusted_attestation_types:
-            [Wax.Attestation.type()] | (Wax.Attestation.result() -> boolean()),
+          trusted_attestation_types: [Wax.Attestation.type()],
           verify_trust_root: boolean(),
           acceptable_authenticator_statuses: [String.t()],
           issued_at: integer(),

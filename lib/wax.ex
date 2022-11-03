@@ -210,7 +210,7 @@ defmodule Wax do
   """
 
   @spec new_registration_challenge(opts()) :: Wax.Challenge.t()
-  def new_registration_challenge(opts) do
+  def new_registration_challenge(opts \\ []) do
     opts = set_opts(Keyword.put(opts, :type, :attestation))
 
     Wax.Challenge.new(opts)
@@ -392,7 +392,7 @@ defmodule Wax do
 
   @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts()) ::
           Wax.Challenge.t()
-  def new_authentication_challenge(allow_credentials, opts) do
+  def new_authentication_challenge(allow_credentials, opts \\ []) do
     opts = set_opts(Keyword.put(opts, :type, :authentication))
 
     Wax.Challenge.new(allow_credentials, opts)

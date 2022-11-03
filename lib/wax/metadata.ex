@@ -28,8 +28,8 @@ defmodule Wax.Metadata do
                               |> X509.Certificate.from_pem!()
                               |> X509.Certificate.to_der()
 
-  @mdsv3_key {__MODULE__, :mdsv3_metadata}
-  @local_key {__MODULE__, :local_metadata}
+  @mdsv3_key {__MODULE__, :mdsv3}
+  @local_key {__MODULE__, :local}
 
   @typedoc """
   A metadata statement
@@ -117,11 +117,26 @@ defmodule Wax.Metadata do
 
   # from MDSv3
   defp check_metadata_validity_and_return(%{"statusReports" => _} = metadata, challenge) do
-    if metadata["statusReports"]["status"] in challenge.acceptable_authenticator_statuses do
+    # TODO: handle invalidation at the batch key level
+    # https://groups.google.com/u/1/a/fidoalliance.org/g/fido-dev/c/4SJQEtQZm9s
+
+    maybe_latest_status =
+      (metadata["statusReports"] || [])
+      |> Enum.reject(&(&1["status"] == "UPDATE_AVAILABLE"))
+      |> Enum.sort(&compare_status_report_dates/2)
+      |> List.last()
+      |> case do
+        %{"status" => status} ->
+          status
+
+        nil ->
+          nil
+      end
+
+    if maybe_latest_status in challenge.acceptable_authenticator_statuses do
       {:ok, metadata["metadataStatement"]}
     else
-      {:error,
-       %Wax.AuthenticatorStatusNotAcceptableError{status: metadata["statusReports"]["status"]}}
+      {:error, %Wax.AuthenticatorStatusNotAcceptableError{status: maybe_latest_status}}
     end
   end
 
@@ -136,6 +151,19 @@ defmodule Wax.Metadata do
 
   defp ensure_loaded() do
     GenServer.call(__MODULE__, :ping, :infinity)
+  end
+
+  defp compare_status_report_dates(status_1, status_2) do
+    status_1_date = status_1["effectiveDate"]
+    status_2_date = status_2["effectiveDate"]
+
+    # Entry with no date is considered most recent
+    cond do
+      is_nil(status_1_date) and is_nil(status_2_date) -> true
+      is_nil(status_1_date) -> false
+      is_nil(status_2_date) -> true
+      true -> status_1_date <= status_2_date
+    end
   end
 
   # server callbacks
