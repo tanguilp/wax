@@ -71,8 +71,25 @@ defmodule Wax.Metadata do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  @spec get_by_aaguid(binary(), Wax.Challenge.t()) :: {:ok, statement()} | {:error, Exception.t()}
-  def get_by_aaguid(aaguid_bin, challenge) do
+  @doc """
+  Returns the metadata associated to an AAGUID
+
+  The `aaguid` parameter is the raw form of the AAGUID, for example
+  `<<44, 13, 248, 50, 146, 222, 75, 225, 132, 18, 136, 168, 240, 116, 223, 74>>`
+  and not the base-16 encoded form such as
+  `"2c0df832-92de-4be1-8412-88a8f074df4a"`.
+
+  If the metadata is not found, `{:error, %Wax.MetadataStatementNotFoundError{}}`
+  is returned.
+
+  If a challenge is passed as the second parameter, this function verifies that
+  the status of the authenticator is accepted (by default, non-certified and
+  revoked authenticator are refused). If the authenticator status is not accepted,
+  `{:error, %Wax.AuthenticatorStatusNotAcceptableError{}}` is returned.
+  """
+  @spec get_by_aaguid(binary(), Wax.Challenge.t() | nil) ::
+          {:ok, statement()} | {:error, Exception.t()}
+  def get_by_aaguid(aaguid_bin, challenge \\ nil) do
     ensure_loaded()
 
     <<
@@ -97,8 +114,25 @@ defmodule Wax.Metadata do
     |> check_metadata_validity_and_return(challenge)
   end
 
-  @spec get_by_acki(binary(), Wax.Challenge.t()) :: {:ok, statement()} | {:error, Exception.t()}
-  def get_by_acki(acki_bin, challenge) do
+  @doc """
+  Returns the metadata associated to an attestation certificate key identifier (ACKI)
+
+  The `acki` parameter is the raw form of the ACKI, for example
+  `<<138, 39, 205, 218, 234, 197, 118, 90, 141, 238, 146, 165, 237, 73, 131, 217, 56, 165, 234, 105>>`
+  and not the base-16 encoded form such as
+  `"8a27cddaeac5765a8dee92a5ed4983d938a5ea69"`.
+
+  If the metadata is not found, `{:error, %Wax.MetadataStatementNotFoundError{}}`
+  is returned.
+
+  If a challenge is passed as the second parameter, this function verifies that
+  the status of the authenticator is accepted (by default, non-certified and
+  revoked authenticator are refused). If the authenticator status is not accepted,
+  `{:error, %Wax.AuthenticatorStatusNotAcceptableError{}}` is returned.
+  """
+  @spec get_by_acki(binary(), Wax.Challenge.t() | nil) ::
+          {:ok, statement()} | {:error, Exception.t()}
+  def get_by_acki(acki_bin, challenge \\ nil) do
     ensure_loaded()
 
     acki_str = Base.encode16(acki_bin, case: :lower)
@@ -116,7 +150,10 @@ defmodule Wax.Metadata do
   end
 
   # from MDSv3
-  defp check_metadata_validity_and_return(%{"statusReports" => _} = metadata, challenge) do
+  defp check_metadata_validity_and_return(
+         %{"statusReports" => _} = metadata,
+         %Wax.Challenge{} = challenge
+       ) do
     # TODO: handle invalidation at the batch key level
     # https://groups.google.com/u/1/a/fidoalliance.org/g/fido-dev/c/4SJQEtQZm9s
 
@@ -138,6 +175,10 @@ defmodule Wax.Metadata do
     else
       {:error, %Wax.AuthenticatorStatusNotAcceptableError{status: maybe_latest_status}}
     end
+  end
+
+  defp check_metadata_validity_and_return(%{"statusReports" => _} = metadata, nil) do
+    {:ok, metadata["metadataStatement"]}
   end
 
   # from local loaded file
