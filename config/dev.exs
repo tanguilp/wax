@@ -5,6 +5,6 @@ config :wax_,
   rp_id: :auto,
   update_metadata: true,
   allowed_attestation_types: [:basic, :uncertain, :attca, :self],
-  metadata_dir: "metadata/metadata/metadataStatements/"
+  metadata_dir: "priv/fido2_metadata/"
 
 # import_config "dev.secret.exs"

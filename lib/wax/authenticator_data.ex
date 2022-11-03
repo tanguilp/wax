@@ -38,6 +38,23 @@ defmodule Wax.AuthenticatorData do
 
   @type credential_id :: binary()
 
+  @doc """
+  Returns the AAGUID of the authenticator
+
+  Note that FIDO-U2F authenticators don't have an AAGUID, so `nil` is returned in
+  this case
+  """
+  @spec get_aaguid(t()) :: binary() | nil
+  def get_aaguid(authenticator_data) do
+    case authenticator_data.attested_credential_data.aaguid do
+      <<0::128>> ->
+        nil
+
+      aaguid ->
+        aaguid
+    end
+  end
+
   @doc false
   @spec decode(binary()) :: {:ok, t()} | {:error, Exception.t()}
   def decode(
