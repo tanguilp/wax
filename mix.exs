@@ -5,11 +5,11 @@ defmodule Wax.MixProject do
     [
       app: :wax_,
       description: "FIDO2 / WebAuthn server library",
-      version: "0.4.1",
-      elixir: "~> 1.7",
+      version: "0.5.0",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      compilers: Mix.compilers ++ [:asn],
+      compilers: Mix.compilers() ++ [:asn],
       dialyzer: [plt_add_apps: [:mix]],
       docs: [
         main: "readme",
@@ -22,18 +22,17 @@ defmodule Wax.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :inets],
       mod: {Wax.Application, []}
     ]
   end
 
   defp deps do
     [
-      {:cbor, "~> 1.0.0"},
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:cbor, "~> 1.0"},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:jason, "~> 1.1"},
-      {:tesla, "~> 1.3"},
       {:x509, "~> 0.8"}
     ]
   end

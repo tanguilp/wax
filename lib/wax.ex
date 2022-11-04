@@ -15,57 +15,30 @@ defmodule Wax do
 
   |  Option       |  Type         |  Applies to       |  Default value                | Notes |
   |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
-  |`attestation`|`"none"` or `"direct"`|<ul style="margin:0"><li>registration</li></ul>| `"none"` | |
-  |`origin`|`String.t()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| | **Mandatory**. Example: `https://www.example.com` |
-  |`rp_id`|`String.t()` or `:auto`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
-  |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>| `"preferred"`| |
-  |`trusted_attestation_types`|`[Wax.Attestation.type()]`|<ul style="margin:0"><li>registration</li></ul>|`[:none, :basic, :uncertain, :attca, :self]`| |
-  |`verify_trust_root`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`true`| Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata |
-  |`acceptable_authenticator_statuses`|`[Wax.Metadata.TOCEntry.StatusReport.status()]`|<ul style="margin:0"><li>registration</li></ul>|`[:fido_certified, :fido_certified_l1, :fido_certified_l1plus, :fido_certified_l2, :fido_certified_l2plus, :fido_certified_l3, :fido_certified_l3plus]`| The `:update_available` status is not whitelisted by default |
-  |`timeout`|`non_neg_integer()`|<ul style="margin:0"><li>registration</li><li>authentication</li></ul>|`20 * 60`| The validity duration of a challenge |
-  |`android_key_allow_software_enforcement`|`boolean()`|<ul style="margin:0"><li>registration</li></ul>|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
-  |`silent_authentication_enabled`|`boolean()`|<ul style="margin:0"><li>authentication</li></ul>|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
+  |`attestation`|`"none"` or `"direct"`|registration|`"none"`| |
+  |`origin`|`String.t()`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` |
+  |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
+  |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|registration & authentication|`"preferred"`| |
+  |`trusted_attestation_types`|`[t:Wax.Attestation.type/0]`|registration|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
+  |`verify_trust_root`|`boolean()`|registration|`true`|Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata|
+  |`acceptable_authenticator_statuses`|`[String.t()]`|registration|`["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]`| The `"UPDATE_AVAILABLE"` status is not whitelisted by default |
+  |`timeout`|`non_neg_integer()`|registration & authentication|`20 * 60`| The validity duration of a challenge, in seconds |
+  |`android_key_allow_software_enforcement`|`boolean()`|registration|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
+  |`silent_authentication_enabled`|`boolean()`|authentication|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
 
-  ## FIDO2 Metadata service (MDS) configuration
+  ## FIDO2 Metadata
 
-  The FIDO Alliance provides with a list of metadata statements of certified **FIDO2**
-  authenticators. A metadata statement contains trust anchors (root certificates) to verify
-  attestations. Wax can automatically keep this metadata up to date but needs a access token which
-  is provided by the FIDO Alliance. One can request it here:
-  [https://mds2.fidoalliance.org/tokens/](https://mds2.fidoalliance.org/tokens/).
+  If you use attestation, you need to enabled metadata.
 
-  Once the token has been granted, it has to be added in the configuration file (consider
-  adding it to your `*.secret.exs` files) with the `:metadata_access_token` key. The update
-  frquency can be configured with the `:metadata_update_interval` key (in seconds, defaults
-  to 12 hours). Example:
+  ### Configuring MDSv3 metadata
 
-  `config/dev.exs`:
-  ```elixir
-  use Mix.Config
+  This is the official metadata service of the FIDO foundation.
 
-  config :wax_,
-    metadata_update_interval: 3600,
-  ```
+  Set the `:update_metadata` environment variable to `true` and metadata will load
+  automatically through HTTP from
+  [https://mds3.fidoalliance.org/](https://fidoalliance.org/metadata/).
 
-  `config/dev.secret.exs`:
-  ```elixir
-  use Mix.Config
-
-  config :wax_,
-    metadata_access_token: "d4904acd10a36f62d7a7d33e4c9a86628a2b0eea0c3b1a6c"
-  ```
-
-  Note that some **FIDO1** certififed authenticators, such as Yubikeys, won't be present in this
-  list and Wax doesn't load data from the former ("FIDO1") metadata Web Service. The FIDO
-  Alliance plans to provides with a web service having both FIDO1 and FIDO2, but there is no
-  roadmap as of September 2019.
-
-  During the registration process, when trust root is verified against FIDO2 metadata, only
-  metadata entries whose last status is whitelisted by the `:acceptable_authenticator_statuses`
-  will be used. Otherwise a warning is logged and the registration process fails. Metadata is still
-  loaded for debugging purpose in the `:wax_metadata` ETS table.
-
-  ## Loading FIDO2 metadata from a directory
+  ### Loading FIDO2 metadata from a directory
 
   In addition to the FIDO2 metadata service, it is possible to load metadata from a directory.
   To do so, the `:metadata_dir` application environment variable must be set to one of:
@@ -75,7 +48,7 @@ defmodule Wax do
 
   In both case, Wax tries to load all files (even directories and other special files).
 
-  ### Example configuration
+  #### Example configuration
 
   ```elixir
   config :wax_,
@@ -84,120 +57,35 @@ defmodule Wax do
     metadata_dir: :my_application
   ```
 
-  will try to load all files of the `"priv/fido2_metadata/"` if the `:my_application` as FIDO2
+  will try to load all files of the `"priv/fido2_metadata/"` of the `:my_application` as FIDO2
   metadata statements. On failure, a warning is emitted.
-  """
 
-  require Logger
+  ## Security considerations
+
+  - Make sure to understand the implications of not using attested credentials before
+  accepting `none` or `self` attestation types, or disabling it for `packed` and `u2f`
+  formats by disabling it with the `verify_trust_root` option
+  - This library has **not** be reviewed by independent security / FIDO2 specialists - use
+  it at your own risks or blindly trust its author! If you're knowledgeable about
+  FIDO2 and willing to help reviewing it, please contact the author
+  """
 
   alias Wax.Utils
 
   @type opts :: [opt()]
 
   @type opt ::
-  {:attestation, String.t()}
-  | {:origin, String.t()}
-  | {:rp_id, String.t() | :auto}
-  | {:user_verification, String.t()}
-  | {:trusted_attestation_types, [Wax.Attestation.type()]}
-  | {:verify_trust_root, boolean()}
-  | {:acceptable_authenticator_statuses, [Wax.Metadata.TOCEntry.StatusReport.status()]}
-  | {:issued_at, integer()}
-  | {:timeout, non_neg_integer()}
-  | {:android_key_allow_software_enforcement, boolean()}
-  | {:silent_authentication_enabled, boolean()}
-
-  @spec set_opts(opts()) :: opts()
-  defp set_opts(opts) do
-    attestation =
-      case opts[:attestation] do
-        "none" -> "none"
-        nil -> "none"
-        "direct" -> "direct"
-        _ -> raise "Invalid attestation, must be one of: `\"none\"`, `\"direct\"`"
-      end
-
-    origin =
-      if is_binary(opts[:origin]) do
-        opts[:origin]
-      else
-        case Application.get_env(:wax_, :origin) do
-          origin when is_binary(origin) ->
-            origin
-
-          _ ->
-            raise "Missing mandatory parameter `origin` (String.t())"
-        end
-      end
-
-    unless URI.parse(origin).host == "localhost" or URI.parse(origin).scheme == "https" do
-      raise "Invalid origin `#{origin}` (must be either https scheme or `localhost`)"
-    end
-
-    rp_id =
-      if opts[:rp_id] == :auto or Application.get_env(:wax_, :rp_id) == :auto do
-        URI.parse(origin).host
-      else
-        if is_binary(opts[:rp_id]) do
-          opts[:rp_id]
-        else
-          case Application.get_env(:wax_, :rp_id) do
-            rp_id when is_binary(rp_id) ->
-              rp_id
-
-            _ ->
-              raise "Missing mandatory parameter `rp_id` (String.t())"
-          end
-        end
-      end
-
-    if opts[:user_verification] &&
-      opts[:user_verification] not in ["discouraged", "preferred", "required"] do
-      raise "Invalid `:user_verification` parameter, must be one of: " <>
-        "\"discouraged\", \"preferred\", \"required\""
-    end
-
-    [
-      type: opts[:type],
-      attestation: attestation,
-      origin: origin,
-      rp_id: rp_id,
-      user_verification:
-        opts[:user_verification]
-        || Application.get_env(:wax_, :user_verification, "preferred"),
-      trusted_attestation_types:
-        opts[:trusted_attestation_types] || Application.get_env(
-          :wax_,
-          :trusted_attestation_types,
-          [:none, :basic, :uncertain, :attca, :self]
-        ),
-      verify_trust_root:
-        opts[:verify_trust_root] || Application.get_env(:wax_, :verify_trust_root, true),
-      acceptable_authenticator_statuses:
-        opts[:acceptable_authenticator_statuses] || Application.get_env(
-          :wax_,
-          :acceptable_authenticator_statuses,
-          [
-            :fido_certified,
-            :fido_certified_l1,
-            :fido_certified_l1plus,
-            :fido_certified_l2,
-            :fido_certified_l2plus,
-            :fido_certified_l3,
-            :fido_certified_l3plus
-          ]
-        ),
-      issued_at: :erlang.monotonic_time(:second),
-      timeout: opts[:timeout] || Application.get_env(:wax_, :timeout, 60 * 20),
-      android_key_allow_software_enforcement:
-        opts[:android_key_allow_software_enforcement]
-        || Application.get_env(:wax_, :android_key_allow_software_enforcement)
-        || false,
-      silent_authentication_enabled:
-        opts[:silent_authentication_enabled]
-        || Application.get_env(:wax_, :silent_authentication_enabled, false)
-    ]
-  end
+          {:attestation, String.t()}
+          | {:origin, String.t()}
+          | {:rp_id, String.t() | :auto}
+          | {:user_verification, String.t()}
+          | {:trusted_attestation_types, [Wax.Attestation.type()]}
+          | {:verify_trust_root, boolean()}
+          | {:acceptable_authenticator_statuses, [String.t()]}
+          | {:issued_at, integer()}
+          | {:timeout, non_neg_integer()}
+          | {:android_key_allow_software_enforcement, boolean()}
+          | {:silent_authentication_enabled, boolean()}
 
   @doc """
   Generates a new challenge for registration
@@ -229,11 +117,10 @@ defmodule Wax do
   """
 
   @spec new_registration_challenge(opts()) :: Wax.Challenge.t()
-
-  def new_registration_challenge(opts) do
-    opts = set_opts(Keyword.put(opts, :type, :attestation))
-
-    Wax.Challenge.new(opts)
+  def new_registration_challenge(opts \\ []) do
+    opts
+    |> Keyword.put(:type, :attestation)
+    |> Wax.Challenge.new()
   end
 
   @doc """
@@ -266,8 +153,8 @@ defmodule Wax do
   case Wax.register(attestation_object, client_data_json_raw, challenge) do
     {:ok, {authenticator_data, {_, _, metadata_statement}}} ->
       # tee is for "trusted execution platform"
-      if :key_protection_tee in metadata_statement.key_protection or
-         :key_protection_secure_element in metadata_statement.key_protection
+      if "tee" in metadata_statement["keyProtection"] or
+         "secure_element" in metadata_statement["keyProtection"]
       do
         register_key(user, credential_id, authenticator_data.attested_credential_data.cose_key)
 
@@ -293,20 +180,18 @@ defmodule Wax do
 
   A credential id is related to a cose key, and vice-versa.
 
-  Note that a user can have several (credential id, cose key) pairs, for example if the
+  Note that a user can have several `{credential id, cose key}` pairs, for example if the
   user uses different authenticators. The unique key (for storage, etc.) is therefore the tuple
-  (user id, credential id).
+  `{user id, credential id}`.
 
   In the success case, and after calling `register/3`, a server shall:
   1. Verify that no other user has the same credential id (and should fail otherwise)
-  2. Store the new tuple (credential id, cose key) for the user
+  2. Store the new tuple `{credential id, cose key}` for the user
   """
 
-  @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t())
-  :: {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, atom()}
-
+  @spec register(binary(), Wax.ClientData.raw_string(), Wax.Challenge.t()) ::
+          {:ok, {Wax.AuthenticatorData.t(), Wax.Attestation.result()}} | {:error, Exception.t()}
   def register(attestation_object_cbor, client_data_json_raw, challenge) do
-
     with :ok <- not_expired?(challenge),
          {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
          :ok <- type_create?(client_data),
@@ -314,21 +199,14 @@ defmodule Wax do
          :ok <- valid_origin?(client_data, challenge),
          client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
          {:ok, att_data, _} <- Utils.CBOR.decode(attestation_object_cbor),
-         %{"fmt" => fmt, "authData" => auth_data_bin, "attStmt" => att_stmt} = att_data,
+         %{"fmt" => att_fmt, "authData" => auth_data_bin, "attStmt" => att_stmt} = att_data,
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
          :ok <- valid_rp_id?(auth_data, challenge),
          :ok <- user_present_flag_set?(auth_data, challenge),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
-         {:ok, valid_attestation_statement_format?}
-           <- Wax.Attestation.statement_verify_fun(fmt),
-         {:ok, attestation_result_data} <- valid_attestation_statement_format?.(
-           att_stmt,
-           auth_data,
-           client_data_hash,
-           challenge
-         ),
-         :ok <- attestation_trustworthy?(attestation_result_data, challenge)
-    do
+         {:ok, attestation_result_data} <-
+           Wax.Attestation.verify(att_stmt, att_fmt, auth_data, client_data_hash, challenge),
+         :ok <- attestation_trustworthy?(attestation_result_data, challenge) do
       {:ok, {auth_data, attestation_result_data}}
     end
   end
@@ -419,13 +297,13 @@ defmodule Wax do
   ```
   """
 
-  @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts())
-    :: Wax.Challenge.t()
-
-  def new_authentication_challenge(allow_credentials, opts) do
-    opts = set_opts(Keyword.put(opts, :type, :authentication))
-
-    Wax.Challenge.new(allow_credentials, opts)
+  @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts()) ::
+          Wax.Challenge.t()
+  def new_authentication_challenge(allow_credentials, opts \\ []) do
+    opts
+    |> Keyword.put(:type, :authentication)
+    |> Keyword.put(:allow_credentials, allow_credentials)
+    |> Wax.Challenge.new()
   end
 
   @doc """
@@ -444,27 +322,33 @@ defmodule Wax do
   - `challenge`: the challenge that was generated beforehand, and whose bytes has been sent
   to the browser and used as an input by the WebAuthn javascript API
 
-  The call returns `{:ok, authenticator_data}` in case of success, or `{:error, :reason}`
-  otherwise.
+  The call returns `{:ok, authenticator_data}` in case of success, or `{:error, e}` otherwise.
 
   The `auth_data.sign_count` is the number of signature performed by this authenticator for this
   credential id, and can be used to detect cloning of authenticator. See point 17 of the
   [7.2. Verifying an Authentication Assertion](https://www.w3.org/TR/webauthn-1/#verifying-assertion)
   for more details.
-  """
-  @spec authenticate(Wax.CredentialId.t(),
-                     binary(),
-                     binary(),
-                     Wax.ClientData.raw_string(),
-                     Wax.Challenge.t()
-  ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, atom()}
 
-  def authenticate(credential_id,
-                   auth_data_bin,
-                   sig,
-                   client_data_json_raw,
-                   challenge)
-  do
+  When using attestation, it's a good practice to check that the authenticator is not revoked
+  after authentication. To do so:
+  1. save the aaguid after registration along with the credential ID
+  2. check the authenticator is not revoked after authentication using the aaguid saved in
+  step 1. and `Wax.Metadata.get_by_aaguid/2`
+  """
+  @spec authenticate(
+          Wax.CredentialId.t(),
+          binary(),
+          binary(),
+          Wax.ClientData.raw_string(),
+          Wax.Challenge.t()
+        ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, Exception.t()}
+  def authenticate(
+        credential_id,
+        auth_data_bin,
+        sig,
+        client_data_json_raw,
+        challenge
+      ) do
     with :ok <- not_expired?(challenge),
          {:ok, cose_key} <- cose_key_from_credential_id(credential_id, challenge),
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
@@ -476,80 +360,65 @@ defmodule Wax do
          :ok <- user_present_flag_set?(auth_data, challenge),
          :ok <- maybe_user_verified_flag_set?(auth_data, challenge),
          client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
-         :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig)
-    do
+         :ok <- Wax.CoseKey.verify(auth_data_bin <> client_data_hash, cose_key, sig) do
       {:ok, auth_data}
     end
   end
 
-  @spec not_expired?(Wax.Challenge.t()) :: :ok | {:error, :challenge_expired}
-  defp not_expired?(%Wax.Challenge{issued_at: issued_at, timeout: timeout}) do
+  defp not_expired?(challenge) do
     current_time = :erlang.monotonic_time(:second)
 
-    if current_time - issued_at < timeout do
+    if current_time - challenge.issued_at < challenge.timeout do
       :ok
     else
-      {:error, :challenge_expired}
+      {:error, %Wax.ExpiredChallengeError{}}
     end
   end
-
-  @spec type_create?(Wax.ClientData.t()) :: :ok | {:error, atom()}
 
   defp type_create?(client_data) do
     if client_data.type == :create do
       :ok
     else
-      {:error, :attestation_invalid_type}
+      {:error, %Wax.InvalidClientDataError{reason: :create_type_expected}}
     end
   end
-
-  @spec type_get?(Wax.ClientData.t()) :: :ok | {:error, atom()}
 
   defp type_get?(client_data) do
     if client_data.type == :get do
       :ok
     else
-      {:error, :attestation_invalid_type}
+      {:error, %Wax.InvalidClientDataError{reason: :get_type_expected}}
     end
   end
-
-  @spec valid_challenge?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, any()}
 
   defp valid_challenge?(client_data, challenge) do
     if client_data.challenge == challenge.bytes do
       :ok
     else
-      {:error, :invalid_challenge}
+      {:error, %Wax.InvalidClientDataError{reason: :challenge_mismatch}}
     end
   end
-
-  @spec valid_origin?(Wax.ClientData.t(), Wax.Challenge.t()) :: :ok | {:error, atom()}
 
   defp valid_origin?(client_data, challenge) do
     if client_data.origin == challenge.origin do
       :ok
     else
-      {:error, :attestation_invalid_origin}
+      {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}}
     end
   end
 
-  @spec valid_rp_id?(Wax.AuthenticatorData.t(), Wax.Challenge.t()) :: :ok | {:error, atom()}
   defp valid_rp_id?(auth_data, challenge) do
     if auth_data.rp_id_hash == :crypto.hash(:sha256, challenge.rp_id) do
       :ok
     else
-      {:error, :invalid_rp_id}
+      {:error, %Wax.InvalidClientDataError{reason: :rp_id_mismatch}}
     end
   end
 
-  @spec user_present_flag_set?(
-    Wax.AuthenticatorData.t(),
-    Wax.Challenge.t()
-  ) :: :ok | {:error, any()}
   defp user_present_flag_set?(
-    _auth_data,
-    %Wax.Challenge{type: :authentication, silent_authentication_enabled: true})
-  do
+         _auth_data,
+         %Wax.Challenge{type: :authentication, silent_authentication_enabled: true}
+       ) do
     :ok
   end
 
@@ -557,19 +426,17 @@ defmodule Wax do
     if auth_data.flag_user_present == true do
       :ok
     else
-      {:error, :flag_user_present_not_set}
+      {:error, %Wax.InvalidClientDataError{reason: :flag_user_present_not_set}}
     end
   end
 
-  @spec maybe_user_verified_flag_set?(Wax.AuthenticatorData.t(), Wax.Challenge.t())
-    :: :ok | {:error, atom()}
   defp maybe_user_verified_flag_set?(auth_data, challenge) do
     case challenge.user_verification do
       "required" ->
         if auth_data.flag_user_verified do
           :ok
         else
-          {:error, :user_not_verified}
+          {:error, %Wax.InvalidClientDataError{reason: :user_not_verified}}
         end
 
       _ ->
@@ -577,20 +444,13 @@ defmodule Wax do
     end
   end
 
-  @spec attestation_trustworthy?(Wax.Attestation.result(), Wax.Challenge.t())
-    :: :ok | {:error, any()}
-
-  defp attestation_trustworthy?({type, _, _}, %Wax.Challenge{trusted_attestation_types: tatl})
-  do
-    if type in tatl do
+  defp attestation_trustworthy?({type, _, _}, challenge) do
+    if type in challenge.trusted_attestation_types do
       :ok
     else
-      {:error, :untrusted_attestation_type}
+      {:error, %Wax.UntrustedAttestationTypeError{type: type, challenge: challenge}}
     end
   end
-
-  @spec cose_key_from_credential_id(Wax.CredentialId.t(), Wax.Challenge.t())
-    :: {:ok, Wax.CoseKey.t()} | {:error, any()}
 
   defp cose_key_from_credential_id(credential_id, challenge) do
     case List.keyfind(challenge.allow_credentials, credential_id, 0) do
@@ -598,7 +458,7 @@ defmodule Wax do
         {:ok, cose_key}
 
       _ ->
-        {:error, :incorrect_credential_id_for_user}
+        {:error, %Wax.InvalidClientDataError{reason: :credential_id_mismatch}}
     end
   end
 end

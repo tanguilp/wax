@@ -8,10 +8,13 @@ defmodule Wax.Utils.CBOR do
   a binary field.
   """
 
-  @spec decode(binary()) :: {:ok, any(), binary()} | {:error, atom()}
+  @spec decode(binary()) :: {:ok, any(), binary()} | {:error, Exception.t()}
   def decode(cbor) do
     with {:ok, cbor, rest} <- CBOR.decode(cbor) do
       {:ok, reduce_binaries(cbor), rest}
+    else
+      {:error, _} ->
+        {:error, %Wax.InvalidCBORError{}}
     end
   end
 

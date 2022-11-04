@@ -1,8 +1,9 @@
 defmodule Wax.Utils.Timestamp.TimeTravel do
   @moduledoc false
 
-  @spec get_timestamp() :: non_neg_integer()
+  @behaviour Wax.Utils.Timestamp
 
+  @impl true
   def get_timestamp() do
     if Process.get(:mock_time) do
       Process.get(:mock_time)
@@ -12,7 +13,6 @@ defmodule Wax.Utils.Timestamp.TimeTravel do
   end
 
   @spec set_timestamp(non_neg_integer()) :: no_return()
-
   def set_timestamp(timestamp) do
     Process.put(:mock_time, timestamp)
   end

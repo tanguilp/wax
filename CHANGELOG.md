@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.5.0] - TBC
+
+### Changed
+
+- [Wax] Requires OTP25+
+- [Wax] Supports Apple Anonymous attestation
+- [Wax] Returns metadata as a map conforming with
+  [FIDO Metadata Statement](https://fidoalliance.org/specs/mds/fido-metadata-statement-v3.0-ps-20210518.html),
+  and no longer Elixir structs
+- [Wax] All returned errors are exceptions
+- [Wax.Metadata] Wax now loads MDSv3 metadata, and no longer requires an access token
+- [Wax.Metadata] The `tesla` library is no longer used
+
 ## [0.4.1] - 2021-05-18
 
 ### Fixed

@@ -9,6 +9,10 @@ defmodule Wax.AttestationStatementFormat.None do
   end
 
   def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
-    {:error, :invalid_attestation_conveyance_preference}
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :none,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 end

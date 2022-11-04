@@ -8,60 +8,107 @@ defmodule Wax.Attestation do
   The attestation type
   """
   @type type ::
-    :basic
-    | :self
-    | :attca
-    | :ecdaa
-    | :uncertain
-    | :none
+          :basic
+          | :self
+          | :attca
+          | :anonca
+          | :ecdaa
+          | :uncertain
+          | :none
+
+  @typedoc """
+  The attestation statement format
+  """
+  @type statement_format ::
+          :packed
+          | :tpm
+          | :android_key
+          | :android_safetynet
+          | :fido_u2f
+          | :none
 
   @typedoc """
   The attestation path
+
+  Der-encoded certificates, the first certificate is the leaf / attestation certificate
   """
-  @type trust_path :: [binary()] | binary() | nil
+  @type trust_path :: [binary()]
 
-  @type result ::
-  {__MODULE__.type(), __MODULE__.trust_path() | nil, Wax.Metadata.Statement.t() | nil}
-
-  @type attestation_statement_format_verify_fun ::
-  (
-    Wax.Attestation.statement(),
-    Wax.AuthenticatorData.t(),
-    Wax.ClientData.hash(),
-    Wax.Challenge.t() ->
-      {:ok, __MODULE__.result()} | {:error, any()}
-  )
+  @type result :: {type(), trust_path() | nil, Wax.Metadata.statement() | nil}
 
   @doc false
+  @spec verify(
+          statement(),
+          format :: String.t(),
+          Wax.AuthenticatorData.t(),
+          Wax.ClientData.hash(),
+          Wax.Challenge.t()
+        ) :: {:ok, result()} | {:error, Exception.t()}
 
-  @spec statement_verify_fun(binary()) ::
-    {:ok, attestation_statement_format_verify_fun} | {:error, any()}
-
-  def statement_verify_fun("none") do
-    {:ok, &Wax.AttestationStatementFormat.None.verify/4}
+  def verify(att_statement, "none", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.None.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
   end
 
-  def statement_verify_fun("fido-u2f") do
-    {:ok, &Wax.AttestationStatementFormat.FIDOU2F.verify/4}
+  def verify(att_statement, "fido-u2f", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.FIDOU2F.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
   end
 
-  def statement_verify_fun("android-key") do
-    {:ok, &Wax.AttestationStatementFormat.AndroidKey.verify/4}
+  def verify(att_statement, "android-key", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.AndroidKey.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
   end
 
-  def statement_verify_fun("android-safetynet") do
-    {:ok, &Wax.AttestationStatementFormat.AndroidSafetynet.verify/4}
+  def verify(att_statement, "android-safetynet", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.AndroidSafetynet.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
   end
 
-  def statement_verify_fun("tpm") do
-    {:ok, &Wax.AttestationStatementFormat.TPM.verify/4}
+  def verify(att_statement, "tpm", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.TPM.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
   end
 
-  def statement_verify_fun("packed") do
-    {:ok, &Wax.AttestationStatementFormat.Packed.verify/4}
+  def verify(att_statement, "packed", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.Packed.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
   end
 
-  def statement_verify_fun(_) do
-    {:error, :unsupported_statement_format}
+  def verify(att_statement, "apple", auth_data, client_data_hash, challenge) do
+    Wax.AttestationStatementFormat.AppleAnonymous.verify(
+      att_statement,
+      auth_data,
+      client_data_hash,
+      challenge
+    )
+  end
+
+  def verify(_, _, _, _, _) do
+    {:error, %Wax.UnsupportedAttestationFormatError{}}
   end
 end
