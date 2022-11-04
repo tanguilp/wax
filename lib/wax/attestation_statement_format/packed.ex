@@ -264,7 +264,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
         %{"x5c" => _} = att_stmt,
         auth_data,
         client_data_hash,
-        challenge
+        %Wax.Challenge{attestation: "direct"} = challenge
       ) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
@@ -276,11 +276,19 @@ defmodule Wax.AttestationStatementFormat.Packed do
     end
   end
 
+  def verify(%{"x5c" => _}, _auth_data, _client_data_hash, _challenge) do
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :packed,
+       reason: :invalid_attestation_conveyance_preference
+     }}
+  end
+
   def verify(
         %{"ecdaaKeyId" => _},
         _auth_data,
         _client_hash_data,
-        _challenge
+        %Wax.Challenge{attestation: "direct"}
       ) do
     {:error, %Wax.AttestationVerificationError{type: :packed, reason: :unsupported_ecdaa}}
   end

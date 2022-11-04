@@ -13,7 +13,6 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - [Wax] Returns metadata as a map conforming with
   [FIDO Metadata Statement](https://fidoalliance.org/specs/mds/fido-metadata-statement-v3.0-ps-20210518.html),
   and no longer Elixir structs
-- [Wax] `:attestation` option was removed
 - [Wax] All returned errors are exceptions
 - [Wax.Metadata] Wax now loads MDSv3 metadata, and no longer requires an access token
 - [Wax.Metadata] The `tesla` library is no longer used

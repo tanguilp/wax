@@ -35,7 +35,7 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
         att_stmt,
         auth_data,
         client_data_hash,
-        challenge
+        %Wax.Challenge{attestation: "direct"} = challenge
       ) do
     # see: https://medium.com/@tangui.lepense/hi-the-webauthn-specification-https-www-w3-org-tr-webauthn-android-key-attestation-6e5e5daaa03f
     with :ok <- valid_cbor?(att_stmt),
@@ -59,6 +59,14 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
       error ->
         error
     end
+  end
+
+  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :android_key,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 
   defp valid_cbor?(att_stmt) do

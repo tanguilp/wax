@@ -8,7 +8,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
         att_stmt,
         auth_data,
         client_data_hash,
-        challenge
+        %Wax.Challenge{attestation: "direct"} = challenge
       ) do
     with :ok <- valid_cbor?(att_stmt),
          {:ok, pub_key} <- extract_and_verify_public_key(att_stmt),
@@ -22,6 +22,14 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
 
       {:ok, {attestation_type, att_stmt["x5c"], maybe_metadata_statement}}
     end
+  end
+
+  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
+    {:error,
+     %Wax.AttestationVerificationError{
+       type: :fido_u2f,
+       reason: :invalid_attestation_conveyance_preference
+     }}
   end
 
   defp valid_cbor?(att_stmt) do
