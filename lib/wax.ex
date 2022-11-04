@@ -328,6 +328,12 @@ defmodule Wax do
   credential id, and can be used to detect cloning of authenticator. See point 17 of the
   [7.2. Verifying an Authentication Assertion](https://www.w3.org/TR/webauthn-1/#verifying-assertion)
   for more details.
+
+  When using attestation, it's a good practice to check that the authenticator is not revoked
+  after authentication. To do so:
+  1. save the aaguid after registration along with the credential ID
+  2. check the authenticator is not revoked after authentication using the aaguid saved in
+  step 1. and `Wax.Metadata.get_by_aaguid/2`
   """
   @spec authenticate(
           Wax.CredentialId.t(),
