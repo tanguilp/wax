@@ -288,7 +288,7 @@ defmodule Wax.Metadata do
           |> :erlang.list_to_binary()
           |> process_and_save_metadata(state)
 
-        last_modified = List.keyfind(headers, "last-modified", 0)
+        last_modified = last_modified(headers)
 
         %{state | last_modified: last_modified, version_number: version_number}
 
@@ -315,6 +315,23 @@ defmodule Wax.Metadata do
         Logger.info("Failed to verify FIDO MDSV3 metadata (reason: #{inspect(reason)})")
 
         -1
+    end
+  end
+
+  defp last_modified([]) do
+    nil
+  end
+
+  defp last_modified([{header_name, header_value} | rest]) do
+    header_name
+    |> :erlang.list_to_binary()
+    |> String.downcase()
+    |> case do
+      "last-modified" ->
+        header_value
+
+      _ ->
+        last_modified(rest)
     end
   end
 
