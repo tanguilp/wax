@@ -87,99 +87,6 @@ defmodule Wax do
           | {:android_key_allow_software_enforcement, boolean()}
           | {:silent_authentication_enabled, boolean()}
 
-  defp set_opts(opts) do
-    attestation =
-      case opts[:attestation] do
-        "none" -> "none"
-        nil -> "none"
-        "direct" -> "direct"
-        _ -> raise "Invalid attestation, must be one of: `\"none\"`, `\"direct\"`"
-      end
-
-    origin =
-      if is_binary(opts[:origin]) do
-        opts[:origin]
-      else
-        case Application.get_env(:wax_, :origin) do
-          origin when is_binary(origin) ->
-            origin
-
-          _ ->
-            raise "Missing mandatory parameter `origin` (String.t())"
-        end
-      end
-
-    unless URI.parse(origin).host == "localhost" or URI.parse(origin).scheme == "https" do
-      raise "Invalid origin `#{origin}` (must be either https scheme or `localhost`)"
-    end
-
-    rp_id =
-      if opts[:rp_id] == :auto or Application.get_env(:wax_, :rp_id) == :auto do
-        URI.parse(origin).host
-      else
-        if is_binary(opts[:rp_id]) do
-          opts[:rp_id]
-        else
-          case Application.get_env(:wax_, :rp_id) do
-            rp_id when is_binary(rp_id) ->
-              rp_id
-
-            _ ->
-              raise "Missing mandatory parameter `rp_id` (String.t())"
-          end
-        end
-      end
-
-    if opts[:user_verification] &&
-         opts[:user_verification] not in ["discouraged", "preferred", "required"] do
-      raise "Invalid `:user_verification` parameter, must be one of: " <>
-              "\"discouraged\", \"preferred\", \"required\""
-    end
-
-    [
-      type: opts[:type],
-      attestation: attestation,
-      origin: origin,
-      rp_id: rp_id,
-      user_verification:
-        opts[:user_verification] ||
-          Application.get_env(:wax_, :user_verification, "preferred"),
-      trusted_attestation_types:
-        opts[:trusted_attestation_types] ||
-          Application.get_env(
-            :wax_,
-            :trusted_attestation_types,
-            [:none, :basic, :uncertain, :attca, :anonca, :self]
-          ),
-      verify_trust_root:
-        opts[:verify_trust_root] || Application.get_env(:wax_, :verify_trust_root, true),
-      acceptable_authenticator_statuses:
-        opts[:acceptable_authenticator_statuses] ||
-          Application.get_env(
-            :wax_,
-            :acceptable_authenticator_statuses,
-            [
-              "FIDO_CERTIFIED",
-              "FIDO_CERTIFIED_L1",
-              "FIDO_CERTIFIED_L1plus",
-              "FIDO_CERTIFIED_L2",
-              "FIDO_CERTIFIED_L2plus",
-              "FIDO_CERTIFIED_L3",
-              "FIDO_CERTIFIED_L3plus"
-            ]
-          ),
-      issued_at: :erlang.monotonic_time(:second),
-      timeout: opts[:timeout] || Application.get_env(:wax_, :timeout, 60 * 20),
-      android_key_allow_software_enforcement:
-        opts[:android_key_allow_software_enforcement] ||
-          Application.get_env(:wax_, :android_key_allow_software_enforcement) ||
-          false,
-      silent_authentication_enabled:
-        opts[:silent_authentication_enabled] ||
-          Application.get_env(:wax_, :silent_authentication_enabled, false)
-    ]
-  end
-
   @doc """
   Generates a new challenge for registration
 
@@ -211,9 +118,9 @@ defmodule Wax do
 
   @spec new_registration_challenge(opts()) :: Wax.Challenge.t()
   def new_registration_challenge(opts \\ []) do
-    opts = set_opts(Keyword.put(opts, :type, :attestation))
-
-    Wax.Challenge.new(opts)
+    opts
+    |> Keyword.put(:type, :attestation)
+    |> Wax.Challenge.new()
   end
 
   @doc """
@@ -393,9 +300,10 @@ defmodule Wax do
   @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts()) ::
           Wax.Challenge.t()
   def new_authentication_challenge(allow_credentials, opts \\ []) do
-    opts = set_opts(Keyword.put(opts, :type, :authentication))
-
-    Wax.Challenge.new(allow_credentials, opts)
+    opts
+    |> Keyword.put(:type, :authentication)
+    |> Keyword.put(:allow_credentials, allow_credentials)
+    |> Wax.Challenge.new()
   end
 
   @doc """
