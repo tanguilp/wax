@@ -54,7 +54,7 @@ defmodule Wax.CoseKey do
   """
   @type t :: %{required(integer()) => integer}
 
-  @typep cose_alg :: integer()
+  @type cose_alg :: integer()
 
   @doc false
   @spec supported_algs() :: %{required(cose_alg()) => String.t()}
