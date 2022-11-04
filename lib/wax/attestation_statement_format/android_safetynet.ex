@@ -36,7 +36,7 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
         att_stmt,
         auth_data,
         client_data_hash,
-        %Wax.Challenge{attestation: "direct"} = challenge
+        challenge
       ) do
     [header_b64, payload_b64, _sig] = String.split(att_stmt["response"], ".")
 
@@ -64,14 +64,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
   rescue
     _ ->
       {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_att_stmt}}
-  end
-
-  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
-    {:error,
-     %Wax.AttestationVerificationError{
-       type: :safetynet,
-       reason: :invalid_attestation_conveyance_preference
-     }}
   end
 
   defp valid_cbor?(att_stmt) do
