@@ -280,7 +280,7 @@ defmodule Wax.AttestationStatementFormat.Packed do
         %{"ecdaaKeyId" => _},
         _auth_data,
         _client_hash_data,
-        %Wax.Challenge{attestation: "direct"}
+        _challenge
       ) do
     {:error, %Wax.AttestationVerificationError{type: :packed, reason: :unsupported_ecdaa}}
   end

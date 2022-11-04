@@ -24,7 +24,6 @@ defmodule WaxTest do
 
     challenge = %Wax.Challenge{
       type: :attestation,
-      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -67,7 +66,6 @@ defmodule WaxTest do
 
     challenge = %Wax.Challenge{
       type: :attestation,
-      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -115,7 +113,6 @@ defmodule WaxTest do
 
     challenge = %Wax.Challenge{
       type: :attestation,
-      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -163,7 +160,6 @@ defmodule WaxTest do
 
     challenge = %Wax.Challenge{
       type: :attestation,
-      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -215,7 +211,6 @@ defmodule WaxTest do
 
   #  challenge = %Wax.Challenge{
   #    type: :attestation,
-  #    attestation: "direct",
   #    bytes: Map.get(test_client_data, :challenge),
   #    origin: Map.get(test_client_data, :origin),
   #    rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -255,7 +250,6 @@ defmodule WaxTest do
 
     challenge = %Wax.Challenge{
       type: :attestation,
-      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -297,7 +291,6 @@ defmodule WaxTest do
 
     challenge = %Wax.Challenge{
       type: :attestation,
-      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
@@ -510,7 +503,6 @@ defmodule WaxTest do
 
     challenge = %Wax.Challenge{
       type: :attestation,
-      attestation: "direct",
       bytes: Map.get(test_client_data, :challenge),
       origin: Map.get(test_client_data, :origin),
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
