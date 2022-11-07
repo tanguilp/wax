@@ -41,7 +41,7 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax_, "~> 0.5.0"}
+    {:wax_, "~> 0.6.0"}
   ]
 end
 ```
