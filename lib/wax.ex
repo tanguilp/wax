@@ -214,10 +214,6 @@ defmodule Wax do
   @doc """
   Generates a new challenge for authentication
 
-  The first argument is a list of (credential id, cose key) which were previsouly
-  registered (after successful `register/3`) for a user. This can be retrieved from
-  a user database for instance.
-
   The returned structure:
   - Contains the challenge bytes under the `bytes` key (e.g.: `challenge.bytes`). This is a
   random value that must be used by the javascript WebAuthn call
@@ -255,7 +251,7 @@ defmodule Wax do
        3 => -7
      }}
   ]
-  iex> Wax.new_authentication_challenge(cred_ids_and_associated_keys, [])
+  iex> Wax.new_authentication_challenge(allow_credentials: cred_ids_and_associated_keys)
   %Wax.Challenge{
     allow_credentials: [
       {"vwoRFklWfHJe1Fqjv7wY6exTyh23PjIBC4tTc4meXCeZQFEMwYorp3uYToGo8rVwxoU7c+C8eFuFOuF+unJQ8g==",
@@ -295,14 +291,16 @@ defmodule Wax do
     verify_trust_root: true
   }
   ```
+
+  When self-discoverable credentials (so-called *resident keys*) are to be used,
+  omit the `:allow_credentials` parameter and use instead  the `:credentials` parameter
+  of `authenticate/6` when verifying.
   """
 
-  @spec new_authentication_challenge([{Wax.CredentialId.t(), Wax.CoseKey.t()}], opts()) ::
-          Wax.Challenge.t()
-  def new_authentication_challenge(allow_credentials, opts \\ []) do
+  @spec new_authentication_challenge(opts()) :: Wax.Challenge.t()
+  def new_authentication_challenge(opts \\ []) do
     opts
     |> Keyword.put(:type, :authentication)
-    |> Keyword.put(:allow_credentials, allow_credentials)
     |> Wax.Challenge.new()
   end
 
@@ -311,7 +309,7 @@ defmodule Wax do
 
   The input params are:
   - `credential_id`: the credential id returned by the WebAuthn javascript API. Must be of
-  the same form as the one passed to `new_authentication_challenge/2` as it will be
+  the same form as the one passed to `new_authentication_challenge/1` as it will be
   compared against the previously retrieved valid credential ids
   - `auth_data_bin`: the authenticator data returned by the WebAuthn javascript API. Must
   be the raw binary, not the base64 encoded form
@@ -321,6 +319,7 @@ defmodule Wax do
   JSON as returned by the WebAuthn javascript API
   - `challenge`: the challenge that was generated beforehand, and whose bytes has been sent
   to the browser and used as an input by the WebAuthn javascript API
+  - `credentials`: see **Self-discoverable credentials** below
 
   The call returns `{:ok, authenticator_data}` in case of success, or `{:error, e}` otherwise.
 
@@ -334,23 +333,39 @@ defmodule Wax do
   1. save the aaguid after registration along with the credential ID
   2. check the authenticator is not revoked after authentication using the aaguid saved in
   step 1. and `Wax.Metadata.get_by_aaguid/2`
+
+  ### Self-discoverable credentials (*resident keys*)
+
+  It is possible to call the WebAuthn API without `:allow_credentials` when the FIDO2 device
+  is capable of storing self-discoverable credentials. In this case, the device prompts the user
+  for an account to use, and authenticates the user.
+
+  The WebAuthn API then returns a `userHandle` parameter, which is the user id which was used
+  during registration.
+
+  In this flow, it is not possible to know the allowed credentials in advance. Instead, one
+  need to use the *user handle* to retrieve the user keys after the WebAuthn API returns,
+  and before calling this function, with the retrieved keys passed as the `:credentials`
+  parameter.
   """
   @spec authenticate(
           Wax.CredentialId.t(),
           binary(),
           binary(),
           Wax.ClientData.raw_string(),
-          Wax.Challenge.t()
+          Wax.Challenge.t(),
+          [{Wax.AuthenticatorData.credential_id(), Wax.CoseKey.t()}]
         ) :: {:ok, Wax.AuthenticatorData.t()} | {:error, Exception.t()}
   def authenticate(
         credential_id,
         auth_data_bin,
         sig,
         client_data_json_raw,
-        challenge
+        challenge,
+        credentials \\ []
       ) do
     with :ok <- not_expired?(challenge),
-         {:ok, cose_key} <- cose_key_from_credential_id(credential_id, challenge),
+         {:ok, cose_key} <- cose_key_from_credential_id(credential_id, challenge, credentials),
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
          {:ok, client_data} <- Wax.ClientData.parse_raw_json(client_data_json_raw),
          :ok <- type_get?(client_data),
@@ -452,8 +467,17 @@ defmodule Wax do
     end
   end
 
-  defp cose_key_from_credential_id(credential_id, challenge) do
-    case List.keyfind(challenge.allow_credentials, credential_id, 0) do
+  defp cose_key_from_credential_id(credential_id, challenge, credentials) do
+    credential_list =
+      if challenge.allow_credentials == [] do
+        # There's no credentials in the challenge, resident key was used instead
+        # so we use the list of credentials passed as a parameter to authenticate/6
+        credentials
+      else
+        challenge.allow_credentials
+      end
+
+    case List.keyfind(credential_list, credential_id, 0) do
       {_, cose_key} ->
         {:ok, cose_key}
 

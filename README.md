@@ -41,7 +41,7 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax_, "~> 0.5.0"}
+    {:wax_, "~> 0.6.0"}
   ]
 end
 ```
@@ -80,7 +80,7 @@ required to persist it on the server side, for instance in the session:
 ```elixir
 # generating a challenge
 
-challenge = Wax.new_registration_challenge(login, [])
+challenge = Wax.new_registration_challenge()
 
 conn
 |> put_session(:challenge, challenge)
@@ -133,7 +133,7 @@ For further information, refer to the `Wax` module documentation.
 ### Authentication
 
 The process is quite similar, with 2 functions for authentication:
-1. `Wax.new_authentication_challenge/2`: generates a challenge from a list of
+1. `Wax.new_authentication_challenge/1`: generates a challenge from a list of
 `{credential id, key}` saved during the registration processes. It also has to be sent to
 the client for use by the javascript WebAuthn API
 2. `Wax.authenticate/5`: to be called to verify the WebAuthn javascript API response
@@ -144,7 +144,7 @@ This also requires storing the challenge:
 ```elixir
 cred_ids_and_keys = UserStore.get_keys(username)
 
-challenge = Wax.new_authentication_challenge(cred_ids_and_keys, [])
+challenge = Wax.new_authentication_challenge(allow_credentials: cred_ids_and_keys)
 
 conn
 |> put_session(:authentication_challenge, challenge)
