@@ -13,7 +13,6 @@ defmodule Wax.Challenge do
     :origin,
     :rp_id,
     :token_binding_status,
-    :allow_credentials,
     :issued_at,
     acceptable_authenticator_statuses: [
       "FIDO_CERTIFIED",
@@ -25,6 +24,7 @@ defmodule Wax.Challenge do
       "FIDO_CERTIFIED_L3plus"
     ],
     android_key_allow_software_enforcement: false,
+    allow_credentials: [],
     attestation: "none",
     silent_authentication_enabled: false,
     timeout: 120,
@@ -41,7 +41,7 @@ defmodule Wax.Challenge do
           rp_id: String.t(),
           user_verification: String.t(),
           token_binding_status: any(),
-          allow_credentials: [binary()],
+          allow_credentials: [{Wax.AuthenticatorData.credential_id(), Wax.CoseKey.t()}],
           trusted_attestation_types: [Wax.Attestation.type()],
           verify_trust_root: boolean(),
           acceptable_authenticator_statuses: [String.t()],

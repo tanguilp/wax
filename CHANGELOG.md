@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.6.0] - 2022-11-07
+
+### Changed
+
+- [Wax] `Wax.new_authentication_challenge/1` signature change to support *resident keys*
+- [Wax] `Wax.authenticate/6` signature change to support *resident keys*
+
 ## [0.5.0] - 2022-11-04
 
 ### Changed
