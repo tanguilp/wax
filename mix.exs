@@ -16,7 +16,8 @@ defmodule Wax.MixProject do
         extras: ["README.md", "CHANGELOG.md"]
       ],
       package: package(),
-      source_url: "https://github.com/tanguilp/wax"
+      source_url: "https://github.com/tanguilp/wax",
+      xref: [exclude: [:asn1ct]]
     ]
   end
 
