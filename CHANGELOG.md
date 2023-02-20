@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.6.1] - 2023-02-20
+
+### Changed
+
+- [Wax] External ASN1 compiler is used (through a new dependency) that should fix issue when
+compiling Wax for the first time
+
 ## [0.6.0] - 2022-11-07
 
 ### Changed
