@@ -1,4 +1,5 @@
 %{
+  "asn1_compiler": {:hex, :asn1_compiler, "0.1.1", "64a4e52b59d1f225878445ace2c75cd2245b13a5a81182304fd9dc5acfc8994e", [:mix], [], "hexpm", "c250d24c22f1a3f305d88864400f9ac2df55c6886e1e3a030e2946efeb94695e"},
   "cbor": {:hex, :cbor, "1.0.0", "35d33a26f6420ce3d2d01c0b1463a748b34c537d5609fc40116daf3666700d36", [:mix], [], "hexpm", "cc5e21e0fa5a0330715a3806c67bc294f8b65d07160f751b5bd6058bed1962ac"},
   "dialyxir": {:hex, :dialyxir, "1.2.0", "58344b3e87c2e7095304c81a9ae65cb68b613e28340690dfe1a5597fd08dec37", [:mix], [{:erlex, ">= 0.2.6", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "61072136427a851674cab81762be4dbeae7679f85b1272b6d25c3a839aff8463"},
   "earmark_parser": {:hex, :earmark_parser, "1.4.28", "0bf6546eb7cd6185ae086cbc5d20cd6dbb4b428aad14c02c49f7b554484b4586", [:mix], [], "hexpm", "501cef12286a3231dc80c81352a9453decf9586977f917a96e619293132743fb"},
