@@ -98,6 +98,6 @@ defmodule Wax.Challenge do
   end
 
   defp random_bytes() do
-    :crypto.strong_rand_bytes(32)
+    :crypto.strong_rand_bytes(32) |> Base.encode16()
   end
 end
