@@ -5,6 +5,8 @@ defmodule Wax.AuthenticatorData do
     :rp_id_hash,
     :flag_user_present,
     :flag_user_verified,
+    :flag_backup_eligible,
+    :flag_credential_backed_up,
     :flag_attested_credential_data,
     :flag_extension_data_included,
     :sign_count,
@@ -16,6 +18,8 @@ defmodule Wax.AuthenticatorData do
     :rp_id_hash,
     :flag_user_present,
     :flag_user_verified,
+    :flag_backup_eligible,
+    :flag_credential_backed_up,
     :flag_attested_credential_data,
     :flag_extension_data_included,
     :sign_count,
@@ -28,6 +32,8 @@ defmodule Wax.AuthenticatorData do
           rp_id_hash: binary(),
           flag_user_present: boolean(),
           flag_user_verified: boolean(),
+          flag_backup_eligible: boolean(),
+          flag_credential_backed_up: boolean(),
           flag_attested_credential_data: boolean(),
           flag_extension_data_included: boolean(),
           sign_count: non_neg_integer(),
@@ -62,7 +68,9 @@ defmodule Wax.AuthenticatorData do
           rp_id_hash::binary-size(32),
           flag_extension_data_included::size(1),
           flag_attested_credential_data::size(1),
-          _::size(3),
+          _::size(1),
+          flag_credential_backed_up::size(1),
+          flag_backup_eligible::size(1),
           flag_user_verified::size(1),
           _::size(1),
           flag_user_present::size(1),
@@ -72,6 +80,8 @@ defmodule Wax.AuthenticatorData do
       ) do
     flag_user_present = to_bool(flag_user_present)
     flag_user_verified = to_bool(flag_user_verified)
+    flag_backup_eligible = to_bool(flag_backup_eligible)
+    flag_credential_backed_up = to_bool(flag_credential_backed_up)
     flag_attested_credential_data = to_bool(flag_attested_credential_data)
     flag_extension_data_included = to_bool(flag_extension_data_included)
 
@@ -85,6 +95,8 @@ defmodule Wax.AuthenticatorData do
          rp_id_hash: rp_id_hash,
          flag_user_present: flag_user_present,
          flag_user_verified: flag_user_verified,
+         flag_backup_eligible: flag_backup_eligible,
+         flag_credential_backed_up: flag_credential_backed_up,
          flag_attested_credential_data: flag_attested_credential_data,
          flag_extension_data_included: flag_extension_data_included,
          sign_count: sign_count,
