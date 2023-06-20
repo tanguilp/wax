@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.6.2] - 2023-06-20
+
+### Added
+
+- [Wax.AuthenticatorData] Added `flag_backup_eligible` and `flag_credential_backed_up` flags
+
 ## [0.6.1] - 2023-02-20
 
 ### Changed
