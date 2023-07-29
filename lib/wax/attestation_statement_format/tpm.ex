@@ -61,8 +61,14 @@ defmodule Wax.AttestationStatementFormat.TPM do
                           "id:41544D4C",
                           # Broadcom
                           "id:4252434D",
+                          # Cisco
+                          "id:4353434F",
+                          # Flyslice Technologies
+                          "id:464C5953",
                           # HPE
                           "id:48504500",
+                          # Huawei
+                          "id:48495349",
                           # IBM
                           "id:49424d00",
                           # Infineon
