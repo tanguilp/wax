@@ -103,8 +103,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
                           "id:524F4343",
                           # Google,
                           "id:474F4F47"
-                        ] ++
-                          ["id:FFFFF1D0"]
+                        ] # ++ ["id:FFFFF1D0"]
 
   # fake ID for conformance tool testing, uncomment only for testing
 
