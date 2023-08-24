@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.6.3] - 2023-06-20
+
+### Fixed
+
+- [Wax.AttestationStatementFormat.AndroidSafetynet] Fix erroneous alg check
+
 ## [0.6.2] - 2023-06-20
 
 ### Added
