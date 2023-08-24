@@ -98,14 +98,10 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
           |> Jason.decode!()
           |> Map.get("alg")
 
-        if Enum.any?(authentication_algorithms, &algs_match?(&1, jws_alg)) do
-          root_certificates =
-            metadata_statement["attestationRootCertificates"] |> Enum.map(&Base.decode64!/1)
+        root_certificates =
+          Enum.map(metadata_statement["attestationRootCertificates"], &Base.decode64!/1)
 
-          do_verify_signature(jws, root_certificates)
-        else
-          {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :algs_mismatch}}
-        end
+        do_verify_signature(jws, root_certificates)
 
       {:error, %Wax.MetadataStatementNotFoundError{}} ->
         do_verify_signature(jws, [@root_cert_der])
@@ -114,23 +110,6 @@ defmodule Wax.AttestationStatementFormat.AndroidSafetynet do
         error
     end
   end
-
-  defp algs_match?("secp256r1_ecdsa_sha256_raw", "ES256"), do: true
-  defp algs_match?("secp256r1_ecdsa_sha256_der", "ES256"), do: true
-  defp algs_match?("rsassa_pss_sha256_raw", "PS256"), do: true
-  defp algs_match?("rsassa_pss_sha256_der", "PS256"), do: true
-  defp algs_match?("secp256k1_ecdsa_sha256_raw", "ES256K"), do: true
-  defp algs_match?("secp256k1_ecdsa_sha256_der", "ES256K"), do: true
-  defp algs_match?("rsassa_pss_sha384_raw", "PS384"), do: true
-  defp algs_match?("rsassa_pss_sha256_raw", "PS512"), do: true
-  defp algs_match?("rsassa_pkcsv15_sha256_raw", "RS256"), do: true
-  defp algs_match?("rsassa_pkcsv15_sha384_raw", "RS384"), do: true
-  defp algs_match?("rsassa_pkcsv15_sha512_raw", "RS512"), do: true
-  defp algs_match?("rsassa_pkcsv15_sha1_raw", "RS1"), do: true
-  defp algs_match?("secp384r1_ecdsa_sha384_raw", "ES384"), do: true
-  defp algs_match?("secp512r1_ecdsa_sha256_raw", "ES512"), do: true
-  defp algs_match?("ed25519_eddsa_sha512_raw", "EdDSA"), do: true
-  defp algs_match?(_, _), do: false
 
   defp do_verify_signature(_jws, []) do
     {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_jws_signature}}
