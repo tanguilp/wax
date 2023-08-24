@@ -55,55 +55,57 @@ defmodule Wax.AttestationStatementFormat.TPM do
   # from https://trustedcomputinggroup.org/resource/vendor-id-registry/
   # version 1.01
   @tpm_manufacturer_ids [
-                          # AMD
-                          "id:414D4400",
-                          # Atmel
-                          "id:41544D4C",
-                          # Broadcom
-                          "id:4252434D",
-                          # Cisco
-                          "id:4353434F",
-                          # Flyslice Technologies
-                          "id:464C5953",
-                          # HPE
-                          "id:48504500",
-                          # Huawei
-                          "id:48495349",
-                          # IBM
-                          "id:49424d00",
-                          # Infineon
-                          "id:49465800",
-                          # Intel
-                          "id:494E5443",
-                          # Lenovo
-                          "id:4C454E00",
-                          # Microsoft
-                          "id:4D534654",
-                          # National Semiconductor
-                          "id:4E534D20",
-                          # Nationz
-                          "id:4E545A00",
-                          # Nuvoton Technology
-                          "id:4E544300",
-                          # Qualcomm
-                          "id:51434F4D",
-                          # SMSC
-                          "id:534D5343",
-                          # ST Microelectronics
-                          "id:53544D20",
-                          # Samsung
-                          "id:534D534E",
-                          # Sinosun
-                          "id:534E5300",
-                          # Texas Instruments
-                          "id:54584E00",
-                          # Winbond
-                          "id:57454300",
-                          # Fuzhouk Rockchip
-                          "id:524F4343",
-                          # Google,
-                          "id:474F4F47"
-                        ] # ++ ["id:FFFFF1D0"]
+    # AMD
+    "id:414D4400",
+    # Atmel
+    "id:41544D4C",
+    # Broadcom
+    "id:4252434D",
+    # Cisco
+    "id:4353434F",
+    # Flyslice Technologies
+    "id:464C5953",
+    # HPE
+    "id:48504500",
+    # Huawei
+    "id:48495349",
+    # IBM
+    "id:49424d00",
+    # Infineon
+    "id:49465800",
+    # Intel
+    "id:494E5443",
+    # Lenovo
+    "id:4C454E00",
+    # Microsoft
+    "id:4D534654",
+    # National Semiconductor
+    "id:4E534D20",
+    # Nationz
+    "id:4E545A00",
+    # Nuvoton Technology
+    "id:4E544300",
+    # Qualcomm
+    "id:51434F4D",
+    # SMSC
+    "id:534D5343",
+    # ST Microelectronics
+    "id:53544D20",
+    # Samsung
+    "id:534D534E",
+    # Sinosun
+    "id:534E5300",
+    # Texas Instruments
+    "id:54584E00",
+    # Winbond
+    "id:57454300",
+    # Fuzhouk Rockchip
+    "id:524F4343",
+    # Google,
+    "id:474F4F47"
+  ]
+
+  # ++ ["id:FFFFF1D0"]
 
   # fake ID for conformance tool testing, uncomment only for testing
 
