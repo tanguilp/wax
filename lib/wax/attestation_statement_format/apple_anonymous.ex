@@ -42,7 +42,7 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
     else
       {:error, :malformed} ->
         {:error,
-         %Wax.AttestationVerificationError{type: :android_key, reason: :malformed_certificate}}
+         %Wax.AttestationVerificationError{type: :apple, reason: :malformed_certificate}}
 
       {:error, _} = error ->
         error
