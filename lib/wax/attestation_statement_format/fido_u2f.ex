@@ -39,7 +39,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
          length(Map.keys(att_stmt)) == 2 do
       :ok
     else
-      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_cbor}}
+      {:error, %Wax.AttestationVerificationError{type: :fido_u2f, reason: :invalid_cbor}}
     end
   end
 
@@ -56,13 +56,13 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
         else
           {:error,
            %Wax.AttestationVerificationError{
-             type: :safetynet,
+             type: :fido_u2f,
              reason: :invalid_public_key_algorithm
            }}
         end
 
       _ ->
-        {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :multiple_x5c}}
+        {:error, %Wax.AttestationVerificationError{type: :fido_u2f, reason: :multiple_x5c}}
     end
   end
 
@@ -70,7 +70,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     if :binary.decode_unsigned(auth_data.attested_credential_data.aaguid) == 0 do
       :ok
     else
-      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :non_nil_aaguid}}
+      {:error, %Wax.AttestationVerificationError{type: :fido_u2f, reason: :non_nil_aaguid}}
     end
   end
 
@@ -93,7 +93,7 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
     if :public_key.verify(verification_data, :sha256, sig, pub_key) do
       :ok
     else
-      {:error, %Wax.AttestationVerificationError{type: :safetynet, reason: :invalid_signature}}
+      {:error, %Wax.AttestationVerificationError{type: :fido_u2f, reason: :invalid_signature}}
     end
   end
 

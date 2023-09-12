@@ -44,6 +44,11 @@ end
 defmodule Wax.AttestationVerificationError do
   defexception [:type, :reason]
 
+  @type t :: %__MODULE__{
+          type: Wax.Attestation.statement_format(),
+          reason: atom()
+        }
+
   @impl true
   def message(%{type: type, reason: reason}) do
     "Failed to verify attestation of type #{type} (reason: #{reason})"

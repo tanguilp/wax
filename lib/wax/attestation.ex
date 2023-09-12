@@ -23,7 +23,8 @@ defmodule Wax.Attestation do
           :packed
           | :tpm
           | :android_key
-          | :android_safetynet
+          | :safetynet
+          | :apple
           | :fido_u2f
           | :none
 

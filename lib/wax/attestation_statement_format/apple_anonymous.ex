@@ -41,8 +41,7 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
       {:ok, {:anonca, att_stmt["x5c"], nil}}
     else
       {:error, :malformed} ->
-        {:error,
-         %Wax.AttestationVerificationError{type: :android_key, reason: :malformed_certificate}}
+        {:error, %Wax.AttestationVerificationError{type: :apple, reason: :malformed_certificate}}
 
       {:error, _} = error ->
         error
