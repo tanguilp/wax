@@ -269,7 +269,7 @@ defmodule Wax.Metadata do
       customize_hostname_check: [
         match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
       ],
-      crl_check: true,
+      crl_check: :best_effort,
       crl_cache: {:ssl_crl_cache, {:internal, [http: 1000]}}
     ]
 
