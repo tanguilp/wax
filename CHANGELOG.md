@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.6.4] - 2024-02-03
+
+### Changed
+
+- [Wax.Metadata] Relax CRL check requirements (https://github.com/tanguilp/wax/issues/36)
+
 ## [0.6.3] - 2023-06-20
 
 ### Fixed
