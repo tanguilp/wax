@@ -31,7 +31,7 @@ defmodule WaxTest do
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       # this example doesn't have a valid attestation root in FIDO2 MDS
       verify_trust_root: false,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -73,7 +73,7 @@ defmodule WaxTest do
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -121,7 +121,7 @@ defmodule WaxTest do
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -169,7 +169,7 @@ defmodule WaxTest do
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -221,7 +221,7 @@ defmodule WaxTest do
   #    rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
   #    trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
   #    verify_trust_root: true,
-  #    issued_at: :erlang.monotonic_time(:second),
+  #    issued_at: System.system_time(:second),
   #    timeout: 100,
   #    silent_authentication_enabled: false
   #  }
@@ -261,7 +261,7 @@ defmodule WaxTest do
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: false,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -303,7 +303,7 @@ defmodule WaxTest do
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -385,7 +385,7 @@ defmodule WaxTest do
       token_binding_status: nil,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -467,7 +467,7 @@ defmodule WaxTest do
       token_binding_status: nil,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }
@@ -516,7 +516,7 @@ defmodule WaxTest do
       rp_id: URI.parse(Map.get(test_client_data, :origin)).host,
       trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
       verify_trust_root: true,
-      issued_at: :erlang.monotonic_time(:second),
+      issued_at: System.system_time(:second),
       timeout: 100,
       silent_authentication_enabled: false
     }

@@ -71,7 +71,7 @@ defmodule Wax.Challenge do
     opts =
       opts
       |> Keyword.put(:bytes, random_bytes())
-      |> Keyword.put(:issued_at, :erlang.monotonic_time(:second))
+      |> Keyword.put(:issued_at, System.system_time(:second))
 
     opts_from_env = Application.get_all_env(:wax_) |> Keyword.take(@opt_names)
 
