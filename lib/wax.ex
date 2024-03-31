@@ -381,7 +381,7 @@ defmodule Wax do
   end
 
   defp not_expired?(challenge) do
-    current_time = :erlang.monotonic_time(:second)
+    current_time = System.system_time(:second)
 
     if current_time - challenge.issued_at < challenge.timeout do
       :ok
