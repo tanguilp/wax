@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.6.5] - 2024-03-31
+
+### Fixed
+
+- [Wax] Use system time instead of monotonic time for timeout handling
+[(#38)](https://github.com/tanguilp/wax/issues/38)
+
 ## [0.6.4] - 2024-02-03
 
 ### Changed
