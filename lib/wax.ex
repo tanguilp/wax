@@ -415,7 +415,11 @@ defmodule Wax do
   end
 
   defp valid_origin?(client_data, challenge) do
-    if client_data.origin == challenge.origin do
+    client_origin = URI.parse(client_data.origin)
+    challenge_origin = URI.parse(challenge.origin)
+
+    if client_origin.scheme == challenge_origin.scheme &&
+         String.ends_with?(client_origin.host, challenge.rp_id) do
       :ok
     else
       {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}}
