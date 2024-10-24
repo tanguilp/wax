@@ -461,7 +461,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
       end
     )
     |> elem(2)
-    |> String.slice(2..-1)
+    |> String.slice(2..-1//-1)
   end
 
   defp to_erlang_curve(@tpm_ecc_nist_p192), do: :pubkey_cert_records.namedCurves(:secp192r1)

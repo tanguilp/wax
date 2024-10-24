@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :wax_,
   origin: "http://localhost:4000",

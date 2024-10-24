@@ -275,7 +275,7 @@ defmodule Wax.Metadata do
 
     headers =
       if state[:last_modified] do
-        [{'if-modified-since', state[:last_modified]}]
+        [{~c"if-modified-since", state[:last_modified]}]
       else
         []
       end
