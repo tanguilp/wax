@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
-## [0.6.5] - 2024-03-31
+## [0.6.6] - 2024-10-24
+
+### Fixed
+
+- Suppress several warnings with Elixir 1.17 & OTP 27
 
 ### Fixed
 
