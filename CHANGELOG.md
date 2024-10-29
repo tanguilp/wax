@@ -10,6 +10,8 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 - Suppress several warnings with Elixir 1.17 & OTP 27
 
+## [0.6.5] - 2024-03-31
+
 ### Fixed
 
 - [Wax] Use system time instead of monotonic time for timeout handling
