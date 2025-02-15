@@ -52,7 +52,7 @@ defmodule Wax.CoseKey do
   }
   ```
   """
-  @type t :: %{required(integer()) => integer}
+  @type t :: %{required(integer()) => integer | binary()}
 
   @type cose_alg :: integer()
 

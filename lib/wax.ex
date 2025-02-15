@@ -79,6 +79,7 @@ defmodule Wax do
           | {:origin, String.t()}
           | {:rp_id, String.t() | :auto}
           | {:user_verification, String.t()}
+          | {:allow_credentials, [{Wax.AuthenticatorData.credential_id(), Wax.CoseKey.t()}]}
           | {:trusted_attestation_types, [Wax.Attestation.type()]}
           | {:verify_trust_root, boolean()}
           | {:acceptable_authenticator_statuses, [String.t()]}
