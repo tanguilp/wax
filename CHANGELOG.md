@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [0.6.7] - 2025-02-17
+
+### Fixed
+
+- Add missing option `allow_credentials`
+
 ## [0.6.6] - 2024-10-24
 
 ### Fixed
