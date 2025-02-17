@@ -19,6 +19,7 @@ defmodule Wax do
   |`origin`|`String.t()`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` |
   |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
   |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|registration & authentication|`"preferred"`| |
+  |`allow_credentials`|`[{Wax.AuthenticatorData.credential_id(), Wax.CoseKey.t()}]`|authentication|`[]`| |
   |`trusted_attestation_types`|`[t:Wax.Attestation.type/0]`|registration|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
   |`verify_trust_root`|`boolean()`|registration|`true`|Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata|
   |`acceptable_authenticator_statuses`|`[String.t()]`|registration|`["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]`| The `"UPDATE_AVAILABLE"` status is not whitelisted by default |
