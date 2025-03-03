@@ -218,7 +218,8 @@ defmodule Wax do
 
   The returned structure:
   - Contains the challenge bytes under the `bytes` key (e.g.: `challenge.bytes`). This is a
-  random value that must be used by the javascript WebAuthn call
+  random value that must be used by the javascript WebAuthn call. Optionally, you can supply
+  your own via the `:bytes` option.
   - Must be passed backed to `authenticate/5`
 
   Typically, this structure is stored in the session (cookie...) for the time the WebAuthn
