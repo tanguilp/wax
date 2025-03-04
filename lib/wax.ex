@@ -416,12 +416,30 @@ defmodule Wax do
     end
   end
 
-  defp valid_origin?(client_data, challenge) do
-    if client_data.origin == challenge.origin do
+  def valid_origin?(client_data, challenge) do
+    if same_host_or_subdomain?(client_data, challenge) do
       :ok
     else
       {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}}
     end
+  end
+
+  defp same_host_or_subdomain?(_client, nil), do: false
+
+  defp same_host_or_subdomain?(client, challenge) do
+     client_uri = URI.parse(client.origin)
+     challenge_uri = URI.parse(challenge.origin)
+
+     cond do
+       client.origin == challenge.origin ->
+         true
+       client_uri.scheme == challenge_uri.scheme and
+       client_uri.port == challenge_uri.port and
+       String.ends_with?(client_uri.host, "." <> challenge.rp_id) ->
+         true
+       true ->
+         false
+     end
   end
 
   defp valid_rp_id?(auth_data, challenge) do

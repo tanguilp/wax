@@ -406,6 +406,88 @@ defmodule WaxTest do
     assert {:ok, _} = Wax.authenticate(raw_id, auth_data, sig, client_data_json, challenge)
   end
 
+  test "Inalid subdomain authentication" do
+    challenge = %Wax.Challenge{
+      type: :authentication,
+      allow_credentials: [
+        {"vwoRFklWfHJe1Fqjv7wY6exTyh23PjIBC4tTc4meXCeZQFEMwYorp3uYToGo8rVwxoU7c+C8eFuFOuF+unJQ8g==",
+         %{
+           -3 =>
+             <<121, 21, 84, 106, 84, 48, 91, 21, 161, 78, 176, 199, 224, 86, 196, 226, 116, 207,
+               221, 200, 26, 202, 214, 78, 95, 112, 140, 236, 190, 183, 177, 223>>,
+           -2 =>
+             <<195, 105, 55, 252, 13, 134, 94, 208, 83, 115, 8, 235, 190, 173, 107, 78, 247, 125,
+               65, 216, 252, 232, 41, 13, 39, 104, 231, 65, 200, 149, 172, 118>>,
+           -1 => 1,
+           1 => 2,
+           3 => -7
+         }},
+        {"E0YtUWEPcRLyW1wd4v3KuHqlW1DRQmF2VgNhhR1FumtMYPUEu/d3RO+WC4T4XIa0PZ6Pjw+IBNQDn/It5UjWmw==",
+         %{
+           -3 =>
+             <<113, 34, 76, 107, 120, 21, 246, 189, 21, 167, 119, 39, 245, 140, 143, 133, 209, 19,
+               63, 196, 145, 52, 43, 2, 193, 208, 200, 103, 3, 51, 37, 123>>,
+           -2 =>
+             <<199, 68, 146, 57, 216, 62, 11, 98, 8, 108, 9, 229, 40, 97, 201, 127, 47, 240, 50,
+               126, 138, 205, 37, 148, 172, 240, 65, 125, 70, 81, 213, 152>>,
+           -1 => 1,
+           1 => 2,
+           3 => -7
+         }},
+        {"SsArygrKWPGW6T50XP+7G/k4u1oKz2Dib+p5xrrclICUFQIcYq6YNF6vmnVxFipTRC/EMwjy5/3cU3UOTglLhw==",
+         %{
+           -3 =>
+             <<78, 240, 9, 176, 160, 253, 47, 218, 95, 31, 7, 50, 129, 149, 65, 83, 195, 170, 176,
+               242, 21, 165, 151, 116, 198, 7, 150, 11, 36, 18, 30, 154>>,
+           -2 =>
+             <<165, 186, 196, 38, 14, 111, 96, 252, 55, 193, 147, 196, 151, 150, 176, 190, 83, 5,
+               70, 66, 208, 57, 66, 82, 70, 158, 41, 213, 218, 205, 73, 36>>,
+           -1 => 1,
+           1 => 2,
+           3 => -7
+         }},
+        {"DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ==",
+         %{
+           -3 =>
+             <<98, 100, 223, 32, 227, 200, 15, 188, 189, 232, 138, 105, 22, 180, 62, 243, 3, 141,
+               155, 218, 234, 56, 73, 119, 68, 40, 15, 226, 166, 223, 142, 70>>,
+           -2 =>
+             <<208, 207, 104, 44, 202, 126, 18, 157, 148, 21, 163, 59, 225, 16, 109, 136, 12, 65,
+               158, 142, 164, 239, 142, 27, 193, 171, 144, 237, 209, 71, 65, 213>>,
+           -1 => 1,
+           1 => 2,
+           3 => -7
+         }}
+      ],
+      bytes:
+        <<116, 133, 61, 70, 123, 121, 10, 178, 236, 90, 87, 60, 49, 217, 68, 174, 49, 237, 210,
+          27, 49, 158, 107, 163, 50, 109, 253, 21, 8, 125, 125, 154>>,
+      origin: "http://localhost:4000",
+      rp_id: "localhost",
+      token_binding_status: nil,
+      trusted_attestation_types: [:none, :basic, :uncertain, :attca, :self],
+      verify_trust_root: true,
+      issued_at: System.system_time(:second),
+      timeout: 100,
+      silent_authentication_enabled: false
+    }
+
+    raw_id =
+      "DFQrvtpFuI9EXiqRcbN/a26zy20MZfECYuqf4deP6FzpwpWLjZrBAIFrxnNbiwo05uxMoBP+0dnlQMpZLAE9UQ=="
+
+    client_data_json =
+      "{\"challenge\":\"dIU9Rnt5CrLsWlc8MdlErjHt0hsxnmujMm39FQh9fZo\",\"clientExtensions\":{},\"hashAlgorithm\":\"SHA-256\",\"origin\":\"http://test_localhost:4000\",\"type\":\"webauthn.get\"}"
+
+    auth_data = Base.decode64!("SZYN5YgOjGh0NBcPZHZgW4/krrmihjLHmVzzuoMdl2MBAAAANg==")
+
+    sig =
+      Base.decode64!(
+        "MEQCIHHZ5/2J9enVkAYKFcmNCAxcFz7Bs/A2f8THzhtCS4PqAiAxZXMONoQrnRQviYWn4wqGwQZr20ukNltjH88SIn9k2Q=="
+      )
+
+    assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch, __exception__: true}} = Wax.authenticate(raw_id, auth_data, sig, client_data_json, challenge)
+  end
+
   test "Invalid authentication (invalid signature)" do
     challenge = %Wax.Challenge{
       type: :authentication,
@@ -533,5 +615,115 @@ defmodule WaxTest do
 
     assert {:error, %Wax.AttestationVerificationError{reason: :path_validation_failed}} =
              Wax.register(attestation_object, client_data_json, challenge)
+  end
+
+  describe "valid_origin?/2" do
+    test "exact match origin" do
+      client_data = %Wax.ClientData{
+        origin: "https://example.com",
+        type: :create,
+        challenge: "challenge"
+      }
+
+      challenge = %Wax.Challenge{
+        type: nil,
+        bytes: nil,
+        issued_at: nil,
+        origin: "https://example.com",
+        rp_id: "example.com"
+      }
+
+      assert :ok = Wax.valid_origin?(client_data, challenge)
+    end
+
+    test "subdomain match" do
+      client_data = %Wax.ClientData{
+        origin: "https://sub.example.com",
+        type: :create,
+        challenge: "challenge"
+      }
+
+      challenge = %Wax.Challenge{
+        type: nil,
+        bytes: nil,
+        issued_at: nil,
+        origin: "https://example.com",
+        rp_id: "example.com"
+      }
+
+      assert :ok = Wax.valid_origin?(client_data, challenge)
+    end
+
+    test "different scheme should fail" do
+      client_data = %Wax.ClientData{
+        origin: "http://example.com",
+        type: :create,
+        challenge: "challenge"
+      }
+
+      challenge = %Wax.Challenge{
+        type: nil,
+        bytes: nil,
+        issued_at: nil,
+        origin: "https://example.com",
+        rp_id: "example.com"
+      }
+
+      assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}} = Wax.valid_origin?(client_data, challenge)
+    end
+
+    test "different port should fail" do
+      client_data = %Wax.ClientData{
+        origin: "https://example.com:8443",
+        type: :create,
+        challenge: "challenge"
+      }
+
+      challenge = %Wax.Challenge{
+        type: nil,
+        bytes: nil,
+        issued_at: nil,
+        origin: "https://example.com",
+        rp_id: "example.com"
+      }
+
+      assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}} = Wax.valid_origin?(client_data, challenge)
+    end
+
+    test "completely different domain should fail" do
+      client_data = %Wax.ClientData{
+        origin: "https://attacker_example.com",
+        type: :create,
+        challenge: "challenge"
+      }
+
+      challenge = %Wax.Challenge{
+        type: nil,
+        bytes: nil,
+        issued_at: nil,
+        origin: "https://example.com",
+        rp_id: "example.com"
+      }
+
+      assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}} = Wax.valid_origin?(client_data, challenge)
+    end
+
+    test "similar domain that is not a subdomain should fail" do
+      client_data = %Wax.ClientData{
+        origin: "https://exampleacom.evil.com",
+        type: :create,
+        challenge: "challenge"
+      }
+
+      challenge = %Wax.Challenge{
+        type: nil,
+        bytes: nil,
+        issued_at: nil,
+        origin: "https://example.com",
+        rp_id: "example.com"
+      }
+
+      assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}} = Wax.valid_origin?(client_data, challenge)
+    end
   end
 end
