@@ -715,6 +715,7 @@ defmodule WaxTest do
         ".com",
         ".example",
         ".example.com",
+        "sub.sub.example.com",
         " example.com",
         " .example.com",
         "example.com.evil",
