@@ -706,24 +706,40 @@ defmodule WaxTest do
       }
 
       assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}} = Wax.valid_origin?(client_data, challenge)
-    end
+  end
 
-    test "similar domain that is not a subdomain should fail" do
-      client_data = %Wax.ClientData{
-        origin: "https://exampleacom.evil.com",
-        type: :create,
-        challenge: "challenge"
-      }
+    test "fake domain with matching suffix should fail" do
+      fake_domain_names = [
+        "example.com.evil.com",
+        "evilexample.com",
+        ".com",
+        ".example",
+        ".example.com",
+        " example.com",
+        " .example.com",
+        "example.com.evil",
+        << 0 >> <> ".example.com",
+        << 1 >> <> ".example.com",
+        << 32 >> <> ".example.com"
+      ]
 
-      challenge = %Wax.Challenge{
-        type: nil,
-        bytes: nil,
-        issued_at: nil,
-        origin: "https://example.com",
-        rp_id: "example.com"
-      }
+      for fake_domain <- fake_domain_names do
+        client_data = %Wax.ClientData{
+          origin: "https://#{fake_domain}",
+          type: :create,
+          challenge: "challenge"
+        }
 
-      assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}} = Wax.valid_origin?(client_data, challenge)
+        challenge = %Wax.Challenge{
+          type: nil,
+          bytes: nil,
+          issued_at: nil,
+          origin: "https://example.com",
+          rp_id: "example.com"
+        }
+
+        assert {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}} = Wax.valid_origin?(client_data, challenge)
+      end
     end
   end
 end

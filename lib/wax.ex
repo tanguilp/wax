@@ -435,11 +435,26 @@ defmodule Wax do
          true
        client_uri.scheme == challenge_uri.scheme and
        client_uri.port == challenge_uri.port and
+       segments(client_uri.host) == 1 + segments(challenge.rp_id) and
        String.ends_with?(client_uri.host, "." <> challenge.rp_id) ->
          true
        true ->
          false
      end
+  end
+
+  defp segments(host) do
+    # 1. Remove all non-alphanumeric characters except dots and dashes
+    # 2. Trim leading and trailing whitespace
+    # 3. Split on dots
+    # 4. Filter out empty segments
+    # 5. Count the remaining segments
+
+    Regex.replace(~r/[^A-Za-z0-9.\-]/, host, "")
+    |> String.trim()
+    |> String.split(".")
+    |> Enum.filter(&(&1 != ""))
+    |> Enum.count()
   end
 
   defp valid_rp_id?(auth_data, challenge) do
