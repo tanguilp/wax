@@ -89,6 +89,10 @@ defmodule Wax.Challenge do
       raise "Missing mandatory parameter `rp_id` (String.t())"
     end
 
+    if opts[:rp_id] == :auto and is_list(opts[:origin]) do
+      raise "`:rp_id` must be manually set when using a list of accepted origins"
+    end
+
     opts =
       if opts[:rp_id] == :auto,
         do: Keyword.put(opts, :rp_id, URI.parse(opts[:origin]).host),
