@@ -71,7 +71,7 @@ defmodule Wax do
   it at your own risks or blindly trust its author! If you're knowledgeable about
   FIDO2 and willing to help reviewing it, please contact the author
   - When providing your own challenge, please make sure to understand that:
-    - it explciitly violates the recommandation in the standard
+    - it explicitly violates the recommandation in the standard
     - it exposes you to some attacks (such as replay attacks)
     - you have no guarantee that the user understood what he has been signing (no specific browser UI
     was presented)
