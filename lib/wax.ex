@@ -26,6 +26,7 @@ defmodule Wax do
   |`timeout`|`non_neg_integer()`|registration & authentication|`20 * 60`| The validity duration of a challenge, in seconds |
   |`android_key_allow_software_enforcement`|`boolean()`|registration|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
   |`silent_authentication_enabled`|`boolean()`|authentication|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
+  |`bytes`|`binary()`|registration & authentication|random bytes|Allows to provide with your own challenge. This is **not** recommended unless you know what you're doing. Refer to the [Security considerations](#security-considerations) for more information|
 
   ## FIDO2 Metadata
 
@@ -69,6 +70,11 @@ defmodule Wax do
   - This library has **not** be reviewed by independent security / FIDO2 specialists - use
   it at your own risks or blindly trust its author! If you're knowledgeable about
   FIDO2 and willing to help reviewing it, please contact the author
+  - When providing your own challenge, please make sure to understand that:
+    - it explciitly violates the recommandation in the standard
+    - it exposes you to some attacks (such as replay attacks)
+    - you have no guarantee that the user understood what he has been signing (no specific browser UI
+    was presented)
   """
 
   alias Wax.Utils
@@ -218,7 +224,8 @@ defmodule Wax do
 
   The returned structure:
   - Contains the challenge bytes under the `bytes` key (e.g.: `challenge.bytes`). This is a
-  random value that must be used by the javascript WebAuthn call
+  random value that must be used by the javascript WebAuthn call. Optionally, you can supply
+  your own via the `:bytes` option.
   - Must be passed backed to `authenticate/5`
 
   Typically, this structure is stored in the session (cookie...) for the time the WebAuthn

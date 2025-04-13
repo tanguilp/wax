@@ -70,7 +70,7 @@ defmodule Wax.Challenge do
   def new(opts) do
     opts =
       opts
-      |> Keyword.put(:bytes, random_bytes())
+      |> Keyword.put_new(:bytes, random_bytes())
       |> Keyword.put(:issued_at, System.system_time(:second))
 
     opts_from_env = Application.get_all_env(:wax_) |> Keyword.take(@opt_names)
