@@ -5,12 +5,15 @@ defmodule Wax.ChallengeTest do
 
   describe "new/1" do
     test "generates bytes" do
-      %{bytes: bytes} = Challenge.new([])
-      assert byte_size(bytes) == 32
+      challenge = Challenge.new([])
+
+      assert byte_size(challenge.bytes) == 32
     end
 
     test "does not override bytes when provided as an option" do
-      assert %{bytes: "abcd"} = Challenge.new(bytes: "abcd")
+      challenge = Challenge.new(bytes: "abcd")
+
+      assert challenge.bytes == "abcd"
     end
   end
 end

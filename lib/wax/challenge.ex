@@ -14,6 +14,7 @@ defmodule Wax.Challenge do
     :rp_id,
     :token_binding_status,
     :issued_at,
+    :origin_verify_fun,
     acceptable_authenticator_statuses: [
       "FIDO_CERTIFIED",
       "FIDO_CERTIFIED_L1",
@@ -37,7 +38,7 @@ defmodule Wax.Challenge do
           type: :attestation | :authentication,
           attestation: String.t(),
           bytes: binary(),
-          origin: String.t(),
+          origin: String.t() | [String.t()] | any(),
           rp_id: String.t(),
           user_verification: String.t(),
           token_binding_status: any(),
@@ -48,7 +49,8 @@ defmodule Wax.Challenge do
           issued_at: integer(),
           timeout: non_neg_integer(),
           android_key_allow_software_enforcement: boolean(),
-          silent_authentication_enabled: boolean()
+          silent_authentication_enabled: boolean(),
+          origin_verify_fun: {module(), atom(), [any()]}
         }
 
   @opt_names [
@@ -71,26 +73,22 @@ defmodule Wax.Challenge do
     opts =
       opts
       |> Keyword.put_new(:bytes, random_bytes())
+      |> Keyword.put_new(:origin_verify_fun, {Wax, :origins_match?, []})
       |> Keyword.put(:issued_at, System.system_time(:second))
 
     opts_from_env = Application.get_all_env(:wax_) |> Keyword.take(@opt_names)
 
-    opts = Keyword.merge(opts, opts_from_env)
+    opts = Keyword.merge(opts_from_env, opts)
 
-    unless is_binary(opts[:origin]),
+    if is_nil(opts[:origin]),
       do: raise("Missing mandatory parameter `origin` (String.t())")
-
-    unless URI.parse(opts[:origin]).host == "localhost" or
-             URI.parse(opts[:origin]).scheme == "https" do
-      raise "Invalid origin `#{opts[:origin]}` (must be either https scheme or `localhost`)"
-    end
 
     unless is_binary(opts[:rp_id]) or opts[:rp_id] == :auto do
       raise "Missing mandatory parameter `rp_id` (String.t())"
     end
 
-    if opts[:rp_id] == :auto and is_list(opts[:origin]) do
-      raise "`:rp_id` must be manually set when using a list of accepted origins"
+    if opts[:rp_id] == :auto and not is_binary(opts[:origin]) do
+      raise "`:rp_id` must be manually set when using value other than a string for `origin`"
     end
 
     opts =

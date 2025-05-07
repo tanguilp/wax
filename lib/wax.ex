@@ -16,8 +16,8 @@ defmodule Wax do
   |  Option       |  Type         |  Applies to       |  Default value                | Notes |
   |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
   |`attestation`|`"none"` or `"direct"`|registration|`"none"`| |
-  |`origin`|`String.t()` or `[String.t(), ...]`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` or `["www.example.com", "biz.example.com"]` |
-  |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
+  |`origin`|`String.t()` or `[String.t()]`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` or `["www.example.com", "biz.example.com"]` |
+  |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) if it is a string | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
   |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|registration & authentication|`"preferred"`| |
   |`allow_credentials`|`[{Wax.AuthenticatorData.credential_id(), Wax.CoseKey.t()}]`|authentication|`[]`| |
   |`trusted_attestation_types`|`[t:Wax.Attestation.type/0]`|registration|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
@@ -27,6 +27,7 @@ defmodule Wax do
   |`android_key_allow_software_enforcement`|`boolean()`|registration|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
   |`silent_authentication_enabled`|`boolean()`|authentication|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
   |`bytes`|`binary()`|registration & authentication|random bytes|Allows to provide with your own challenge. This is **not** recommended unless you know what you're doing. Refer to the [Security considerations](#security-considerations) for more information|
+  |`origin_verify_fun`|MFA tuple|registration & authentication|`{Wax, :origins_match?, []}`|The origin can be checked against a unique origin or a list of origin, using the `:origin` option. This option allows to modify the verify function so as to, for example, check subdomains of an allowed origin. It accepts an MFA tuple. The origins from the client data and the challenge are appended to the arguments|
 
   ## FIDO2 Metadata
 
@@ -389,6 +390,20 @@ defmodule Wax do
     end
   end
 
+  @doc """
+  Default origin verification function
+
+  Verifies that the client data origin is the expected origin (or in the list of
+  expected origins).
+  """
+  @spec origins_match?(
+          client_data_origin :: String.t(),
+          configured_origin :: String.t() | [String.t()]
+        ) :: boolean()
+  def origins_match?(client_data_origin, challenge_origin) do
+    client_data_origin in List.wrap(challenge_origin)
+  end
+
   defp not_expired?(challenge) do
     current_time = System.system_time(:second)
 
@@ -424,7 +439,9 @@ defmodule Wax do
   end
 
   defp valid_origin?(client_data, challenge) do
-    if client_data.origin in List.wrap(challenge.origin) do
+    {m, f, a} = challenge.origin_verify_fun
+
+    if apply(m, f, [client_data.origin, challenge.origin] ++ a) do
       :ok
     else
       {:error, %Wax.InvalidClientDataError{reason: :origin_mismatch}}
