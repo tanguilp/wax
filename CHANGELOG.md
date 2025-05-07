@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [0.7.0] - XXXX-XX-XX
 
+### Changed
+
+- [Wax] Options passed to the `Wax` module functions now take precedence over environment
+- [Wax] Origin can now be an origin string (as before) or a list of origins (new) against
+which the client data origin is checked
+
 ### Removed
 
 - [Wax] Removed support for safetynet attestations (as it is deprecated)

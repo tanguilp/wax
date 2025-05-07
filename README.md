@@ -182,8 +182,8 @@ These options are:
 |  Option       |  Type         |  Applies to       |  Default value                | Notes |
 |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
 |`attestation`|`"none"` or `"direct"`|registration|`"none"`| |
-|`origin`|`String.t()`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` |
-|`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
+|`origin`|`String.t()` or `[String.t()]`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` or `["www.example.com", "biz.example.com"]` |
+|`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) if it is a string | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
 |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|registration & authentication|`"preferred"`| |
 |`trusted_attestation_types`|`[t:Wax.Attestation.type/0]`|registration|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
 |`verify_trust_root`|`boolean()`|registration|`true`|Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata|
@@ -192,6 +192,7 @@ These options are:
 |`android_key_allow_software_enforcement`|`boolean()`|registration|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
 |`silent_authentication_enabled`|`boolean()`|authentication|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
 |`bytes`|`binary()`|registration & authentication|random bytes|Allows to provide with your own challenge. This is **not** recommended unless you know what you're doing. Refer to the [Security considerations](#security-considerations) for more information|
+|`origin_verify_fun`|MFA tuple|registration & authentication|`{Wax, :origins_match?, []}`|The origin can be checked against a unique origin or a list of origin, using the `:origin` option. This option allows to modify the verify function so as to, for example, check subdomains of an allowed origin. It accepts an MFA tuple. The origins from the client data and the challenge are appended to the arguments|
 
 ## FIDO2 Metadata
 
