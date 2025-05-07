@@ -23,7 +23,6 @@ defmodule Wax.Attestation do
           :packed
           | :tpm
           | :android_key
-          | :safetynet
           | :apple
           | :fido_u2f
           | :none
@@ -66,15 +65,6 @@ defmodule Wax.Attestation do
 
   def verify(att_statement, "android-key", auth_data, client_data_hash, challenge) do
     Wax.AttestationStatementFormat.AndroidKey.verify(
-      att_statement,
-      auth_data,
-      client_data_hash,
-      challenge
-    )
-  end
-
-  def verify(att_statement, "android-safetynet", auth_data, client_data_hash, challenge) do
-    Wax.AttestationStatementFormat.AndroidSafetynet.verify(
       att_statement,
       auth_data,
       client_data_hash,
