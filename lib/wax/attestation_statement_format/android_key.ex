@@ -52,10 +52,6 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
         {:error,
          %Wax.AttestationVerificationError{type: :android_key, reason: :malformed_certificate}}
 
-      {:error, {:bad_cert, _}} ->
-        {:error,
-         %Wax.AttestationVerificationError{type: :android_key, reason: :path_validation_bad_cert}}
-
       error ->
         error
     end

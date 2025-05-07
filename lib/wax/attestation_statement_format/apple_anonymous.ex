@@ -39,12 +39,6 @@ defmodule Wax.AttestationStatementFormat.AppleAnonymous do
          :ok <- check_keys_match(auth_data, att_cert),
          :ok <- check_certificate_path(att_stmt, auth_data, challenge) do
       {:ok, {:anonca, att_stmt["x5c"], nil}}
-    else
-      {:error, :malformed} ->
-        {:error, %Wax.AttestationVerificationError{type: :apple, reason: :malformed_certificate}}
-
-      {:error, _} = error ->
-        error
     end
   end
 

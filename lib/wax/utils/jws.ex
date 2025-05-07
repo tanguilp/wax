@@ -50,9 +50,6 @@ defmodule Wax.Utils.JWS do
 
       false ->
         {:error, :jws_invalid_signature}
-
-      {:error, _} = error ->
-        error
     end
   rescue
     _e ->
