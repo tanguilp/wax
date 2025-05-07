@@ -266,7 +266,7 @@ See [CHANGELOG.md](CHANGELOG.md).
   - [x] **Mandatory**: TPM attestation
   - [x] *Optional*: Android key attestation
   - [x] **Mandatory**: U2F attestation
-  - [x] **Mandatory**: Android Safetynet attestation
+  - [ ] *Deprecated*: Android Safetynet attestation (removed in `v0.7.0`)
   - [x] [**Mandatory**](https://medium.com/webauthnworks/webauthn-fido2-whats-new-in-mds3-migrating-from-mds2-to-mds3-a271d82cb774#c977): Apple Anonymous
 
 [3. Authentication and Assertions](https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-server-v2.0-rd-20180702.html#authn-and-assertion)
