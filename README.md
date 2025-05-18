@@ -41,7 +41,7 @@ Add the following line to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:wax_, "~> 0.6.0"}
+    {:wax_, "~> 0.7.0"}
   ]
 end
 ```
@@ -241,6 +241,10 @@ FIDO2 and willing to help reviewing it, please contact the author
   - it exposes you to some attacks (such as replay attacks)
   - you have no guarantee that the user understood what he has been signing (no specific browser UI
   was presented)
+- When using the `origin_verify_fun` option, make sure to understand the security
+implications of it. In particular, if you're using it to check against subdomains using
+a wildcard (`*.example.com`), use a library such as `Domainatrex` - incorrect wildcard parsing is
+a frequent cause of security blunder
 
 ## Changes
 
