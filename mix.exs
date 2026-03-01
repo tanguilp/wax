@@ -34,7 +34,7 @@ defmodule Wax.MixProject do
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:jason, "~> 1.1"},
-      {:x509, "~> 0.8"}
+      {:x509, "~> 0.9"}
     ]
   end
 

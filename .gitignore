@@ -23,3 +23,6 @@ erl_crash.dump
 webauthn-*.tar
 
 *.swp
+
+# Generated ASN.1 compiler output.
+/src/
