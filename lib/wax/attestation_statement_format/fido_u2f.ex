@@ -8,8 +8,9 @@ defmodule Wax.AttestationStatementFormat.FIDOU2F do
         att_stmt,
         auth_data,
         client_data_hash,
-        %Wax.Challenge{attestation: "direct"} = challenge
-      ) do
+        %Wax.Challenge{attestation: conveyance_preference} = challenge
+      )
+      when conveyance_preference == "direct" or conveyance_preference == "indirect" do
     with :ok <- valid_cbor?(att_stmt),
          {:ok, pub_key} <- extract_and_verify_public_key(att_stmt),
          :ok <- verify_aaguid_null(auth_data),

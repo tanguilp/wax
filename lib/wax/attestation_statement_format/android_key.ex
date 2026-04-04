@@ -35,8 +35,9 @@ defmodule Wax.AttestationStatementFormat.AndroidKey do
         att_stmt,
         auth_data,
         client_data_hash,
-        %Wax.Challenge{attestation: "direct"} = challenge
-      ) do
+        %Wax.Challenge{attestation: conveyance_preference} = challenge
+      )
+      when conveyance_preference == "direct" or conveyance_preference == "indirect" do
     # see: https://medium.com/@tangui.lepense/hi-the-webauthn-specification-https-www-w3-org-tr-webauthn-android-key-attestation-6e5e5daaa03f
     with :ok <- valid_cbor?(att_stmt),
          cert_chain = att_stmt["x5c"],

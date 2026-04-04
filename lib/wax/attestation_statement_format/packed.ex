@@ -264,8 +264,9 @@ defmodule Wax.AttestationStatementFormat.Packed do
         %{"x5c" => _} = att_stmt,
         auth_data,
         client_data_hash,
-        %Wax.Challenge{attestation: "direct"} = challenge
-      ) do
+        %Wax.Challenge{attestation: conveyance_preference} = challenge
+      )
+      when conveyance_preference == "direct" or conveyance_preference == "indirect" do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- valid_attestation_certificate?(List.first(att_stmt["x5c"]), auth_data),
          :ok <- valid_x5c_signature?(att_stmt, auth_data, client_data_hash),
