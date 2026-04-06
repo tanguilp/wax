@@ -181,7 +181,6 @@ These options are:
 
 |  Option       |  Type         |  Applies to       |  Default value                | Notes |
 |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
-|`attestation`|`"none"` or `"direct"`|registration|`"none"`| |
 |`origin`|`String.t()` or `[String.t()]`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` or `["www.example.com", "biz.example.com"]` |
 |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) if it is a string | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
 |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|registration & authentication|`"preferred"`| |

@@ -26,7 +26,6 @@ defmodule Wax.Challenge do
     ],
     android_key_allow_software_enforcement: false,
     allow_credentials: [],
-    attestation: "none",
     silent_authentication_enabled: false,
     timeout: 120,
     trusted_attestation_types: [:none, :self, :basic, :uncertain, :attca, :anonca],
@@ -36,7 +35,6 @@ defmodule Wax.Challenge do
 
   @type t :: %__MODULE__{
           type: :attestation | :authentication,
-          attestation: String.t(),
           bytes: binary(),
           origin: String.t() | [String.t()] | any(),
           rp_id: String.t(),
@@ -54,7 +52,6 @@ defmodule Wax.Challenge do
         }
 
   @opt_names [
-    :attestation,
     :origin,
     :rp_id,
     :user_verification,

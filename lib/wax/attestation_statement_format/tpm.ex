@@ -115,7 +115,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
         %{"x5c" => _} = att_stmt,
         auth_data,
         client_data_hash,
-        %Wax.Challenge{attestation: "direct"} = challenge
+        challenge
       ) do
     with :ok <- valid_cbor?(att_stmt),
          :ok <- version_valid?(att_stmt),
@@ -136,17 +136,9 @@ defmodule Wax.AttestationStatementFormat.TPM do
         %{"ecdaaKeyId" => _},
         _auth_data,
         _client_data_hash,
-        %Wax.Challenge{attestation: "direct"}
+        _challenge
       ) do
     {:error, %Wax.AttestationVerificationError{type: :tpm, reason: :unsupported_ecdaa}}
-  end
-
-  def verify(_attstmt, _auth_data, _client_data_hash, _challenge) do
-    {:error,
-     %Wax.AttestationVerificationError{
-       type: :tpm,
-       reason: :invalid_attestation_conveyance_preference
-     }}
   end
 
   defp valid_cbor?(att_stmt) do
