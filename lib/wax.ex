@@ -125,6 +125,20 @@ defmodule Wax do
 
   @spec new_registration_challenge(opts()) :: Wax.Challenge.t()
   def new_registration_challenge(opts \\ []) do
+    if opts[:attestation] == "direct" do
+      raise """
+      The `attestation` option has been removed from Wax v0.8.0
+
+      To control which attestation types are accepted, use the `:trusted_attestation_types` options
+      instead. Before v0.8.0, `attestation: "direct"` could be erroneously used to ensure that the
+      attestation was of certain type. This is no longer the case and you MUST update the options
+      accordingly, for instance by setting: `trusted_attestation_types: [:attca, :anonca]` to
+      accept only strong attestation types.
+
+      DO NOT REMOVE THIS EXCEPTION UNTIL YOU ARE SURE TO UNDERSTAND WHAT YOU ARE DOING.
+      """
+    end
+
     opts
     |> Keyword.put(:type, :attestation)
     |> Wax.Challenge.new()
