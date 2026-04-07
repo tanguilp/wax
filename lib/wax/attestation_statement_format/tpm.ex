@@ -105,9 +105,8 @@ defmodule Wax.AttestationStatementFormat.TPM do
     "id:474F4F47"
   ]
 
-  # ++ ["id:FFFFF1D0"]
-
-  # fake ID for conformance tool testing, uncomment only for testing
+  # Fake manufacturer ID used by some FIDO Alliance conformance tests.
+  @conformance_fake_tpm_manufacturer_id "id:FFFFF1D0"
 
   @impl Wax.AttestationStatementFormat
 
@@ -336,7 +335,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
          X509.Certificate.subject(cert) == {:rdnSequence, []} and
          parse_cert_utc_time(valid_from) < Wax.Utils.Timestamp.get_timestamp() and
          parse_cert_utc_time(valid_to) > Wax.Utils.Timestamp.get_timestamp() and
-         get_tcpaTpmManufacturer_field(cert) in @tpm_manufacturer_ids and
+         get_tcpaTpmManufacturer_field(cert) in tpm_manufacturer_ids() and
          {2, 23, 133, 8, 3} in key_ext_vals and
          Wax.Utils.Certificate.basic_constraints_ext_ca_component(cert) == false do
       # checking if oid of id-fido-gen-ce-aaguid is present and, if so, aaguid
@@ -486,4 +485,14 @@ defmodule Wax.AttestationStatementFormat.TPM do
   defp name_alg_to_erlang_digest(@tpm_alg_sha256), do: :sha256
   defp name_alg_to_erlang_digest(@tpm_alg_sha384), do: :sha384
   defp name_alg_to_erlang_digest(@tpm_alg_sha512), do: :sha512
+
+  if Mix.env() == :dev and Application.compile_env(:wax_, :setup_for_conformance_suite, false) do
+    defp tpm_manufacturer_ids() do
+      [@conformance_fake_tpm_manufacturer_id | @tpm_manufacturer_ids]
+    end
+  else
+    defp tpm_manufacturer_ids() do
+      @tpm_manufacturer_ids
+    end
+  end
 end
