@@ -505,4 +505,31 @@ defmodule WaxTest do
                [{"credential_id", cose_key}]
              )
   end
+
+  test "register returns an error for a malformed attestation object" do
+    challenge =
+      Wax.new_registration_challenge(origin: "http://localhost:4000", rp_id: "localhost")
+
+    client_data_json =
+      Jason.encode!(%{
+        "type" => "webauthn.create",
+        "challenge" => Base.url_encode64(challenge.bytes, padding: false),
+        "origin" => "http://localhost:4000"
+      })
+
+    auth_data = %CBOR.Tag{
+      tag: :bytes,
+      value: :crypto.hash(:sha256, "localhost") <> <<1, 0, 0, 0, 0>>
+    }
+
+    for attestation_object <- [
+          1,
+          [],
+          %{"fmt" => "none"},
+          %{"fmt" => "packed", "authData" => auth_data, "attStmt" => 1}
+        ] do
+      assert {:error, %Wax.InvalidAttestationObjectError{}} =
+               Wax.register(CBOR.encode(attestation_object), client_data_json, challenge)
+    end
+  end
 end
