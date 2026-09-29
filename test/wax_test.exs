@@ -479,4 +479,30 @@ defmodule WaxTest do
     assert {:error, %Wax.AttestationVerificationError{reason: :path_validation_failed}} =
              Wax.register(attestation_object, client_data_json, challenge)
   end
+
+  test "register returns an error for malformed client data" do
+    challenge =
+      Wax.new_registration_challenge(origin: "http://localhost:4000", rp_id: "localhost")
+
+    assert {:error, %Wax.InvalidClientDataError{reason: :invalid_type}} =
+             Wax.register(<<>>, ~s({"type":"webauthn.unknown"}), challenge)
+  end
+
+  test "authenticate returns an error for malformed client data" do
+    challenge =
+      Wax.new_authentication_challenge(origin: "http://localhost:4000", rp_id: "localhost")
+
+    auth_data = :crypto.hash(:sha256, "localhost") <> <<1, 0, 0, 0, 0>>
+    cose_key = %{1 => 2, 3 => -7, -1 => 1, -2 => <<0::256>>, -3 => <<0::256>>}
+
+    assert {:error, %Wax.InvalidClientDataError{reason: :invalid_challenge}} =
+             Wax.authenticate(
+               "credential_id",
+               auth_data,
+               <<>>,
+               ~s({"type":"webauthn.get","challenge":"not base64url!"}),
+               challenge,
+               [{"credential_id", cose_key}]
+             )
+  end
 end

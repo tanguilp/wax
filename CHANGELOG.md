@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Fixed
+
+- [Wax.ClientData] Malformed client data (not a JSON object, unknown or missing `type`,
+missing or invalid `challenge`, missing or non-string `origin`) now returns a
+`Wax.InvalidClientDataError` instead of raising (#61)
+
 ## [0.7.0] - 2025-05-18
 
 ### Added

@@ -43,32 +43,53 @@ defmodule Wax.ClientData do
 
   @spec parse_raw_json(raw_string()) :: {:ok, t()} | {:error, Exception.t()}
   def parse_raw_json(client_data_json_raw) do
-    with {:ok, client_data_map} <- Jason.decode(client_data_json_raw),
-         {:ok, maybe_token_binding} <- parse_token_binding(client_data_map["tokenBinding"]) do
-      type =
-        case client_data_map["type"] do
-          "webauthn.create" ->
-            :create
-
-          "webauthn.get" ->
-            :get
-        end
-
+    with {:ok, client_data_map} <- decode_json_object(client_data_json_raw),
+         {:ok, maybe_token_binding} <- parse_token_binding(client_data_map["tokenBinding"]),
+         {:ok, type} <- parse_type(client_data_map["type"]),
+         {:ok, challenge} <- parse_challenge(client_data_map["challenge"]),
+         {:ok, origin} <- parse_origin(client_data_map["origin"]) do
       {:ok,
        %__MODULE__{
          type: type,
-         challenge: Base.url_decode64!(client_data_map["challenge"], padding: false),
-         origin: client_data_map["origin"],
+         challenge: challenge,
+         origin: origin,
          token_binding: maybe_token_binding
        }}
-    else
-      {:error, %Jason.DecodeError{}} ->
-        {:error, %Wax.InvalidClientDataError{reason: :malformed_json}}
-
-      error ->
-        error
     end
   end
+
+  # The client data is sent by the browser and is therefore untrusted: any JSON value can
+  # show up here, not only an object with the expected members
+  defp decode_json_object(client_data_json_raw) do
+    case Jason.decode(client_data_json_raw) do
+      {:ok, %{} = client_data_map} ->
+        {:ok, client_data_map}
+
+      _ ->
+        {:error, %Wax.InvalidClientDataError{reason: :malformed_json}}
+    end
+  end
+
+  defp parse_type("webauthn.create"), do: {:ok, :create}
+  defp parse_type("webauthn.get"), do: {:ok, :get}
+  defp parse_type(_), do: {:error, %Wax.InvalidClientDataError{reason: :invalid_type}}
+
+  defp parse_challenge(challenge) when is_binary(challenge) do
+    case Base.url_decode64(challenge, padding: false) do
+      {:ok, challenge} ->
+        {:ok, challenge}
+
+      :error ->
+        {:error, %Wax.InvalidClientDataError{reason: :invalid_challenge}}
+    end
+  end
+
+  defp parse_challenge(_) do
+    {:error, %Wax.InvalidClientDataError{reason: :invalid_challenge}}
+  end
+
+  defp parse_origin(origin) when is_binary(origin), do: {:ok, origin}
+  defp parse_origin(_), do: {:error, %Wax.InvalidClientDataError{reason: :invalid_origin}}
 
   defp parse_token_binding(nil) do
     {:ok, nil}
