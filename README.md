@@ -188,7 +188,7 @@ These options are:
 |`trusted_attestation_types`|`[t:Wax.Attestation.type/0]`|registration|`[:none, :basic, :uncertain, :attca, :anonca, :self]`| |
 |`verify_trust_root`|`boolean()`|registration|`true`|Only for `u2f` and `packed` attestation. `tpm` attestation format is always checked against metadata|
 |`acceptable_authenticator_statuses`|`[String.t()]`|registration|`["FIDO_CERTIFIED", "FIDO_CERTIFIED_L1",  "FIDO_CERTIFIED_L1plus", "FIDO_CERTIFIED_L2", "FIDO_CERTIFIED_L2plus", "FIDO_CERTIFIED_L3", "FIDO_CERTIFIED_L3plus"]`| The `"UPDATE_AVAILABLE"` status is not whitelisted by default |
-|`timeout`|`non_neg_integer()`|registration & authentication|`20 * 60`| The validity duration of a challenge, in seconds |
+|`timeout`|`non_neg_integer()`|registration & authentication|`120`| The validity duration of a challenge, in seconds |
 |`android_key_allow_software_enforcement`|`boolean()`|registration|`false`| When registration is a Android key, determines whether software enforcement is acceptable (`true`) or only hardware enforcement is (`false`) |
 |`silent_authentication_enabled`|`boolean()`|authentication|`false`| See [https://github.com/fido-alliance/conformance-tools-issues/issues/434](https://github.com/fido-alliance/conformance-tools-issues/issues/434) |
 |`bytes`|`binary()`|registration & authentication|random bytes|Allows to provide with your own challenge. This is **not** recommended unless you know what you're doing. Refer to the [Security considerations](#security-considerations) for more information|
