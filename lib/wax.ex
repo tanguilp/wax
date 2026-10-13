@@ -15,7 +15,6 @@ defmodule Wax do
 
   |  Option       |  Type         |  Applies to       |  Default value                | Notes |
   |:-------------:|:-------------:|-------------------|:-----------------------------:|-------|
-  |`attestation`|`"none"` or `"direct"`|registration|`"none"`| |
   |`origin`|`String.t()` or `[String.t()]`|registration & authentication| | **Mandatory**. Example: `https://www.example.com` or `["www.example.com", "biz.example.com"]` |
   |`rp_id`|`String.t()` or `:auto`|registration & authentication|If set to `:auto`, automatically determined from the `origin` (set to the host) if it is a string | With `:auto`, it defaults to the full host (e.g.: `www.example.com`). This option allow you to set the `rp_id` to another valid value (e.g.: `example.com`) |
   |`user_verification`|`"discouraged"`, `"preferred"` or `"required"`|registration & authentication|`"preferred"`| |
@@ -83,8 +82,7 @@ defmodule Wax do
   @type opts :: [opt()]
 
   @type opt ::
-          {:attestation, String.t()}
-          | {:origin, String.t() | [String.t(), ...]}
+          {:origin, String.t() | [String.t(), ...]}
           | {:rp_id, String.t() | :auto}
           | {:user_verification, String.t()}
           | {:allow_credentials, [{Wax.AuthenticatorData.credential_id(), Wax.CoseKey.t()}]}
@@ -127,6 +125,20 @@ defmodule Wax do
 
   @spec new_registration_challenge(opts()) :: Wax.Challenge.t()
   def new_registration_challenge(opts \\ []) do
+    if opts[:attestation] == "direct" do
+      raise """
+      The `attestation` option has been removed from Wax v0.8.0
+
+      To control which attestation types are accepted, use the `:trusted_attestation_types` options
+      instead. Before v0.8.0, `attestation: "direct"` could be erroneously used to ensure that the
+      attestation was of certain type. This is no longer the case and you MUST update the options
+      accordingly, for instance by setting: `trusted_attestation_types: [:attca, :anonca]` to
+      accept only strong attestation types.
+
+      DO NOT REMOVE THIS EXCEPTION UNTIL YOU ARE SURE TO UNDERSTAND WHAT YOU ARE DOING.
+      """
+    end
+
     opts
     |> Keyword.put(:type, :attestation)
     |> Wax.Challenge.new()
