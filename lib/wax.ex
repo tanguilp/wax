@@ -208,7 +208,7 @@ defmodule Wax do
          :ok <- valid_origin?(client_data, challenge),
          client_data_hash = :crypto.hash(:sha256, client_data_json_raw),
          {:ok, att_data, _} <- Utils.CBOR.decode(attestation_object_cbor),
-         %{"fmt" => att_fmt, "authData" => auth_data_bin, "attStmt" => att_stmt} = att_data,
+         {:ok, att_fmt, auth_data_bin, att_stmt} <- attestation_object_fields(att_data),
          {:ok, auth_data} <- Wax.AuthenticatorData.decode(auth_data_bin),
          :ok <- valid_rp_id?(auth_data, challenge),
          :ok <- user_present_flag_set?(auth_data, challenge),
@@ -402,6 +402,20 @@ defmodule Wax do
         ) :: boolean()
   def origins_match?(client_data_origin, challenge_origin) do
     client_data_origin in List.wrap(challenge_origin)
+  end
+
+  # The attestation object is sent by the browser and is therefore untrusted: it can decode to
+  # any CBOR value, not only a map with the expected members
+  defp attestation_object_fields(%{
+         "fmt" => att_fmt,
+         "authData" => auth_data_bin,
+         "attStmt" => %{} = att_stmt
+       }) do
+    {:ok, att_fmt, auth_data_bin, att_stmt}
+  end
+
+  defp attestation_object_fields(_) do
+    {:error, %Wax.InvalidAttestationObjectError{}}
   end
 
   defp not_expired?(challenge) do

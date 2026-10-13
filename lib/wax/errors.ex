@@ -15,6 +15,10 @@ defmodule Wax.InvalidCBORError do
   defexception message: "Invalid CBOR"
 end
 
+defmodule Wax.InvalidAttestationObjectError do
+  defexception message: "Invalid attestation object"
+end
+
 defmodule Wax.InvalidAuthenticatorDataError do
   defexception message: "Invalid authenticator data"
 end
