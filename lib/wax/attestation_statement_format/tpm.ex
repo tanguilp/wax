@@ -185,7 +185,7 @@ defmodule Wax.AttestationStatementFormat.TPM do
 
     <<
       attested_name_digest::unsigned-big-integer-size(16),
-      attested_name_hash::binary-size(hash_length)
+      attested_name_hash::binary-size(^hash_length)
     >> = attested_name
 
     {:ok,
