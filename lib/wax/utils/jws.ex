@@ -76,7 +76,7 @@ defmodule Wax.Utils.JWS do
 
   defp new_der_encoded_sig(raw) when is_binary(raw) do
     size = raw |> byte_size() |> div(2)
-    <<r::size(size)-unit(8), s::size(size)-unit(8)>> = raw
+    <<r::size(^size)-unit(8), s::size(^size)-unit(8)>> = raw
     new_der_encoded_sig(r, s)
   end
 
